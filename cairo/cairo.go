@@ -16,6 +16,7 @@ type Cairo struct {
 	*tripod.Tripod
 	cairoVM vm.VM
 	state   core.StateReader
+	cfg     *Config
 }
 
 func NewCairo(cfg *Config) *Cairo {
@@ -32,6 +33,7 @@ func NewCairo(cfg *Config) *Cairo {
 		Tripod:  tripod.NewTripod(),
 		cairoVM: cairoVM,
 		state:   state,
+		cfg:     cfg,
 	}
 
 	cairo.SetWritings(cairo.AddTxn)
@@ -41,7 +43,7 @@ func NewCairo(cfg *Config) *Cairo {
 }
 
 func newVM(cfg *Config) (vm.VM, error) {
-	log, err := utils.NewZapLogger(utils.LogLevel(cfg.LogLevel), true)
+	log, err := utils.NewZapLogger(utils.LogLevel(cfg.LogLevel), cfg.Colour)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +51,7 @@ func newVM(cfg *Config) (vm.VM, error) {
 }
 
 func newState(cfg *Config) (core.StateReader, error) {
-	dbLog, err := utils.NewZapLogger(utils.ERROR, true)
+	dbLog, err := utils.NewZapLogger(utils.ERROR, cfg.Colour)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +78,15 @@ func (c *Cairo) call(
 	contractAddr, classHash, selector *felt.Felt,
 	calldata []felt.Felt,
 	blockNumber, blockTimestamp uint64,
-	network utils.Network,
 ) ([]*felt.Felt, error) {
-	return c.cairoVM.Call(contractAddr, classHash, selector, calldata, blockNumber, blockTimestamp, c.state, network)
+	return c.cairoVM.Call(contractAddr, classHash, selector, calldata, blockNumber, blockTimestamp, c.state, utils.Network(c.cfg.Network))
 }
 
-func (c *Cairo) execute() {
-	c.cairoVM.Execute()
+// FIXME: should implement startup.TxnExecute
+func (c *Cairo) Execute(txns []core.Transaction, declaredClasses []core.Class, blockNumber, blockTimestamp uint64,
+	sequencerAddress *felt.Felt, paidFeesOnL1 []*felt.Felt,
+	skipChargeFee, skipValidate, errOnRevert bool, gasPriceWEI *felt.Felt, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
+) ([]*felt.Felt, []vm.TransactionTrace, error) {
+	return c.cairoVM.Execute(txns, declaredClasses, blockNumber, blockTimestamp, sequencerAddress,
+		c.state, utils.Network(c.cfg.Network), paidFeesOnL1, skipChargeFee, skipValidate, errOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
 }

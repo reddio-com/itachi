@@ -12,4 +12,5 @@ type Config struct {
 	MaxVMs     uint  `toml:"max_vms"`
 	MaxVMQueue int32 `toml:"max_vm_queue"`
 	LogLevel   int   `toml:"log_level"`
+	Colour     bool  `toml:"colour"`
 }
