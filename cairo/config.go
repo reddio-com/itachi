@@ -13,4 +13,9 @@ type Config struct {
 	MaxVMQueue int32 `toml:"max_vm_queue"`
 	LogLevel   int   `toml:"log_level"`
 	Colour     bool  `toml:"colour"`
+	// cairo VM execute
+	SequencerAddr string `toml:"sequencer_addr"`
+	SkipChargeFee bool   `toml:"skip_charge_fee"`
+	SkipValidate  bool   `toml:"skip_validate"`
+	ErrOnRevert   bool   `toml:"err_on_revert"`
 }

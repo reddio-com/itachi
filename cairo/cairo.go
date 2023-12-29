@@ -10,13 +10,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
+	"github.com/yu-org/yu/core/types"
 )
 
 type Cairo struct {
 	*tripod.Tripod
-	cairoVM vm.VM
-	state   core.StateReader
-	cfg     *Config
+	cairoVM       vm.VM
+	state         core.StateReader
+	cfg           *Config
+	sequencerAddr *felt.Felt
 }
 
 func NewCairo(cfg *Config) *Cairo {
@@ -28,16 +30,23 @@ func NewCairo(cfg *Config) *Cairo {
 	if err != nil {
 		logrus.Fatal("init cairoVM failed: ", err)
 	}
+	sequencerAddr, err := new(felt.Felt).SetString(cfg.SequencerAddr)
+	if err != nil {
+		logrus.Fatal("load sequencer address failed: ", err)
+	}
 
 	cairo := &Cairo{
-		Tripod:  tripod.NewTripod(),
-		cairoVM: cairoVM,
-		state:   state,
-		cfg:     cfg,
+		Tripod:        tripod.NewTripod(),
+		cairoVM:       cairoVM,
+		state:         state,
+		cfg:           cfg,
+		sequencerAddr: sequencerAddr,
 	}
 
 	cairo.SetWritings(cairo.AddDeployAccountTxn, cairo.AddDeclareTxn, cairo.AddInvokeTxn, cairo.AddL1HandleTxn)
 	cairo.SetReadings(cairo.Call)
+	cairo.SetInit(cairo)
+	cairo.SetTxnChecker(cairo)
 
 	return cairo
 }
@@ -66,15 +75,25 @@ func newState(cfg *Config) (core.StateReader, error) {
 	return core.NewState(txn), nil
 }
 
+func (c *Cairo) InitChain() {
+	// TODO: init the genesis block
+}
+
+func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
+	// TODO: check tx, if illegal, will not insert to txpool.
+}
+
 func (c *Cairo) AddDeployAccountTxn(ctx *context.WriteContext) error {
 	return nil
 }
 
 func (c *Cairo) AddDeclareTxn(ctx *context.WriteContext) error {
+	// TODO: check if contract is already declared
 	return nil
 }
 
 func (c *Cairo) AddInvokeTxn(ctx *context.WriteContext) error {
+	// TODO: check if contract is already declared
 	return nil
 }
 
@@ -100,11 +119,11 @@ func (c *Cairo) call(
 	return c.cairoVM.Call(contractAddr, classHash, selector, calldata, blockNumber, blockTimestamp, c.state, utils.Network(c.cfg.Network))
 }
 
-// FIXME: should implement startup.TxnExecute
-func (c *Cairo) execute(txns []core.Transaction, declaredClasses []core.Class, blockNumber, blockTimestamp uint64,
-	sequencerAddress *felt.Felt, paidFeesOnL1 []*felt.Felt,
-	skipChargeFee, skipValidate, errOnRevert bool, gasPriceWEI *felt.Felt, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
+func (c *Cairo) execute(
+	txns []core.Transaction, declaredClasses []core.Class,
+	blockNumber, blockTimestamp uint64, paidFeesOnL1 []*felt.Felt,
+	gasPriceWEI, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
-	return c.cairoVM.Execute(txns, declaredClasses, blockNumber, blockTimestamp, sequencerAddress,
-		c.state, utils.Network(c.cfg.Network), paidFeesOnL1, skipChargeFee, skipValidate, errOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
+	return c.cairoVM.Execute(txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
+		c.state, utils.Network(c.cfg.Network), paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate, c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
 }
