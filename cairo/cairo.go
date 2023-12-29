@@ -19,6 +19,7 @@ type Cairo struct {
 	state         core.StateReader
 	cfg           *Config
 	sequencerAddr *felt.Felt
+	network       utils.Network
 }
 
 func NewCairo(cfg *Config) *Cairo {
@@ -41,6 +42,7 @@ func NewCairo(cfg *Config) *Cairo {
 		state:         state,
 		cfg:           cfg,
 		sequencerAddr: sequencerAddr,
+		network:       utils.Network(cfg.Network),
 	}
 
 	cairo.SetWritings(cairo.AddDeployAccountTxn, cairo.AddDeclareTxn, cairo.AddInvokeTxn, cairo.AddL1HandleTxn)
@@ -109,21 +111,4 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	blockNumber := uint64(block.Height)
 	blockTimestamp := block.Timestamp
 
-}
-
-func (c *Cairo) call(
-	contractAddr, classHash, selector *felt.Felt,
-	calldata []felt.Felt,
-	blockNumber, blockTimestamp uint64,
-) ([]*felt.Felt, error) {
-	return c.cairoVM.Call(contractAddr, classHash, selector, calldata, blockNumber, blockTimestamp, c.state, utils.Network(c.cfg.Network))
-}
-
-func (c *Cairo) execute(
-	txns []core.Transaction, declaredClasses []core.Class,
-	blockNumber, blockTimestamp uint64, paidFeesOnL1 []*felt.Felt,
-	gasPriceWEI, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
-) ([]*felt.Felt, []vm.TransactionTrace, error) {
-	return c.cairoVM.Execute(txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
-		c.state, utils.Network(c.cfg.Network), paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate, c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
 }
