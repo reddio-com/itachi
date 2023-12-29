@@ -36,7 +36,7 @@ func NewCairo(cfg *Config) *Cairo {
 		cfg:     cfg,
 	}
 
-	cairo.SetWritings(cairo.AddTxn)
+	cairo.SetWritings(cairo.AddDeployAccountTxn, cairo.AddDeclareTxn, cairo.AddInvokeTxn, cairo.AddL1HandleTxn)
 	cairo.SetReadings(cairo.Call)
 
 	return cairo
@@ -66,11 +66,29 @@ func newState(cfg *Config) (core.StateReader, error) {
 	return core.NewState(txn), nil
 }
 
-func (c *Cairo) AddTxn(ctx *context.WriteContext) error {
+func (c *Cairo) AddDeployAccountTxn(ctx *context.WriteContext) error {
+	return nil
+}
 
+func (c *Cairo) AddDeclareTxn(ctx *context.WriteContext) error {
+	return nil
+}
+
+func (c *Cairo) AddInvokeTxn(ctx *context.WriteContext) error {
+	return nil
+}
+
+func (c *Cairo) AddL1HandleTxn(ctx *context.WriteContext) error {
+	return nil
 }
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
+	block, err := c.Chain.GetEndBlock()
+	if err != nil {
+
+	}
+	blockNumber := uint64(block.Height)
+	blockTimestamp := block.Timestamp
 
 }
 
@@ -83,7 +101,7 @@ func (c *Cairo) call(
 }
 
 // FIXME: should implement startup.TxnExecute
-func (c *Cairo) Execute(txns []core.Transaction, declaredClasses []core.Class, blockNumber, blockTimestamp uint64,
+func (c *Cairo) execute(txns []core.Transaction, declaredClasses []core.Class, blockNumber, blockTimestamp uint64,
 	sequencerAddress *felt.Felt, paidFeesOnL1 []*felt.Felt,
 	skipChargeFee, skipValidate, errOnRevert bool, gasPriceWEI *felt.Felt, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
