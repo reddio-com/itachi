@@ -11,7 +11,9 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/jinzhu/copier"
+	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
+	"github.com/yu-org/yu/core/result"
 	"github.com/yu-org/yu/core/startup"
 	"github.com/yu-org/yu/core/types"
 )
@@ -47,11 +49,36 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 	}
 	blockNumber := uint64(block.Height)
 	blockTimestamp := block.Timestamp
+	blockHash := block.Hash
 
-	actualFee, traces, err := c.execute(starknetTxns, classes, blockNumber, blockTimestamp, paidFeesOnL1)
+	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
+	_, traces, err := c.execute(
+		starknetTxns, classes, blockNumber, blockTimestamp,
+		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
+	)
 	if err != nil {
 		return err
 	}
+
+	// store events
+	var results []*result.Result
+	for _, trace := range traces {
+		for _, event := range trace.ExecuteInvocation.Events {
+			eventByt, terr := json.Marshal(event)
+			if terr != nil {
+				return terr
+			}
+			caller := trace.ExecuteInvocation.CallerAddress.Bytes()
+			yuEvent := &result.Event{
+				Caller:    common.BytesToAddress(caller[:]),
+				BlockHash: blockHash,
+				Height:    block.Height,
+				Value:     eventByt,
+			}
+			results = append(results, result.NewEvent(yuEvent))
+		}
+	}
+	return c.TxDB.SetResults(results)
 }
 
 func (c *Cairo) call(
