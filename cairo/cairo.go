@@ -85,6 +85,7 @@ func (c *Cairo) InitChain() {
 
 func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 	// TODO: check tx, if illegal, will not insert to txpool.
+	return nil
 }
 
 func (c *Cairo) AddDeployAccountTxn(ctx *context.WriteContext) error {
