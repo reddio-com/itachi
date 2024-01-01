@@ -34,12 +34,12 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-		btxn := new(rpc.BroadcastedTransaction)
-		err = ctx.BindJson(btxn)
+		txReq := new(TxRequest)
+		err = ctx.BindJson(txReq)
 		if err != nil {
 			return err
 		}
-		tx, class, paidFeeOnL1, err := c.adaptBroadcastedTransaction(btxn)
+		tx, class, paidFeeOnL1, err := c.adaptBroadcastedTransaction(txReq.Tx)
 		if err != nil {
 			return err
 		}
@@ -79,14 +79,6 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		}
 	}
 	return c.TxDB.SetResults(results)
-}
-
-func (c *Cairo) call(
-	contractAddr, classHash, selector *felt.Felt,
-	calldata []felt.Felt,
-	blockNumber, blockTimestamp uint64,
-) ([]*felt.Felt, error) {
-	return c.cairoVM.Call(contractAddr, classHash, selector, calldata, blockNumber, blockTimestamp, c.state, c.network)
 }
 
 func (c *Cairo) execute(

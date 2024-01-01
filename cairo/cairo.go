@@ -7,10 +7,12 @@ import (
 	"github.com/NethermindEth/juno/node"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
+	"net/http"
 )
 
 type Cairo struct {
@@ -104,11 +106,42 @@ func (c *Cairo) AddL1HandleTxn(ctx *context.WriteContext) error {
 }
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
+	callRequest := new(CallRequest)
+	err := ctx.BindJSON(callRequest)
+	if err != nil {
+		ctx.AbortWithError(
+			http.StatusBadRequest,
+			errors.Errorf("Json decoded CallRequest failed: %v", err),
+		)
+		return
+	}
+
 	block, err := c.Chain.GetEndBlock()
 	if err != nil {
-
+		ctx.AbortWithError(
+			http.StatusInternalServerError,
+			errors.Errorf("Get end block failed: %v", err),
+		)
+		return
 	}
 	blockNumber := uint64(block.Height)
 	blockTimestamp := block.Timestamp
 
+	retData, err := c.cairoVM.Call(
+		callRequest.ContractAddr,
+		callRequest.ClassHash,
+		callRequest.Selector,
+		callRequest.Calldata,
+		blockNumber, blockTimestamp,
+		c.state, c.network,
+	)
+	if err != nil {
+		ctx.AbortWithError(
+			http.StatusInternalServerError,
+			errors.Errorf("CairoVM call failed: %v", err),
+		)
+		return
+	}
+
+	ctx.JsonOk(&CallResponse{ReturnData: retData})
 }
