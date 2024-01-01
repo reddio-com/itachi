@@ -43,15 +43,16 @@ func LoadCfg(fpath string) *Config {
 
 func DefaultCfg() *Config {
 	return &Config{
-		Network:       6,
-		Path:          "cairo_db",
-		Cache:         1,
-		MaxOpenFiles:  3,
-		MaxVMs:        3,
-		MaxVMQueue:    3,
-		LogLevel:      1,
-		Colour:        false,
-		SequencerAddr: "",
+		Network:      6,
+		Path:         "cairo_db",
+		Cache:        1,
+		MaxOpenFiles: 3,
+		MaxVMs:       3,
+		MaxVMQueue:   3,
+		LogLevel:     1,
+		Colour:       false,
+		// test addr
+		SequencerAddr: "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b",
 		SkipChargeFee: true,
 		SkipValidate:  true,
 		ErrOnRevert:   true,
