@@ -9,7 +9,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
-	github.com/yu-org/yu v0.0.0-20240102103144-cd96832147d2
+	github.com/yu-org/yu v0.0.0-20240102113745-7cb5d1da3192
 )
 
 require (
