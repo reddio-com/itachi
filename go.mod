@@ -2,6 +2,10 @@ module itachi
 
 go 1.21.4
 
+replace (
+	github.com/NethermindEth/juno => ./juno
+)
+
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/NethermindEth/juno v0.8.1-0.20231228072404-6222563f6218
