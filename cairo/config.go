@@ -21,6 +21,7 @@ type Config struct {
 	MaxOpenFiles int    `toml:"max_open_files"`
 
 	// cairoVM
+	MockVM     bool  `toml:"mock_vm"`
 	MaxVMs     uint  `toml:"max_vms"`
 	MaxVMQueue int32 `toml:"max_vm_queue"`
 	LogLevel   int   `toml:"log_level"`
@@ -43,6 +44,7 @@ func LoadCfg(fpath string) *Config {
 
 func DefaultCfg() *Config {
 	return &Config{
+		MockVM:       true,
 		Network:      6,
 		Path:         "cairo_db",
 		Cache:        1,

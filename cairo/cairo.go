@@ -60,6 +60,10 @@ func newVM(cfg *Config) (vm.VM, error) {
 	if err != nil {
 		return nil, err
 	}
+	if cfg.MockVM {
+		logrus.Info("Mock CairoVM!")
+		return new(MockCairoVM), nil
+	}
 	return node.NewThrottledVM(vm.New(log), cfg.MaxVMs, cfg.MaxVMQueue), nil
 }
 
