@@ -2,5 +2,11 @@ github.com/NethermindEth/juno v0.8.1-0.20231228072404-6222563f6218 h1:Xg2S0hfbb6
 github.com/NethermindEth/juno v0.8.1-0.20231228072404-6222563f6218/go.mod h1:5kSgsPgy1oHKSbzUFvx5ot8Jgutr9cCcWyKRD9gp9tY=
 github.com/NethermindEth/juno v0.9.2 h1:VoYjVheuHX2EzdxDqkzGA4p6zFh98fVU/K1CLBjF2vw=
 github.com/NethermindEth/juno v0.9.2/go.mod h1:uji2muAKzNHZuTd6DtCqgzUDRek6UMmOzheenJLgccM=
+github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be h1:J5BL2kskAlV9ckgEsNQXscjIaLiOYiZ75d4e94E6dcQ=
+github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be/go.mod h1:mk5IQ+Y0ZeO87b858TlA645sVcEcbiX6YqP98kt+7+w=
 github.com/yu-org/yu v0.0.0-20231228073722-7faa48ad921e h1:UPG6FQfXttsrLlx0bkS3oF65Sy1jmgx/l+Q8rRY/x/w=
 github.com/yu-org/yu v0.0.0-20231228073722-7faa48ad921e/go.mod h1:breQEzTiQiq/ysmKZydzm4bp8eoS+23SHQ/sfVi6f1E=
+github.com/yu-org/yu v0.0.0-20240102024010-94d608bb9c12 h1:F0AXENZcRnPl7a9yfvZQXXh9K6b/DrakYl5Xc+VS+14=
+github.com/yu-org/yu v0.0.0-20240102024010-94d608bb9c12/go.mod h1:breQEzTiQiq/ysmKZydzm4bp8eoS+23SHQ/sfVi6f1E=
+github.com/yu-org/yu v0.0.0-20240102065044-a72e944770c1 h1:iCUEoVBZdd0dB2Y8sRFQD1uiSe3oXjO0hD11m2nY8Ac=
+github.com/yu-org/yu v0.0.0-20240102065044-a72e944770c1/go.mod h1:breQEzTiQiq/ysmKZydzm4bp8eoS+23SHQ/sfVi6f1E=
