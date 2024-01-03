@@ -7,10 +7,14 @@ import (
 	"itachi/cairo"
 )
 
-func StartUpChain(poaCfg *poa.PoaConfig, cairoCfg *cairo.Config) {
+func StartUpChain(poaCfg *poa.PoaConfig, crCfg *cairo.Config) {
 	figure.NewColorFigure("Itachi", "big", "green", false).Print()
-	startup.DefaultStartup(
-		poa.NewPoa(poaCfg),
-		cairo.NewCairo(cairoCfg),
+
+	poaTri := poa.NewPoa(poaCfg)
+	cairoTri := cairo.NewCairo(crCfg)
+	chain := startup.InitDefaultKernel(
+		poaTri, cairoTri,
 	)
+	chain.WithExecuteFn(cairoTri.Execute)
+	chain.Startup()
 }

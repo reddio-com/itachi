@@ -2,9 +2,7 @@ module itachi
 
 go 1.21.4
 
-replace (
-	github.com/NethermindEth/juno => ./juno
-)
+replace github.com/NethermindEth/juno => ./juno
 
 require (
 	github.com/BurntSushi/toml v1.2.1
@@ -13,7 +11,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
-	github.com/yu-org/yu v0.0.0-20240102113745-7cb5d1da3192
+	github.com/yu-org/yu v0.0.0-20240103030148-c2f18c5c5f1e
 )
 
 require (

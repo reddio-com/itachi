@@ -23,9 +23,12 @@ func runItachiMockVM() {
 	startup.InitDefaultConfig()
 	poaCfg := poa.DefaultCfg(0)
 	crCfg := cairo.DefaultCfg()
+
+	poaTri := poa.NewPoa(poaCfg)
+	cairoTri := cairo.NewCairo(crCfg)
 	chain = startup.InitDefaultKernel(
-		poa.NewPoa(poaCfg),
-		cairo.NewCairo(crCfg),
+		poaTri, cairoTri,
 	)
+	chain.WithExecuteFn(cairoTri.Execute)
 	chain.Startup()
 }

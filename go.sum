@@ -707,6 +707,8 @@ github.com/yu-org/yu v0.0.0-20240102103144-cd96832147d2 h1:6/PIPXwYKTGGjgK0vyvi7
 github.com/yu-org/yu v0.0.0-20240102103144-cd96832147d2/go.mod h1:kGr04HGNHPwQCsGR+NhEHHvRQKoYo1Mp5ImHroUXMHU=
 github.com/yu-org/yu v0.0.0-20240102113745-7cb5d1da3192 h1:9abma0MwsEH9BrjeSPjRj9uSqbwcJTuMr8IkVeUTROM=
 github.com/yu-org/yu v0.0.0-20240102113745-7cb5d1da3192/go.mod h1:30707s308b8TkVZ/P7fzSUEWBQCuDAPhTmaDY6gsDHc=
+github.com/yu-org/yu v0.0.0-20240103030148-c2f18c5c5f1e h1:Oa20B85+xMU6Sa4qpHSeEoPPtI2m49l7n+7QaAFlcu8=
+github.com/yu-org/yu v0.0.0-20240103030148-c2f18c5c5f1e/go.mod h1:30707s308b8TkVZ/P7fzSUEWBQCuDAPhTmaDY6gsDHc=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
