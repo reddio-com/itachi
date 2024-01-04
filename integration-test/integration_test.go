@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/yu-org/yu/apps/poa"
 	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/kernel"
@@ -26,7 +27,20 @@ func TestIntegration(t *testing.T) {
 		time.AfterFunc(30*time.Second, chain.Stop)
 		wg.Done()
 	}()
-	// TODO: test call/invoke chain
+
+	err := addTxToItachi("AddDeployAccountTxn", new(rpc.BroadcastedTransaction))
+	assert.NoError(t, err)
+	err = addTxToItachi("AddDeclareTxn", new(rpc.BroadcastedTransaction))
+	assert.NoError(t, err)
+	err = addTxToItachi("AddInvokeTxn", new(rpc.BroadcastedTransaction))
+	assert.NoError(t, err)
+	err = addTxToItachi("AddL1HandleTxn", new(rpc.BroadcastedTransaction))
+	assert.NoError(t, err)
+
+	retData, err := callItachi("call", new(cairo.CallRequest))
+	assert.NoError(t, err)
+	t.Logf("the return data of Call is %v", retData)
+	
 	wg.Wait()
 
 }
