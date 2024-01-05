@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"encoding/json"
+	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/stretchr/testify/assert"
@@ -38,13 +39,13 @@ func TestIntegration(t *testing.T) {
 
 	time.Sleep(3 * time.Second) // wait for starting up
 
-	err := addTxToItachi("AddDeployAccountTxn", new(rpc.BroadcastedTransaction))
+	err := addTxToItachi("AddDeployAccountTxn", simulateBcTx())
 	assert.NoError(t, err)
-	err = addTxToItachi("AddDeclareTxn", new(rpc.BroadcastedTransaction))
+	err = addTxToItachi("AddDeclareTxn", simulateBcTx())
 	assert.NoError(t, err)
-	err = addTxToItachi("AddInvokeTxn", new(rpc.BroadcastedTransaction))
+	err = addTxToItachi("AddInvokeTxn", simulateBcTx())
 	assert.NoError(t, err)
-	err = addTxToItachi("AddL1HandleTxn", new(rpc.BroadcastedTransaction))
+	err = addTxToItachi("AddL1HandleTxn", simulateBcTx())
 	assert.NoError(t, err)
 
 	time.Sleep(5 * time.Second)
@@ -103,4 +104,28 @@ func callItachi(funcName string, callReq *cairo.CallRequest) ([]*felt.Felt, erro
 		return nil, err
 	}
 	return callResp.ReturnData, nil
+}
+
+func simulateBcTx() *rpc.BroadcastedTransaction {
+	return &rpc.BroadcastedTransaction{
+		Transaction: rpc.Transaction{
+			Hash:            new(felt.Felt).SetUint64(1),
+			Type:            rpc.TxnInvoke,
+			Version:         new(core.TransactionVersion).SetUint64(1).AsFelt(),
+			Nonce:           new(felt.Felt).SetUint64(10),
+			MaxFee:          new(felt.Felt).SetUint64(6),
+			ContractAddress: new(felt.Felt).SetUint64(7),
+			SenderAddress:   new(felt.Felt).SetUint64(888),
+			Signature: &[]*felt.Felt{
+				new(felt.Felt).SetUint64(4),
+				new(felt.Felt).SetUint64(5),
+			},
+			CallData: &[]*felt.Felt{
+				new(felt.Felt).SetUint64(2),
+				new(felt.Felt).SetUint64(3),
+			},
+			EntryPointSelector: new(felt.Felt).SetUint64(9),
+			Tip:                new(felt.Felt).SetUint64(10),
+		},
+	}
 }

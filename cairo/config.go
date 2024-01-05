@@ -2,6 +2,7 @@ package cairo
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/NethermindEth/juno/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +46,7 @@ func LoadCfg(fpath string) *Config {
 func DefaultCfg() *Config {
 	return &Config{
 		MockVM:       true,
-		Network:      6,
+		Network:      int(utils.Integration),
 		Path:         "cairo_db",
 		Cache:        1,
 		MaxOpenFiles: 3,
