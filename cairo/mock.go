@@ -17,7 +17,7 @@ func (m *MockCairoVM) Call(
 	blockNumber, blockTimestamp uint64,
 	state core.StateReader, network utils.Network,
 ) ([]*felt.Felt, error) {
-	logrus.Info("Mock cairoVM.Call() here!")
+	logrus.Info("Mock CairoVM.Call() here!")
 	return []*felt.Felt{&felt.Zero}, nil
 }
 
@@ -30,7 +30,7 @@ func (m *MockCairoVM) Execute(
 	gasPriceWEI *felt.Felt, gasPriceSTRK *felt.Felt,
 	legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
-	logrus.Info("Mock cairoVM.Execute() here!")
+	logrus.Info("Mock CairoVM.Execute() here!")
 	return []*felt.Felt{&felt.Zero},
 		[]vm.TransactionTrace{
 			{Type: vm.TxnDeployAccount},
