@@ -5,6 +5,7 @@ import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
+	"github.com/sirupsen/logrus"
 )
 
 type MockCairoVM struct {
@@ -16,6 +17,7 @@ func (m *MockCairoVM) Call(
 	blockNumber, blockTimestamp uint64,
 	state core.StateReader, network utils.Network,
 ) ([]*felt.Felt, error) {
+	logrus.Info("Mock cairoVM.Call() here!")
 	return []*felt.Felt{&felt.Zero}, nil
 }
 
@@ -28,6 +30,7 @@ func (m *MockCairoVM) Execute(
 	gasPriceWEI *felt.Felt, gasPriceSTRK *felt.Felt,
 	legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
+	logrus.Info("Mock cairoVM.Execute() here!")
 	return []*felt.Felt{&felt.Zero},
 		[]vm.TransactionTrace{
 			{Type: vm.TxnDeployAccount},

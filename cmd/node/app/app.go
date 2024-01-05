@@ -11,11 +11,11 @@ import (
 func StartUpChain(poaCfg *poa.PoaConfig, crCfg *cairo.Config) {
 	figure.NewColorFigure("Itachi", "big", "green", false).Print()
 
-	chain := InitYu(poaCfg, crCfg)
+	chain := InitItachi(poaCfg, crCfg)
 	chain.Startup()
 }
 
-func InitYu(poaCfg *poa.PoaConfig, crCfg *cairo.Config) *kernel.Kernel {
+func InitItachi(poaCfg *poa.PoaConfig, crCfg *cairo.Config) *kernel.Kernel {
 	poaTri := poa.NewPoa(poaCfg)
 	cairoTri := cairo.NewCairo(crCfg)
 	chain := startup.InitDefaultKernel(

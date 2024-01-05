@@ -24,7 +24,7 @@ func init() {
 	poaCfg := poa.DefaultCfg(0)
 	crCfg := cairo.DefaultCfg()
 
-	chain = app.InitYu(poaCfg, crCfg)
+	chain = app.InitItachi(poaCfg, crCfg)
 }
 
 func TestIntegration(t *testing.T) {
