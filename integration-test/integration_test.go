@@ -49,7 +49,14 @@ func TestIntegration(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 
-	retData, err := callItachi("Call", new(cairo.CallRequest))
+	retData, err := callItachi(
+		"Call",
+		&cairo.CallRequest{
+			ContractAddr: &felt.Zero,
+			ClassHash:    &felt.Zero,
+			Selector:     &felt.Zero,
+			Calldata:     []felt.Felt{felt.Zero},
+		})
 	assert.NoError(t, err)
 	t.Logf("the return data of Call is %v", retData)
 

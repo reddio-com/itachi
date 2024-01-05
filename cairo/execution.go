@@ -63,21 +63,24 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 	// store events
 	var results []*result.Result
 	for _, trace := range traces {
-		for _, event := range trace.ExecuteInvocation.Events {
-			eventByt, terr := json.Marshal(event)
-			if terr != nil {
-				return terr
+		if trace.ExecuteInvocation != nil {
+			for _, event := range trace.ExecuteInvocation.Events {
+				eventByt, terr := json.Marshal(event)
+				if terr != nil {
+					return terr
+				}
+				callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
+				caller := common.BytesToAddress(callerByt[:])
+				yuEvent := &result.Event{
+					Caller:    &caller,
+					BlockHash: blockHash,
+					Height:    block.Height,
+					Value:     eventByt,
+				}
+				results = append(results, result.NewEvent(yuEvent))
 			}
-			callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
-			caller := common.BytesToAddress(callerByt[:])
-			yuEvent := &result.Event{
-				Caller:    &caller,
-				BlockHash: blockHash,
-				Height:    block.Height,
-				Value:     eventByt,
-			}
-			results = append(results, result.NewEvent(yuEvent))
 		}
+
 	}
 	return c.TxDB.SetResults(results)
 }
