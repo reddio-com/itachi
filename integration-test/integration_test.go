@@ -32,7 +32,7 @@ func TestIntegration(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	go func() {
-		time.AfterFunc(30*time.Second, chain.Stop)
+		time.AfterFunc(15*time.Second, chain.Stop)
 		chain.Startup()
 		wg.Done()
 	}()

@@ -112,7 +112,7 @@ func (c *Cairo) AddL1HandleTxn(ctx *context.WriteContext) error {
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
 	callRequest := new(CallRequest)
-	err := ctx.BindJSON(callRequest)
+	err := ctx.BindJson(callRequest)
 	if err != nil {
 		ctx.AbortWithError(
 			http.StatusBadRequest,
