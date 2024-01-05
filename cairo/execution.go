@@ -68,9 +68,10 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 			if terr != nil {
 				return terr
 			}
-			caller := trace.ExecuteInvocation.CallerAddress.Bytes()
+			callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
+			caller := common.BytesToAddress(callerByt[:])
 			yuEvent := &result.Event{
-				Caller:    common.BytesToAddress(caller[:]),
+				Caller:    &caller,
 				BlockHash: blockHash,
 				Height:    block.Height,
 				Value:     eventByt,

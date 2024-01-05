@@ -49,7 +49,7 @@ func TestIntegration(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 
-	retData, err := callItachi("call", new(cairo.CallRequest))
+	retData, err := callItachi("Call", new(cairo.CallRequest))
 	assert.NoError(t, err)
 	t.Logf("the return data of Call is %v", retData)
 
