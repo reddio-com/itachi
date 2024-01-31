@@ -19,6 +19,7 @@ require (
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/HyperService-Consortium/go-hexutil v1.0.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
+	github.com/NethermindEth/starknet.go v0.6.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
