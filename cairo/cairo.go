@@ -47,7 +47,7 @@ func NewCairo(cfg *Config) *Cairo {
 		network:       utils.Network(cfg.Network),
 	}
 
-	cairo.SetWritings(cairo.AddDeployAccountTxn, cairo.AddDeclareTxn, cairo.AddInvokeTxn, cairo.AddL1HandleTxn)
+	cairo.SetWritings(cairo.AddTxn /*cairo.AddDeployAccountTxn, cairo.AddDeclareTxn, cairo.AddInvokeTxn, cairo.AddL1HandleTxn*/)
 	cairo.SetReadings(cairo.Call)
 	cairo.SetInit(cairo)
 	cairo.SetTxnChecker(cairo)
@@ -92,21 +92,25 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 	return nil
 }
 
-func (c *Cairo) AddDeployAccountTxn(ctx *context.WriteContext) error {
-	return nil
-}
+//func (c *Cairo) AddDeployAccountTxn(ctx *context.WriteContext) error {
+//	return nil
+//}
+//
+//func (c *Cairo) AddDeclareTxn(ctx *context.WriteContext) error {
+//	// TODO: check if contract is already declared
+//	return nil
+//}
+//
+//func (c *Cairo) AddInvokeTxn(ctx *context.WriteContext) error {
+//	// TODO: check if contract is already declared
+//	return nil
+//}
+//
+//func (c *Cairo) AddL1HandleTxn(ctx *context.WriteContext) error {
+//	return nil
+//}
 
-func (c *Cairo) AddDeclareTxn(ctx *context.WriteContext) error {
-	// TODO: check if contract is already declared
-	return nil
-}
-
-func (c *Cairo) AddInvokeTxn(ctx *context.WriteContext) error {
-	// TODO: check if contract is already declared
-	return nil
-}
-
-func (c *Cairo) AddL1HandleTxn(ctx *context.WriteContext) error {
+func (c *Cairo) AddTxn(ctx *context.WriteContext) error {
 	return nil
 }
 

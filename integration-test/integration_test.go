@@ -39,13 +39,16 @@ func TestIntegration(t *testing.T) {
 
 	time.Sleep(3 * time.Second) // wait for starting up
 
-	err := addTxToItachi("AddDeployAccountTxn", simulateBcTx())
-	assert.NoError(t, err)
-	err = addTxToItachi("AddDeclareTxn", simulateBcTx())
-	assert.NoError(t, err)
-	err = addTxToItachi("AddInvokeTxn", simulateBcTx())
-	assert.NoError(t, err)
-	err = addTxToItachi("AddL1HandleTxn", simulateBcTx())
+	//err := addTxToItachi("AddDeployAccountTxn", simulateBcTx())
+	//assert.NoError(t, err)
+	//err = addTxToItachi("AddDeclareTxn", simulateBcTx())
+	//assert.NoError(t, err)
+	//err = addTxToItachi("AddInvokeTxn", simulateBcTx())
+	//assert.NoError(t, err)
+	//err = addTxToItachi("AddL1HandleTxn", simulateBcTx())
+	//assert.NoError(t, err)
+
+	err := addTxToItachi("AddTxn", simulateBcTx())
 	assert.NoError(t, err)
 
 	time.Sleep(5 * time.Second)
