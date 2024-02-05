@@ -20,10 +20,11 @@ import (
 
 func (c *Cairo) TxnExecute(block *types.Block) error {
 	var (
-		starknetTxns []core.Transaction
-		classes      []core.Class
-		paidFeesOnL1 []*felt.Felt
+		starknetTxns = make([]core.Transaction, 0)
+		classes      = make([]core.Class, 0)
+		paidFeesOnL1 = make([]*felt.Felt, 0)
 	)
+
 	for _, txn := range block.Txns {
 		wrCall := txn.Raw.WrCall
 		ctx, err := context.NewWriteContext(txn, block)
