@@ -61,6 +61,13 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		return err
 	}
 
+	// commit state
+	stateDiff, newClasses := c.pendingState.StateDiffAndClasses()
+	err = c.state.Update(blockNumber, stateDiff, newClasses)
+	if err != nil {
+		return err
+	}
+
 	// store events
 	var results []*result.Result
 	for _, trace := range traces {
@@ -92,7 +99,7 @@ func (c *Cairo) execute(
 	gasPriceWEI, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
 	return c.cairoVM.Execute(txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
-		c.state, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate, c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
+		c.pendingState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate, c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
 }
 
 func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (core.Transaction, core.Class, *felt.Felt, error) {

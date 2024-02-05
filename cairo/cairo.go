@@ -19,14 +19,15 @@ import (
 type Cairo struct {
 	*tripod.Tripod
 	cairoVM       vm.VM
-	state         vm.StateReadWriter
+	state         *core.State
+	pendingState  *junostate.PendingStateWriter
 	cfg           *Config
 	sequencerAddr *felt.Felt
 	network       utils.Network
 }
 
 func NewCairo(cfg *Config) *Cairo {
-	state, err := newState(cfg)
+	state, pendingState, err := newState(cfg)
 	if err != nil {
 		logrus.Fatal("init state for Cairo failed: ", err)
 	}
@@ -42,6 +43,7 @@ func NewCairo(cfg *Config) *Cairo {
 	cairo := &Cairo{
 		Tripod:        tripod.NewTripod(),
 		cairoVM:       cairoVM,
+		pendingState:  pendingState,
 		state:         state,
 		cfg:           cfg,
 		sequencerAddr: sequencerAddr,
@@ -68,21 +70,22 @@ func newVM(cfg *Config) (vm.VM, error) {
 	return node.NewThrottledVM(vm.New(log), cfg.MaxVMs, cfg.MaxVMQueue), nil
 }
 
-func newState(cfg *Config) (vm.StateReadWriter, error) {
+func newState(cfg *Config) (*core.State, *junostate.PendingStateWriter, error) {
 	dbLog, err := utils.NewZapLogger(utils.ERROR, cfg.Colour)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	db, err := pebble.New(cfg.Path, cfg.Cache, cfg.MaxOpenFiles, dbLog)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	txn, err := db.NewTransaction(true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	state := core.NewState(txn)
-	return junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state), nil
+	pendingState := junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state)
+	return state, pendingState, nil
 }
 
 func (c *Cairo) InitChain() {
@@ -144,7 +147,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		callRequest.Selector,
 		callRequest.Calldata,
 		blockNumber, blockTimestamp,
-		c.state, c.network,
+		c.pendingState, c.network,
 	)
 	if err != nil {
 		ctx.AbortWithError(
