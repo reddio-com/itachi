@@ -1,6 +1,7 @@
 package cairo
 
 import (
+	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/db/pebble"
@@ -18,7 +19,7 @@ import (
 type Cairo struct {
 	*tripod.Tripod
 	cairoVM       vm.VM
-	state         core.StateReader
+	state         vm.StateReadWriter
 	cfg           *Config
 	sequencerAddr *felt.Felt
 	network       utils.Network
@@ -67,7 +68,7 @@ func newVM(cfg *Config) (vm.VM, error) {
 	return node.NewThrottledVM(vm.New(log), cfg.MaxVMs, cfg.MaxVMQueue), nil
 }
 
-func newState(cfg *Config) (core.StateReader, error) {
+func newState(cfg *Config) (vm.StateReadWriter, error) {
 	dbLog, err := utils.NewZapLogger(utils.ERROR, cfg.Colour)
 	if err != nil {
 		return nil, err
@@ -80,7 +81,8 @@ func newState(cfg *Config) (core.StateReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return core.NewState(txn), nil
+	state := core.NewState(txn)
+	return junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state), nil
 }
 
 func (c *Cairo) InitChain() {
