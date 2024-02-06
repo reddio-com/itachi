@@ -19,17 +19,16 @@ import (
 type Cairo struct {
 	*tripod.Tripod
 	cairoVM       vm.VM
-	state         *core.State
-	pendingState  *junostate.PendingStateWriter
+	cairoState    *core.State
 	cfg           *Config
 	sequencerAddr *felt.Felt
 	network       utils.Network
 }
 
 func NewCairo(cfg *Config) *Cairo {
-	state, pendingState, err := newState(cfg)
+	state, err := newState(cfg)
 	if err != nil {
-		logrus.Fatal("init state for Cairo failed: ", err)
+		logrus.Fatal("init cairoState for Cairo failed: ", err)
 	}
 	cairoVM, err := newVM(cfg)
 	if err != nil {
@@ -43,8 +42,7 @@ func NewCairo(cfg *Config) *Cairo {
 	cairo := &Cairo{
 		Tripod:        tripod.NewTripod(),
 		cairoVM:       cairoVM,
-		pendingState:  pendingState,
-		state:         state,
+		cairoState:    state,
 		cfg:           cfg,
 		sequencerAddr: sequencerAddr,
 		network:       utils.Network(cfg.Network),
@@ -70,26 +68,31 @@ func newVM(cfg *Config) (vm.VM, error) {
 	return node.NewThrottledVM(vm.New(log), cfg.MaxVMs, cfg.MaxVMQueue), nil
 }
 
-func newState(cfg *Config) (*core.State, *junostate.PendingStateWriter, error) {
+func newState(cfg *Config) (*core.State, error) {
 	dbLog, err := utils.NewZapLogger(utils.ERROR, cfg.Colour)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	db, err := pebble.New(cfg.DbPath, cfg.DbCache, cfg.DbMaxOpenFiles, dbLog)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	txn, err := db.NewTransaction(true)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	state := core.NewState(txn)
-	pendingState := junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state)
-	return state, pendingState, nil
+	return state, nil
 }
 
 func (c *Cairo) InitChain() {
-	// TODO: init the genesis block
+	// init codec for juno types
+	junostate.RegisterCoreTypesToEncoder()
+
+	err := c.buildGenesisClasses()
+	if err != nil {
+		logrus.Fatal("build genesis classes failed: ", err)
+	}
 }
 
 func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
@@ -147,7 +150,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		callRequest.Selector,
 		callRequest.Calldata,
 		blockNumber, blockTimestamp,
-		c.pendingState, c.network,
+		c.cairoState, c.network,
 	)
 	if err != nil {
 		ctx.AbortWithError(
@@ -158,4 +161,8 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	}
 
 	ctx.JsonOk(&CallResponse{ReturnData: retData})
+}
+
+func (c *Cairo) newPendingStateWriter() *junostate.PendingStateWriter {
+	return junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), c.cairoState)
 }

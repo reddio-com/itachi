@@ -32,6 +32,9 @@ type Config struct {
 	SkipChargeFee bool   `toml:"skip_charge_fee"`
 	SkipValidate  bool   `toml:"skip_validate"`
 	ErrOnRevert   bool   `toml:"err_on_revert"`
+
+	// map[addr]classFilePath
+	GenesisClasses map[string]string `toml:"genesis_classes"`
 }
 
 func LoadCairoCfg(fpath string) *Config {

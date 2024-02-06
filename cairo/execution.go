@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/NethermindEth/juno/adapters/sn2core"
+	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
@@ -53,17 +54,18 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 	blockHash := block.Hash
 
 	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
+	pendingState := c.newPendingStateWriter()
 	_, traces, err := c.execute(
-		starknetTxns, classes, blockNumber, blockTimestamp,
+		pendingState, starknetTxns, classes, blockNumber, blockTimestamp,
 		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
 	)
 	if err != nil {
 		return err
 	}
 
-	// commit state
-	stateDiff, newClasses := c.pendingState.StateDiffAndClasses()
-	err = c.state.Update(blockNumber, stateDiff, newClasses)
+	// commit cairoState
+	stateDiff, newClasses := pendingState.StateDiffAndClasses()
+	err = c.cairoState.Update(blockNumber, stateDiff, newClasses)
 	if err != nil {
 		return err
 	}
@@ -94,12 +96,16 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 }
 
 func (c *Cairo) execute(
+	pendingState *junostate.PendingStateWriter,
 	txns []core.Transaction, declaredClasses []core.Class,
 	blockNumber, blockTimestamp uint64, paidFeesOnL1 []*felt.Felt,
 	gasPriceWEI, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
-	return c.cairoVM.Execute(txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
-		c.pendingState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate, c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON)
+	return c.cairoVM.Execute(
+		txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
+		pendingState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate,
+		c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON,
+	)
 }
 
 func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (core.Transaction, core.Class, *felt.Felt, error) {
