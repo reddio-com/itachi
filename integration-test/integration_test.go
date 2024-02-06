@@ -21,7 +21,7 @@ import (
 var chain *kernel.Kernel
 
 func init() {
-	startup.InitDefaultConfig()
+	startup.InitDefaultKernelConfig()
 	poaCfg := poa.DefaultCfg(0)
 	crCfg := cairo.DefaultCfg()
 

@@ -75,7 +75,7 @@ func newState(cfg *Config) (*core.State, *junostate.PendingStateWriter, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	db, err := pebble.New(cfg.Path, cfg.Cache, cfg.MaxOpenFiles, dbLog)
+	db, err := pebble.New(cfg.DbPath, cfg.DbCache, cfg.DbMaxOpenFiles, dbLog)
 	if err != nil {
 		return nil, nil, err
 	}

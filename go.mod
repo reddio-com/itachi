@@ -11,7 +11,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
-	github.com/yu-org/yu v0.0.0-20240105130107-8f5b674371cd
+	github.com/yu-org/yu v0.0.0-20240206124912-c9b4556e7482
 )
 
 require (

@@ -17,9 +17,9 @@ type Config struct {
 	Network int `toml:"network"`
 
 	// pebble db
-	Path         string `toml:"path"`
-	Cache        uint   `toml:"cache"`
-	MaxOpenFiles int    `toml:"max_open_files"`
+	DbPath         string `toml:"db_path"`
+	DbCache        uint   `toml:"db_cache"`
+	DbMaxOpenFiles int    `toml:"db_max_open_files"`
 
 	// cairoVM
 	MockVM     bool  `toml:"mock_vm"`
@@ -34,7 +34,7 @@ type Config struct {
 	ErrOnRevert   bool   `toml:"err_on_revert"`
 }
 
-func LoadCfg(fpath string) *Config {
+func LoadCairoCfg(fpath string) *Config {
 	cfg := new(Config)
 	_, err := toml.DecodeFile(fpath, cfg)
 	if err != nil {
@@ -45,15 +45,15 @@ func LoadCfg(fpath string) *Config {
 
 func DefaultCfg() *Config {
 	return &Config{
-		MockVM:       true,
-		Network:      int(utils.Integration),
-		Path:         "cairo_db",
-		Cache:        1,
-		MaxOpenFiles: 3,
-		MaxVMs:       3,
-		MaxVMQueue:   3,
-		LogLevel:     1,
-		Colour:       false,
+		MockVM:         true,
+		Network:        int(utils.Integration),
+		DbPath:         "cairo_db",
+		DbCache:        1,
+		DbMaxOpenFiles: 3,
+		MaxVMs:         3,
+		MaxVMQueue:     3,
+		LogLevel:       1,
+		Colour:         false,
 		// test addr
 		SequencerAddr: "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b",
 		SkipChargeFee: true,

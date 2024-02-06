@@ -1,0 +1,16 @@
+network = 4
+
+db_path = "cairo_db"
+db_cache = 1
+db_max_open_files = 10
+
+mock_vm = false
+max_vms = 3
+max_vm_queue = 3
+log_level = 1
+colour = true
+
+sequencer_addr = "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b"
+skip_charge_fee = true
+skip_validate = false
+err_on_revert = true
