@@ -5,5 +5,5 @@ a decentralized sequencer for Starknet
 ```shell
 git submodule init
 git submodule update --recursive --checkout
-make -C juno rustdeps
+make build
 ```
