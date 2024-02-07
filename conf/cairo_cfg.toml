@@ -14,3 +14,9 @@ sequencer_addr = "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6d
 skip_charge_fee = true
 skip_validate = false
 err_on_revert = true
+
+[genesis_classes]
+1 = "./conf/genesis/NoValidateAccount.json"
+2 = "./conf/genesis/"
+3 = "./conf/genesis/"
+4 = "./conf/genesis/"

@@ -33,7 +33,7 @@ type Config struct {
 	SkipValidate  bool   `toml:"skip_validate"`
 	ErrOnRevert   bool   `toml:"err_on_revert"`
 
-	// map[addr]classFilePath
+	// map[contractAddress]classFilePath
 	GenesisClasses map[string]string `toml:"genesis_classes"`
 }
 
