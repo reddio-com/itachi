@@ -48,7 +48,7 @@ func TestIntegration(t *testing.T) {
 	//err = addTxToItachi("AddL1HandleTxn", simulateBcTx())
 	//assert.NoError(t, err)
 
-	err := addTxToItachi("AddTxn", simulateBcTx())
+	err := addTxToItachi("ExecuteTxn", simulateBcTx())
 	assert.NoError(t, err)
 
 	time.Sleep(5 * time.Second)
