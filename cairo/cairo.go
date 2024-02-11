@@ -115,11 +115,11 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		return
 	}
 
-	block, err := c.Chain.GetEndBlock()
+	block, err := c.GetCurrentBlock()
 	if err != nil {
 		ctx.AbortWithError(
 			http.StatusInternalServerError,
-			errors.Errorf("Get end block failed: %v", err),
+			errors.Errorf("Get current block failed: %v", err),
 		)
 		return
 	}
