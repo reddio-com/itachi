@@ -12,8 +12,6 @@ import (
 )
 
 func (c *Cairo) buildGenesisClasses() error {
-	pendingState := c.newPendingStateWriter()
-
 	for addrStr, classPath := range c.cfg.GenesisClasses {
 		bytes, err := os.ReadFile(classPath)
 		if err != nil {
@@ -40,13 +38,12 @@ func (c *Cairo) buildGenesisClasses() error {
 		if err != nil {
 			return fmt.Errorf("calculate class hash: %v", err)
 		}
-		err = storeClasses(pendingState, addrStr, *classHash, coreClass)
+		err = storeClasses(c.cairoState.PendingState, addrStr, *classHash, coreClass)
 		if err != nil {
 			return err
 		}
 	}
-	stateDiff, classes := pendingState.StateDiffAndClasses()
-	return c.cairoState.Update(0, stateDiff, classes)
+	return c.cairoState.Commit(0)
 }
 
 func storeClasses(pendingState *junostate.PendingStateWriter, addrStr string, classHash felt.Felt, class core.Class) error {

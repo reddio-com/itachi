@@ -17,6 +17,6 @@ err_on_revert = true
 
 [genesis_classes]
 1 = "./conf/genesis/NoValidateAccount.json"
-2 = "./conf/genesis/"
-3 = "./conf/genesis/"
-4 = "./conf/genesis/"
+#2 = "./conf/genesis/"
+#3 = "./conf/genesis/"
+#4 = "./conf/genesis/"

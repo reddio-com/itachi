@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/NethermindEth/juno/adapters/sn2core"
-	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
@@ -12,7 +11,6 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/jinzhu/copier"
-	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/result"
 	"github.com/yu-org/yu/core/startup"
@@ -20,11 +18,8 @@ import (
 )
 
 func (c *Cairo) TxnExecute(block *types.Block) error {
-	var (
-		starknetTxns = make([]core.Transaction, 0)
-		classes      = make([]core.Class, 0)
-		paidFeesOnL1 = make([]*felt.Felt, 0)
-	)
+
+	var results []*result.Result
 
 	for _, txn := range block.Txns {
 		wrCall := txn.Raw.WrCall
@@ -32,78 +27,91 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-		_, err = startup.Land.GetWriting(wrCall.TripodName, wrCall.FuncName)
+		wr, err := startup.Land.GetWriting(wrCall.TripodName, wrCall.FuncName)
 		if err != nil {
 			return err
 		}
-		txReq := new(TxRequest)
-		err = ctx.BindJson(txReq)
+		//txReq := new(TxRequest)
+		//err = ctx.BindJson(txReq)
+		//if err != nil {
+		//	return err
+		//}
+		//tx, class, paidFeeOnL1, err := c.adaptBroadcastedTransaction(txReq.Tx)
+		//if err != nil {
+		//	return err
+		//}
+		//starknetTxns = append(starknetTxns, tx)
+		//classes = append(classes, class)
+		//paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
+		err = wr(ctx)
 		if err != nil {
-			return err
+			ctx.EmitError(err)
+			continue
 		}
-		tx, class, paidFeeOnL1, err := c.adaptBroadcastedTransaction(txReq.Tx)
-		if err != nil {
-			return err
+		for _, event := range ctx.Events {
+			results = append(results, result.NewEvent(event))
 		}
-		starknetTxns = append(starknetTxns, tx)
-		classes = append(classes, class)
-		paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
+		if ctx.Error != nil {
+			results = append(results, result.NewError(ctx.Error))
+		}
 	}
 	blockNumber := uint64(block.Height)
-	blockTimestamp := block.Timestamp
-	blockHash := block.Hash
+	//blockTimestamp := block.Timestamp
+	//blockHash := block.Hash
 
-	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
-	pendingState := c.newPendingStateWriter()
-	_, traces, err := c.execute(
-		pendingState, starknetTxns, classes, blockNumber, blockTimestamp,
-		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
-	)
-	if err != nil {
-		return err
-	}
+	//pendingState := c.newPendingStateWriter()
+	//_, traces, err := c.execute(
+	//	pendingState, starknetTxns, classes, blockNumber, blockTimestamp,
+	//	paidFeesOnL1, &felt.Zero, &felt.Zero, false,
+	//)
+	//if err != nil {
+	//	return err
+	//}
 
 	// commit cairoState
-	stateDiff, newClasses := pendingState.StateDiffAndClasses()
-	err = c.cairoState.Update(blockNumber, stateDiff, newClasses)
+	err := c.cairoState.Commit(blockNumber)
 	if err != nil {
 		return err
 	}
+	//stateDiff, newClasses := pendingState.StateDiffAndClasses()
+	//err = c.cairoState.Update(blockNumber, stateDiff, newClasses)
+	//if err != nil {
+	//	return err
+	//}
 
 	// store events
-	var results []*result.Result
-	for _, trace := range traces {
-		if trace.ExecuteInvocation != nil {
-			for _, event := range trace.ExecuteInvocation.Events {
-				eventByt, terr := json.Marshal(event)
-				if terr != nil {
-					return terr
-				}
-				callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
-				caller := common.BytesToAddress(callerByt[:])
-				yuEvent := &result.Event{
-					Caller:    &caller,
-					BlockHash: blockHash,
-					Height:    block.Height,
-					Value:     eventByt,
-				}
-				results = append(results, result.NewEvent(yuEvent))
-			}
-		}
 
-	}
+	//for _, trace := range traces {
+	//	if trace.ExecuteInvocation != nil {
+	//		for _, event := range trace.ExecuteInvocation.Events {
+	//			eventByt, terr := json.Marshal(event)
+	//			if terr != nil {
+	//				return terr
+	//			}
+	//			callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
+	//			caller := common.BytesToAddress(callerByt[:])
+	//			yuEvent := &result.Event{
+	//				Caller:    &caller,
+	//				BlockHash: blockHash,
+	//				Height:    block.Height,
+	//				Value:     eventByt,
+	//			}
+	//			results = append(results, result.NewEvent(yuEvent))
+	//		}
+	//	}
+	//
+	//}
 	return c.TxDB.SetResults(results)
 }
 
 func (c *Cairo) execute(
-	pendingState *junostate.PendingStateWriter,
 	txns []core.Transaction, declaredClasses []core.Class,
 	blockNumber, blockTimestamp uint64, paidFeesOnL1 []*felt.Felt,
 	gasPriceWEI, gasPriceSTRK *felt.Felt, legacyTraceJSON bool,
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
 	return c.cairoVM.Execute(
 		txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
-		pendingState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate,
+		c.cairoState.PendingState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate,
 		c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON,
 	)
 }
