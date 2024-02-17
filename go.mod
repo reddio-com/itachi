@@ -11,7 +11,8 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
-	github.com/yu-org/yu v0.0.0-20240211060151-d3e878567a5e
+	github.com/stretchr/testify v1.8.4
+	github.com/yu-org/yu v0.0.0-20240213133356-9fd0534568cd
 )
 
 require (
@@ -19,8 +20,8 @@ require (
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/HyperService-Consortium/go-hexutil v1.0.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
-	github.com/NethermindEth/starknet.go v0.6.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
+	github.com/anqiansong/ketty v0.0.0-20211202021934-dbaf2e277891 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
@@ -122,6 +123,7 @@ require (
 	github.com/libp2p/go-netroute v0.2.1 // indirect
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/libp2p/go-yamux/v4 v4.0.1 // indirect
+	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
@@ -171,7 +173,6 @@ require (
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221216004406-749998a2ac74 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/tendermint/tendermint v0.34.24 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect

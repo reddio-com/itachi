@@ -144,7 +144,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	callRequest := new(CallRequest)
 	err := ctx.BindJson(callRequest)
 	if err != nil {
-		ctx.AbortWithError(
+		ctx.Err(
 			http.StatusBadRequest,
 			errors.Errorf("Json decoded CallRequest failed: %v", err),
 		)
@@ -153,7 +153,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 
 	block, err := c.GetCurrentBlock()
 	if err != nil {
-		ctx.AbortWithError(
+		ctx.Err(
 			http.StatusInternalServerError,
 			errors.Errorf("Get current block failed: %v", err),
 		)
@@ -171,7 +171,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		c.cairoState.state, c.network,
 	)
 	if err != nil {
-		ctx.AbortWithError(
+		ctx.Err(
 			http.StatusInternalServerError,
 			errors.Errorf("CairoVM call failed: %v", err),
 		)
