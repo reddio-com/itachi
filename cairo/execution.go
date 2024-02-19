@@ -111,7 +111,7 @@ func (c *Cairo) execute(
 ) ([]*felt.Felt, []vm.TransactionTrace, error) {
 	return c.cairoVM.Execute(
 		txns, declaredClasses, blockNumber, blockTimestamp, c.sequencerAddr,
-		c.cairoState.PendingState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate,
+		c.cairoState, c.network, paidFeesOnL1, c.cfg.SkipChargeFee, c.cfg.SkipValidate,
 		c.cfg.ErrOnRevert, gasPriceWEI, gasPriceSTRK, legacyTraceJSON,
 	)
 }

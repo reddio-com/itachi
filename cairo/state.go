@@ -8,11 +8,9 @@ import (
 	"github.com/NethermindEth/juno/utils"
 )
 
-// TODO: will use in cairo tripod
-
 type CairoState struct {
-	PendingState *junostate.PendingStateWriter
-	state        *core.State
+	*junostate.PendingStateWriter
+	state *core.State
 }
 
 func NewCairoState(cfg *Config) (*CairoState, error) {
@@ -22,18 +20,18 @@ func NewCairoState(cfg *Config) (*CairoState, error) {
 	}
 	pendingState := junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state)
 	return &CairoState{
-		PendingState: pendingState,
-		state:        state,
+		PendingStateWriter: pendingState,
+		state:              state,
 	}, nil
 }
 
 func (cs *CairoState) Commit(blockNum uint64) error {
-	stateDiff, newClasses := cs.PendingState.StateDiffAndClasses()
+	stateDiff, newClasses := cs.StateDiffAndClasses()
 	err := cs.state.Update(blockNum, stateDiff, newClasses)
 	if err != nil {
 		return err
 	}
-	cs.PendingState = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.state)
+	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.state)
 	return nil
 }
 
