@@ -48,7 +48,6 @@ func TestIntegration(t *testing.T) {
 		"Call",
 		&cairo.CallRequest{
 			ContractAddr: &felt.Zero,
-			ClassHash:    &felt.Zero,
 			Selector:     &felt.Zero,
 			Calldata:     []felt.Felt{felt.Zero},
 		})

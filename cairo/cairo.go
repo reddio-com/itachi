@@ -50,8 +50,8 @@ func NewCairo(cfg *Config) *Cairo {
 		network:       utils.Network(cfg.Network),
 	}
 
-	cairo.SetWritings(cairo.ExecuteTxn /*cairo.AddDeployAccountTxn, cairo.AddDeclareTxn, cairo.AddInvokeTxn, cairo.AddL1HandleTxn*/)
-	cairo.SetReadings(cairo.Call)
+	cairo.SetWritings(cairo.ExecuteTxn)
+	cairo.SetReadings(cairo.Call, cairo.GetClass, cairo.GetClassHash, cairo.GetNonce, cairo.GetStorage)
 	cairo.SetInit(cairo)
 	cairo.SetTxnChecker(cairo)
 
@@ -86,11 +86,6 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 }
 
 func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
-	var (
-		starknetTxns = make([]core.Transaction, 0)
-		classes      = make([]core.Class, 0)
-		paidFeesOnL1 = make([]*felt.Felt, 0)
-	)
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
 	if err != nil {
@@ -100,6 +95,12 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	if err != nil {
 		return err
 	}
+
+	var (
+		starknetTxns = make([]core.Transaction, 0)
+		classes      = make([]core.Class, 0)
+		paidFeesOnL1 = make([]*felt.Felt, 0)
+	)
 	starknetTxns = append(starknetTxns, tx)
 	classes = append(classes, class)
 	paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
@@ -162,9 +163,15 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	blockNumber := uint64(block.Height)
 	blockTimestamp := block.Timestamp
 
+	classHash, err := c.cairoState.ContractClassHash(callRequest.ContractAddr)
+	if err != nil {
+		ctx.Err(http.StatusBadRequest, errors.Errorf("Contract Not Found"))
+		return
+	}
+
 	retData, err := c.cairoVM.Call(
 		callRequest.ContractAddr,
-		callRequest.ClassHash,
+		classHash,
 		callRequest.Selector,
 		callRequest.Calldata,
 		blockNumber, blockTimestamp,

@@ -7,7 +7,6 @@ import (
 
 type CallRequest struct {
 	ContractAddr *felt.Felt  `json:"contract_addr"`
-	ClassHash    *felt.Felt  `json:"class_hash"`
 	Selector     *felt.Felt  `json:"selector"`
 	Calldata     []felt.Felt `json:"calldata"`
 }
