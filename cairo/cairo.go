@@ -16,6 +16,7 @@ import (
 	"github.com/yu-org/yu/core/result"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
+	"itachi/cairo/config"
 	"net/http"
 )
 
@@ -23,12 +24,12 @@ type Cairo struct {
 	*tripod.Tripod
 	cairoVM       vm.VM
 	cairoState    *CairoState
-	cfg           *Config
+	cfg           *config.Config
 	sequencerAddr *felt.Felt
 	network       utils.Network
 }
 
-func NewCairo(cfg *Config) *Cairo {
+func NewCairo(cfg *config.Config) *Cairo {
 	state, err := NewCairoState(cfg)
 	if err != nil {
 		logrus.Fatal("init cairoState for Cairo failed: ", err)
@@ -59,7 +60,7 @@ func NewCairo(cfg *Config) *Cairo {
 	return cairo
 }
 
-func newVM(cfg *Config) (vm.VM, error) {
+func newVM(cfg *config.Config) (vm.VM, error) {
 	log, err := utils.NewZapLogger(utils.LogLevel(cfg.LogLevel), cfg.Colour)
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package cairo
+package config
 
 import (
 	"github.com/BurntSushi/toml"
@@ -35,6 +35,10 @@ type Config struct {
 
 	// map[contractAddress]classFilePath
 	GenesisClasses map[string]string `toml:"genesis_classes"`
+
+	EnableStarknetRPC bool   `toml:"enable_starknet_rpc"`
+	StarknetHost      string `toml:"starknet_host"`
+	StarknetPort      string `toml:"starknet_port"`
 }
 
 func LoadCairoCfg(fpath string) *Config {
@@ -58,9 +62,10 @@ func DefaultCfg() *Config {
 		LogLevel:       1,
 		Colour:         false,
 		// test addr
-		SequencerAddr: "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b",
-		SkipChargeFee: true,
-		SkipValidate:  true,
-		ErrOnRevert:   true,
+		SequencerAddr:     "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b",
+		SkipChargeFee:     true,
+		SkipValidate:      true,
+		ErrOnRevert:       true,
+		EnableStarknetRPC: false,
 	}
 }

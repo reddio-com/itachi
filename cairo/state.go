@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/db/pebble"
 	"github.com/NethermindEth/juno/utils"
+	"itachi/cairo/config"
 )
 
 type CairoState struct {
@@ -13,7 +14,7 @@ type CairoState struct {
 	state *core.State
 }
 
-func NewCairoState(cfg *Config) (*CairoState, error) {
+func NewCairoState(cfg *config.Config) (*CairoState, error) {
 	state, err := newState(cfg)
 	if err != nil {
 		return nil, err
@@ -35,7 +36,7 @@ func (cs *CairoState) Commit(blockNum uint64) error {
 	return nil
 }
 
-func newState(cfg *Config) (*core.State, error) {
+func newState(cfg *config.Config) (*core.State, error) {
 	dbLog, err := utils.NewZapLogger(utils.ERROR, cfg.Colour)
 	if err != nil {
 		return nil, err

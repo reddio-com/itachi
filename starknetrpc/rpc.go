@@ -15,6 +15,7 @@ import (
 	"github.com/yu-org/yu/core"
 	"github.com/yu-org/yu/core/kernel"
 	"itachi/cairo"
+	"itachi/cairo/config"
 	"net"
 	"net/http"
 	"runtime"
@@ -27,18 +28,10 @@ type StarknetRPC struct {
 	chain *kernel.Kernel
 	log   utils.SimpleLogger
 	srv   *http.Server
-	//cfg   *StarknetRpcConfig
 }
 
-type StarknetRpcConfig struct {
-	Host     string
-	Port     string
-	LogLevel int
-	LogColor bool
-}
-
-func NewStarknetRPC(chain *kernel.Kernel, cfg *StarknetRpcConfig) (*StarknetRPC, error) {
-	log, err := utils.NewZapLogger(utils.LogLevel(cfg.LogLevel), cfg.LogColor)
+func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, error) {
+	log, err := utils.NewZapLogger(utils.LogLevel(cfg.LogLevel), cfg.Colour)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +48,7 @@ func NewStarknetRPC(chain *kernel.Kernel, cfg *StarknetRpcConfig) (*StarknetRPC,
 	mux.Handle(path, exactPathServer(path, httpHandler))
 
 	s.srv = &http.Server{
-		Addr:        net.JoinHostPort(cfg.Host, cfg.Port),
+		Addr:        net.JoinHostPort(cfg.StarknetHost, cfg.StarknetPort),
 		Handler:     cors.Default().Handler(mux),
 		ReadTimeout: 30 * time.Second,
 	}
