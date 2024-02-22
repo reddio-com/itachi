@@ -60,6 +60,8 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
+	cr := resp.DataInterface.(*cairo.CallResponse)
+	return cr.ReturnData, cr.Err
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {

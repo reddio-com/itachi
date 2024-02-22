@@ -5,10 +5,11 @@ import (
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/node"
+	"github.com/NethermindEth/juno/rpc"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
@@ -145,19 +146,13 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	callRequest := new(CallRequest)
 	err := ctx.BindJson(callRequest)
 	if err != nil {
-		ctx.Err(
-			http.StatusBadRequest,
-			errors.Errorf("Json decoded CallRequest failed: %v", err),
-		)
+		ctx.Json(http.StatusBadRequest, CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
 	}
 
 	block, err := c.GetCurrentBlock()
 	if err != nil {
-		ctx.Err(
-			http.StatusInternalServerError,
-			errors.Errorf("Get current block failed: %v", err),
-		)
+		ctx.JsonOk(CallResponse{Err: rpc.ErrBlockNotFound})
 		return
 	}
 	blockNumber := uint64(block.Height)
@@ -165,7 +160,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 
 	classHash, err := c.cairoState.ContractClassHash(callRequest.ContractAddr)
 	if err != nil {
-		ctx.Err(http.StatusBadRequest, errors.Errorf("Contract Not Found"))
+		ctx.Json(http.StatusBadRequest, CallResponse{Err: rpc.ErrContractNotFound})
 		return
 	}
 
@@ -178,14 +173,11 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		c.cairoState.state, c.network,
 	)
 	if err != nil {
-		ctx.Err(
-			http.StatusInternalServerError,
-			errors.Errorf("CairoVM call failed: %v", err),
-		)
+		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
 		return
 	}
 
-	ctx.JsonOk(&CallResponse{ReturnData: retData})
+	ctx.JsonOk(CallResponse{ReturnData: retData})
 }
 
 //func (c *Cairo) newPendingStateWriter() *junostate.PendingStateWriter {

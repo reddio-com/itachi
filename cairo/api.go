@@ -5,6 +5,7 @@ import (
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/yu-org/yu/core/context"
+	"net/http"
 )
 
 type NonceRequest struct {
@@ -21,12 +22,12 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 	var nq NonceRequest
 	err := ctx.BindJson(&nq)
 	if err != nil {
-		ctx.JsonOk(NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		ctx.Json(http.StatusBadRequest, NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
 	}
 	nonce, err := c.cairoState.ContractNonce(&nq.Addr)
 	if err != nil {
-		ctx.JsonOk(NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		ctx.Json(http.StatusInternalServerError, NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
 		return
 	}
 	ctx.JsonOk(NonceResponse{Nonce: nonce})

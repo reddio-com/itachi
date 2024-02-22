@@ -2,6 +2,7 @@ package cairo
 
 import (
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
 )
 
@@ -12,7 +13,8 @@ type CallRequest struct {
 }
 
 type CallResponse struct {
-	ReturnData []*felt.Felt `json:"return_data"`
+	ReturnData []*felt.Felt   `json:"return_data"`
+	Err        *jsonrpc.Error `json:"err"`
 }
 
 type TxRequest struct {
