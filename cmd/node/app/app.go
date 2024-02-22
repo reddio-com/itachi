@@ -21,8 +21,10 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) {
 		if err != nil {
 			logrus.Fatalf("init starknetRPC server failed, %v", err)
 		}
+		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
-			err = rpcSrv.Serve(context.Background())
+			defer cancel()
+			err = rpcSrv.Serve(ctx)
 			if err != nil {
 				logrus.Errorf("starknetRPC serves failed, %v", err)
 			}
