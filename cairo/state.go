@@ -11,7 +11,7 @@ import (
 
 type CairoState struct {
 	*junostate.PendingStateWriter
-	state *core.State
+	*core.State
 }
 
 func NewCairoState(cfg *config.Config) (*CairoState, error) {
@@ -22,17 +22,17 @@ func NewCairoState(cfg *config.Config) (*CairoState, error) {
 	pendingState := junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state)
 	return &CairoState{
 		PendingStateWriter: pendingState,
-		state:              state,
+		State:              state,
 	}, nil
 }
 
 func (cs *CairoState) Commit(blockNum uint64) error {
 	stateDiff, newClasses := cs.StateDiffAndClasses()
-	err := cs.state.Update(blockNum, stateDiff, newClasses)
+	err := cs.State.Update(blockNum, stateDiff, newClasses)
 	if err != nil {
 		return err
 	}
-	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.state)
+	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.State)
 	return nil
 }
 

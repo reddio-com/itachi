@@ -165,7 +165,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	case callReq.BlockID.Latest:
 		classHash, err = c.cairoState.ContractClassHash(callReq.ContractAddr)
 	default:
-		classHash, err = c.cairoState.state.ContractClassHashAt(callReq.ContractAddr, callReq.BlockID.Number)
+		classHash, err = c.cairoState.ContractClassHashAt(callReq.ContractAddr, callReq.BlockID.Number)
 	}
 	if err != nil {
 		ctx.Json(http.StatusBadRequest, CallResponse{Err: rpc.ErrContractNotFound})
@@ -178,7 +178,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		callReq.Selector,
 		callReq.Calldata,
 		blockNumber, blockTimestamp,
-		c.cairoState.state, c.network,
+		c.cairoState.State, c.network,
 	)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
