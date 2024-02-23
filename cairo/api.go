@@ -25,7 +25,14 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 		ctx.Json(http.StatusBadRequest, NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
 	}
-	nonce, err := c.cairoState.ContractNonce(&nq.Addr)
+
+	var nonce *felt.Felt
+	switch {
+	case nq.BlockID.Latest:
+		nonce, err = c.cairoState.ContractNonce(&nq.Addr)
+	default:
+		nonce, err = c.cairoState.state.ContractNonceAt(&nq.Addr, nq.BlockID.Number)
+	}
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
 		return

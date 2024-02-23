@@ -10,6 +10,7 @@ type CallRequest struct {
 	ContractAddr *felt.Felt  `json:"contract_addr"`
 	Selector     *felt.Felt  `json:"selector"`
 	Calldata     []felt.Felt `json:"calldata"`
+	BlockID      rpc.BlockID `json:"block_id"`
 }
 
 type CallResponse struct {

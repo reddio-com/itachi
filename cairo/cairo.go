@@ -144,8 +144,8 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 }
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
-	callRequest := new(CallRequest)
-	err := ctx.BindJson(callRequest)
+	callReq := new(CallRequest)
+	err := ctx.BindJson(callReq)
 	if err != nil {
 		ctx.Json(http.StatusBadRequest, CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
@@ -159,17 +159,24 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	blockNumber := uint64(block.Height)
 	blockTimestamp := block.Timestamp
 
-	classHash, err := c.cairoState.ContractClassHash(callRequest.ContractAddr)
+	var classHash *felt.Felt
+
+	switch {
+	case callReq.BlockID.Latest:
+		classHash, err = c.cairoState.ContractClassHash(callReq.ContractAddr)
+	default:
+		classHash, err = c.cairoState.state.ContractClassHashAt(callReq.ContractAddr, callReq.BlockID.Number)
+	}
 	if err != nil {
 		ctx.Json(http.StatusBadRequest, CallResponse{Err: rpc.ErrContractNotFound})
 		return
 	}
 
 	retData, err := c.cairoVM.Call(
-		callRequest.ContractAddr,
+		callReq.ContractAddr,
 		classHash,
-		callRequest.Selector,
-		callRequest.Calldata,
+		callReq.Selector,
+		callReq.Calldata,
 		blockNumber, blockTimestamp,
 		c.cairoState.state, c.network,
 	)

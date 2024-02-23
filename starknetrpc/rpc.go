@@ -140,6 +140,7 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 		ContractAddr: &call.ContractAddress,
 		Selector:     &call.EntryPointSelector,
 		Calldata:     call.Calldata,
+		BlockID:      id,
 	}
 	byt, err := json.Marshal(callReq)
 	if err != nil {
@@ -159,7 +160,7 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
-	nonceReq := &cairo.NonceRequest{Addr: address}
+	nonceReq := &cairo.NonceRequest{BlockID: id, Addr: address}
 	byt, err := json.Marshal(nonceReq)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
