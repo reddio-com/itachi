@@ -112,6 +112,16 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
 			Handler: s.GetNonce,
 		},
+		{
+			Name:    "starknet_getClass",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "class_hash"}},
+			Handler: s.GetClass,
+		},
+		{
+			Name:    "starknet_getClassAt",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
+			Handler: s.GetClassAt,
+		},
 	}, "/v0_6"
 }
 
@@ -176,4 +186,42 @@ func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *
 	}
 	nr := resp.DataInterface.(*cairo.NonceResponse)
 	return nr.Nonce, nr.Err
+}
+
+func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class, *jsonrpc.Error) {
+	classReq := &cairo.ClassRequest{BlockID: id, ClassHash: &classHash}
+	byt, err := json.Marshal(classReq)
+	if err != nil {
+		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
+	}
+	rdCall := &common.RdCall{
+		TripodName: CairoTripod,
+		FuncName:   "GetClass",
+		Params:     string(byt),
+	}
+	resp, err := s.chain.HandleRead(rdCall)
+	if err != nil {
+		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	}
+	cr := resp.DataInterface.(*cairo.ClassResponse)
+	return cr.Class, cr.Err
+}
+
+func (s *StarknetRPC) GetClassAt(id rpc.BlockID, address felt.Felt) (*rpc.Class, *jsonrpc.Error) {
+	classAtReq := &cairo.ClassAtRequest{BlockID: id, Addr: &address}
+	byt, err := json.Marshal(classAtReq)
+	if err != nil {
+		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
+	}
+	rdCall := &common.RdCall{
+		TripodName: CairoTripod,
+		FuncName:   "GetClassAt",
+		Params:     string(byt),
+	}
+	resp, err := s.chain.HandleRead(rdCall)
+	if err != nil {
+		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	}
+	cr := resp.DataInterface.(*cairo.ClassResponse)
+	return cr.Class, cr.Err
 }
