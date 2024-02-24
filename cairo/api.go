@@ -64,24 +64,7 @@ func (c *Cairo) GetClass(ctx *context.ReadContext) {
 		return
 	}
 
-	class, err := c.cairoState.Class(cq.ClassHash)
-	if err != nil {
-		ctx.Json(http.StatusInternalServerError, ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
-		return
-	}
-	if !cq.BlockID.Latest {
-		if cq.BlockID.Number < class.At {
-			ctx.Json(http.StatusBadRequest, ClassResponse{Err: rpc.ErrClassHashNotFound})
-			return
-		}
-	}
-
-	rpcClass := declaredClassToClass(class)
-	if rpcClass != nil {
-		ctx.JsonOk(ClassResponse{Class: rpcClass})
-	} else {
-		ctx.Json(http.StatusBadRequest, ClassResponse{Err: rpc.ErrClassHashNotFound})
-	}
+	c.getClass(ctx, &cq.BlockID, cq.ClassHash)
 }
 
 func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
@@ -102,14 +85,18 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 		ctx.Json(http.StatusInternalServerError, ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
 		return
 	}
-	
+
+	c.getClass(ctx, &cq.BlockID, classHash)
+}
+
+func (c *Cairo) getClass(ctx *context.ReadContext, blockID *rpc.BlockID, classHash *felt.Felt) {
 	class, err := c.cairoState.Class(classHash)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
 		return
 	}
-	if !cq.BlockID.Latest {
-		if cq.BlockID.Number < class.At {
+	if !blockID.Latest {
+		if blockID.Number < class.At {
 			ctx.Json(http.StatusBadRequest, ClassResponse{Err: rpc.ErrClassHashNotFound})
 			return
 		}
