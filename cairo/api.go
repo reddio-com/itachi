@@ -11,7 +11,7 @@ import (
 
 type NonceRequest struct {
 	BlockID rpc.BlockID `json:"block_id"`
-	Addr    felt.Felt   `json:"addr"`
+	Addr    *felt.Felt  `json:"addr"`
 }
 
 type NonceResponse struct {
@@ -30,9 +30,9 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 	var nonce *felt.Felt
 	switch {
 	case nq.BlockID.Latest:
-		nonce, err = c.cairoState.ContractNonce(&nq.Addr)
+		nonce, err = c.cairoState.ContractNonce(nq.Addr)
 	default:
-		nonce, err = c.cairoState.ContractNonceAt(&nq.Addr, nq.BlockID.Number)
+		nonce, err = c.cairoState.ContractNonceAt(nq.Addr, nq.BlockID.Number)
 	}
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
