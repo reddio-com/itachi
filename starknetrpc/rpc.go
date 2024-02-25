@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/conc"
 	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core"
+	yucontext "github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/kernel"
 	"itachi/cairo"
 	"itachi/cairo/config"
@@ -152,18 +153,9 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 		Calldata:     call.Calldata,
 		BlockID:      id,
 	}
-	byt, err := json.Marshal(callReq)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
-	}
-	rdCall := &common.RdCall{
-		TripodName: CairoTripod,
-		FuncName:   "Call",
-		Params:     string(byt),
-	}
-	resp, err := s.chain.HandleRead(rdCall)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	resp, jsonErr := s.adaptChainRead(callReq, "Call")
+	if jsonErr != nil {
+		return nil, jsonErr
 	}
 	cr := resp.DataInterface.(*cairo.CallResponse)
 	return cr.ReturnData, cr.Err
@@ -171,18 +163,9 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
 	nonceReq := &cairo.NonceRequest{BlockID: id, Addr: &address}
-	byt, err := json.Marshal(nonceReq)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
-	}
-	rdCall := &common.RdCall{
-		TripodName: CairoTripod,
-		FuncName:   "GetNonce",
-		Params:     string(byt),
-	}
-	resp, err := s.chain.HandleRead(rdCall)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	resp, jsonErr := s.adaptChainRead(nonceReq, "GetNonce")
+	if jsonErr != nil {
+		return nil, jsonErr
 	}
 	nr := resp.DataInterface.(*cairo.NonceResponse)
 	return nr.Nonce, nr.Err
@@ -190,18 +173,9 @@ func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *
 
 func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class, *jsonrpc.Error) {
 	classReq := &cairo.ClassRequest{BlockID: id, ClassHash: &classHash}
-	byt, err := json.Marshal(classReq)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
-	}
-	rdCall := &common.RdCall{
-		TripodName: CairoTripod,
-		FuncName:   "GetClass",
-		Params:     string(byt),
-	}
-	resp, err := s.chain.HandleRead(rdCall)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	resp, jsonErr := s.adaptChainRead(classReq, "GetClass")
+	if jsonErr != nil {
+		return nil, jsonErr
 	}
 	cr := resp.DataInterface.(*cairo.ClassResponse)
 	return cr.Class, cr.Err
@@ -209,19 +183,27 @@ func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class,
 
 func (s *StarknetRPC) GetClassAt(id rpc.BlockID, address felt.Felt) (*rpc.Class, *jsonrpc.Error) {
 	classAtReq := &cairo.ClassAtRequest{BlockID: id, Addr: &address}
-	byt, err := json.Marshal(classAtReq)
+	resp, jsonErr := s.adaptChainRead(classAtReq, "GetClassAt")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	cr := resp.DataInterface.(*cairo.ClassResponse)
+	return cr.Class, cr.Err
+}
+
+func (s *StarknetRPC) adaptChainRead(req any, funcName string) (*yucontext.ResponseData, *jsonrpc.Error) {
+	byt, err := json.Marshal(req)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
 	}
 	rdCall := &common.RdCall{
 		TripodName: CairoTripod,
-		FuncName:   "GetClassAt",
+		FuncName:   funcName,
 		Params:     string(byt),
 	}
 	resp, err := s.chain.HandleRead(rdCall)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
-	cr := resp.DataInterface.(*cairo.ClassResponse)
-	return cr.Class, cr.Err
+	return resp, nil
 }
