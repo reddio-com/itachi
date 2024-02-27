@@ -11,6 +11,7 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/jinzhu/copier"
+	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/startup"
 	"github.com/yu-org/yu/core/types"
@@ -18,7 +19,7 @@ import (
 
 func (c *Cairo) TxnExecute(block *types.Block) error {
 
-	var receipts []*types.Receipt
+	receipts := make(map[common.Hash]*types.Receipt)
 
 	for _, txn := range block.Txns {
 		wrCall := txn.Raw.WrCall
@@ -45,7 +46,7 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		err = wr(ctx)
 		rcpt := types.NewReceipt(ctx.Events, err)
 		rcpt.FillMetadata(block, txn, ctx.LeiCost)
-		receipts = append(receipts, rcpt)
+		receipts[txn.TxnHash] = rcpt
 	}
 	blockNumber := uint64(block.Height)
 	//blockTimestamp := block.Timestamp
