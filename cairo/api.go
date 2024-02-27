@@ -1,6 +1,7 @@
 package cairo
 
 import (
+	"encoding/json"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -51,7 +52,13 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 		return
 	}
 
-	receipt
+	starkReceipt := new(rpc.TransactionReceipt)
+	err = json.Unmarshal(receipt.Extra, starkReceipt)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		return
+	}
+	ctx.JsonOk(ReceiptResponse{Receipt: starkReceipt})
 }
 
 type NonceRequest struct {

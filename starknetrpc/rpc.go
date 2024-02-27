@@ -114,6 +114,11 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.GetTransactionByHash,
 		},
 		{
+			Name:    "starknet_getTransactionReceipt",
+			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+			Handler: s.GetReceiptByHash,
+		},
+		{
 			Name:    "starknet_getNonce",
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
 			Handler: s.GetNonce,
@@ -179,6 +184,16 @@ func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *j
 	}
 	tr := resp.DataInterface.(*cairo.TransactionResponse)
 	return tr.Tx, tr.Err
+}
+
+func (s *StarknetRPC) GetReceiptByHash(hash felt.Felt) (*rpc.TransactionReceipt, *jsonrpc.Error) {
+	rcptReq := &cairo.ReceiptRequest{Hash: hash}
+	resp, jsonErr := s.adaptChainRead(rcptReq, "GetReceipt")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	rr := resp.DataInterface.(*cairo.ReceiptResponse)
+	return rr.Receipt, rr.Err
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
