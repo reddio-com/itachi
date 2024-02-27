@@ -9,6 +9,25 @@ import (
 	"net/http"
 )
 
+type TransactionRequest struct {
+	Hash felt.Felt `json:"hash"`
+}
+
+type TransactionResponse struct {
+	Tx  *rpc.Transaction `json:"tx"`
+	Err *jsonrpc.Error   `json:"err"`
+}
+
+func (c *Cairo) GetTransaction(ctx *context.ReadContext) {
+	var tq TransactionRequest
+	err := ctx.BindJson(&tq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		return
+	}
+
+}
+
 type NonceRequest struct {
 	BlockID rpc.BlockID `json:"block_id"`
 	Addr    *felt.Felt  `json:"addr"`

@@ -109,6 +109,11 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.Call,
 		},
 		{
+			Name:    "starknet_getTransactionByHash",
+			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+			Handler: s.GetTransactionByHash,
+		},
+		{
 			Name:    "starknet_getNonce",
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
 			Handler: s.GetNonce,
@@ -143,7 +148,12 @@ func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxR
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
-	return nil, nil
+
+	return &rpc.AddTxResponse{
+		TransactionHash: nil,
+		ContractAddress: nil,
+		ClassHash:       nil,
+	}, nil
 }
 
 func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt, *jsonrpc.Error) {
@@ -159,6 +169,16 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 	}
 	cr := resp.DataInterface.(*cairo.CallResponse)
 	return cr.ReturnData, cr.Err
+}
+
+func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *jsonrpc.Error) {
+	txReq := &cairo.TransactionRequest{Hash: hash}
+	resp, jsonErr := s.adaptChainRead(txReq, "GetTransaction")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	tr := resp.DataInterface.(*cairo.TransactionResponse)
+	return tr.Tx, tr.Err
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {

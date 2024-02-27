@@ -707,6 +707,16 @@ github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRT
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673/go.mod h1:N3UwUGtsrSj3ccvlPHLoLsHnpR27oXr4ZE984MbSER8=
 github.com/yu-org/yu v0.0.0-20240213133356-9fd0534568cd h1:ixS5P/8Mx6XOEOcAoGClRXgSMiPrkU7xyFY4csjivZU=
 github.com/yu-org/yu v0.0.0-20240213133356-9fd0534568cd/go.mod h1:W2qfPLdMEmzOymqCFxb3vN+fjZT94CoWPCVPtpgxwdo=
+github.com/yu-org/yu v0.0.0-20240226061011-cff27e633036 h1:vSss1O1j6xipJY0AJGHLWQ/1+dldChLdQv+fxw2/xzw=
+github.com/yu-org/yu v0.0.0-20240226061011-cff27e633036/go.mod h1:W2qfPLdMEmzOymqCFxb3vN+fjZT94CoWPCVPtpgxwdo=
+github.com/yu-org/yu v0.0.0-20240227025625-e6b42d392ccb h1:rfogqnPeWKeo8xxvaxscNdqWnuRkNatKK0vdHSCisdo=
+github.com/yu-org/yu v0.0.0-20240227025625-e6b42d392ccb/go.mod h1:W2qfPLdMEmzOymqCFxb3vN+fjZT94CoWPCVPtpgxwdo=
+github.com/yu-org/yu v0.0.0-20240227031351-2ebf797684e2 h1:qfiJEOQCFV805Moc6aSxdCM3/YJyWjp71+eLUx6RcCk=
+github.com/yu-org/yu v0.0.0-20240227031351-2ebf797684e2/go.mod h1:W2qfPLdMEmzOymqCFxb3vN+fjZT94CoWPCVPtpgxwdo=
+github.com/yu-org/yu v0.0.0-20240227033641-bebe962fbb2f h1:i5x46nMczRI/8e341fjP8qKTkxRAz+B7m7lavzjW7ZY=
+github.com/yu-org/yu v0.0.0-20240227033641-bebe962fbb2f/go.mod h1:W2qfPLdMEmzOymqCFxb3vN+fjZT94CoWPCVPtpgxwdo=
+github.com/yu-org/yu v0.0.0-20240227041145-e115dd6cdad5 h1:RLSsGZL4YiPY+kR+Z2iNCN8QN+38SCeHXzcnvTZPBSc=
+github.com/yu-org/yu v0.0.0-20240227041145-e115dd6cdad5/go.mod h1:W2qfPLdMEmzOymqCFxb3vN+fjZT94CoWPCVPtpgxwdo=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=

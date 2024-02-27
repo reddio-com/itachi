@@ -1,7 +1,6 @@
 package cairo
 
 import (
-	"encoding/json"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -11,9 +10,7 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/sirupsen/logrus"
-	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
-	"github.com/yu-org/yu/core/result"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
 	"itachi/cairo/config"
@@ -53,7 +50,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 	}
 
 	cairo.SetWritings(cairo.ExecuteTxn)
-	cairo.SetReadings(cairo.Call, cairo.GetClass, cairo.GetClassHash, cairo.GetNonce, cairo.GetStorage)
+	cairo.SetReadings(cairo.Call, cairo.GetClass, cairo.GetClassAt, cairo.GetClassHash, cairo.GetNonce, cairo.GetStorage, cairo.GetTransaction)
 	cairo.SetInit(cairo)
 	cairo.SetTxnChecker(cairo)
 
@@ -109,7 +106,6 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 
 	blockNumber := uint64(ctx.Block.Height)
 	blockTimestamp := ctx.Block.Timestamp
-	blockHash := ctx.Block.Hash
 
 	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
 	_, traces, err := c.execute(
@@ -123,19 +119,7 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	for _, trace := range traces {
 		if trace.ExecuteInvocation != nil {
 			for _, event := range trace.ExecuteInvocation.Events {
-				eventByt, terr := json.Marshal(event)
-				if terr != nil {
-					return terr
-				}
-				callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
-				caller := common.BytesToAddress(callerByt[:])
-				yuEvent := &result.Event{
-					Caller:    &caller,
-					BlockHash: blockHash,
-					Height:    ctx.Block.Height,
-					Value:     eventByt,
-				}
-				ctx.EmitJsonEvent(result.NewEvent(yuEvent))
+				ctx.EmitJsonEvent(event)
 			}
 		}
 
