@@ -44,7 +44,7 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		//classes = append(classes, class)
 		//paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
 		err = wr(ctx)
-		rcpt := types.NewReceipt(ctx.Events, err)
+		rcpt := types.NewReceipt(ctx.Events, err, ctx.Extra)
 		rcpt.FillMetadata(block, txn, ctx.LeiCost)
 		receipts[txn.TxnHash] = rcpt
 	}

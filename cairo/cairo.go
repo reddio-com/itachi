@@ -1,6 +1,8 @@
 package cairo
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -9,6 +11,7 @@ import (
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
@@ -96,19 +99,16 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	}
 
 	var (
-		starknetTxns = make([]core.Transaction, 0)
-		classes      = make([]core.Class, 0)
-		paidFeesOnL1 = make([]*felt.Felt, 0)
+		starknetTxns = []core.Transaction{tx}
+		classes      = []core.Class{class}
+		paidFeesOnL1 = []*felt.Felt{paidFeeOnL1}
 	)
-	starknetTxns = append(starknetTxns, tx)
-	classes = append(classes, class)
-	paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
 
 	blockNumber := uint64(ctx.Block.Height)
 	blockTimestamp := ctx.Block.Timestamp
 
 	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
-	_, traces, err := c.execute(
+	actualFees, traces, err := c.execute(
 		starknetTxns, classes, blockNumber, blockTimestamp,
 		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
 	)
@@ -116,14 +116,16 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		return err
 	}
 
-	for _, trace := range traces {
-		if trace.ExecuteInvocation != nil {
-			for _, event := range trace.ExecuteInvocation.Events {
-				ctx.EmitJsonEvent(event)
-			}
-		}
-
+	var starkReceipt *rpc.TransactionReceipt
+	if len(traces) > 0 && len(actualFees) > 0 {
+		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
+
+	receiptByt, err := json.Marshal(starkReceipt)
+	if err != nil {
+		return err
+	}
+	ctx.Extra = receiptByt
 	return nil
 }
 
@@ -170,6 +172,87 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	}
 
 	ctx.JsonOk(CallResponse{ReturnData: retData})
+}
+
+func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Transaction, amount *felt.Felt) *rpc.TransactionReceipt {
+	starkReceipt := new(rpc.TransactionReceipt)
+	switch {
+	case trace.ExecuteInvocation != nil:
+		starkReceipt = makeStarkReceiptFromInvocation(trace.ExecuteInvocation.FunctionInvocation)
+	case trace.ValidateInvocation != nil:
+		starkReceipt = makeStarkReceiptFromInvocation(trace.ValidateInvocation)
+	}
+	starkReceipt.RevertReason = trace.RevertReason()
+	starkReceipt.Type = rpc.TransactionType(trace.Type)
+	if trace.IsReverted() {
+		starkReceipt.ExecutionStatus = rpc.TxnFailure
+	} else {
+		starkReceipt.ExecutionStatus = rpc.TxnSuccess
+	}
+	blockNum := uint64(block.Height)
+	starkReceipt.BlockNumber = &blockNum
+	starkReceipt.BlockHash = new(felt.Felt).SetBytes(block.Hash.Bytes())
+	starkReceipt.FinalityStatus = rpc.TxnAcceptedOnL2
+	starkReceipt.Hash = tx.Hash()
+	starkReceipt.ActualFee = &rpc.FeePayment{
+		Amount: amount,
+		Unit:   feeUnit(tx),
+	}
+
+	switch v := tx.(type) {
+	case *core.DeployTransaction:
+		starkReceipt.ContractAddress = v.ContractAddress
+	case *core.DeployAccountTransaction:
+		starkReceipt.ContractAddress = v.ContractAddress
+	case *core.L1HandlerTransaction:
+		starkReceipt.MessageHash = "0x" + hex.EncodeToString(v.MessageHash())
+	}
+
+	return starkReceipt
+}
+
+func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.TransactionReceipt {
+	var starkReceipt rpc.TransactionReceipt
+	for _, event := range invocation.Events {
+		starkReceipt.Events = append(starkReceipt.Events, &rpc.Event{
+			From: event.From,
+			Keys: event.Keys,
+			Data: event.Data,
+		})
+	}
+	resources := invocation.ExecutionResources
+	starkReceipt.ExecutionResources = &rpc.ExecutionResources{
+		Steps:        resources.Steps,
+		MemoryHoles:  resources.MemoryHoles,
+		Pedersen:     resources.Pedersen,
+		RangeCheck:   resources.RangeCheck,
+		Bitwise:      resources.Bitwise,
+		Ecsda:        resources.Ecdsa,
+		EcOp:         resources.EcOp,
+		Keccak:       resources.Keccak,
+		Poseidon:     resources.Poseidon,
+		SegmentArena: resources.SegmentArena,
+	}
+
+	for _, message := range invocation.Messages {
+		starkReceipt.MessagesSent = append(starkReceipt.MessagesSent, &rpc.MsgToL1{
+			From:    message.From,
+			To:      common.HexToAddress(message.To),
+			Payload: message.Payload,
+		})
+	}
+
+	return &starkReceipt
+}
+
+func feeUnit(txn core.Transaction) rpc.FeeUnit {
+	feeUnit := rpc.WEI
+	version := txn.TxVersion()
+	if !version.Is(0) && !version.Is(1) && !version.Is(2) {
+		feeUnit = rpc.FRI
+	}
+
+	return feeUnit
 }
 
 //func (c *Cairo) newPendingStateWriter() *junostate.PendingStateWriter {

@@ -22,10 +22,36 @@ func (c *Cairo) GetTransaction(ctx *context.ReadContext) {
 	var tq TransactionRequest
 	err := ctx.BindJson(&tq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		ctx.Json(http.StatusBadRequest, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
 	}
 
+}
+
+type ReceiptRequest struct {
+	Hash felt.Felt `json:"hash"`
+}
+
+type ReceiptResponse struct {
+	Receipt *rpc.TransactionReceipt `json:"receipt"`
+	Err     *jsonrpc.Error          `json:"err"`
+}
+
+func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
+	var rq ReceiptRequest
+	err := ctx.BindJson(&rq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		return
+	}
+
+	receipt, err := c.TxDB.GetReceipt(rq.Hash.Bytes())
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		return
+	}
+
+	receipt
 }
 
 type NonceRequest struct {
