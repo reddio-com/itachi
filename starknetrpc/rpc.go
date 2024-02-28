@@ -114,6 +114,11 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.GetTransactionByHash,
 		},
 		{
+			Name:    "starknet_getTransactionStatus",
+			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+			Handler: s.GetTransactionStatus,
+		},
+		{
 			Name:    "starknet_getTransactionReceipt",
 			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
 			Handler: s.GetReceiptByHash,
@@ -184,6 +189,18 @@ func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *j
 	}
 	tr := resp.DataInterface.(*cairo.TransactionResponse)
 	return tr.Tx, tr.Err
+}
+
+func (s *StarknetRPC) GetTransactionStatus(ctx context.Context, hash felt.Felt) (*rpc.TransactionStatus, *jsonrpc.Error) {
+	receipt, jsonErr := s.GetReceiptByHash(hash)
+	if jsonErr != nil {
+		// TODO: when ErrTxnHashNotFound, should fetch from ETH L1
+		return nil, jsonErr
+	}
+	return &rpc.TransactionStatus{
+		Finality:  rpc.TxnStatus(receipt.FinalityStatus),
+		Execution: receipt.ExecutionStatus,
+	}, nil
 }
 
 func (s *StarknetRPC) GetReceiptByHash(hash felt.Felt) (*rpc.TransactionReceipt, *jsonrpc.Error) {
