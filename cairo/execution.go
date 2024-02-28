@@ -11,15 +11,15 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/jinzhu/copier"
+	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
-	"github.com/yu-org/yu/core/result"
 	"github.com/yu-org/yu/core/startup"
 	"github.com/yu-org/yu/core/types"
 )
 
 func (c *Cairo) TxnExecute(block *types.Block) error {
 
-	var results []*result.Result
+	receipts := make(map[common.Hash]*types.Receipt)
 
 	for _, txn := range block.Txns {
 		wrCall := txn.Raw.WrCall
@@ -44,16 +44,9 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		//classes = append(classes, class)
 		//paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
 		err = wr(ctx)
-		if err != nil {
-			ctx.EmitError(err)
-			continue
-		}
-		for _, event := range ctx.Events {
-			results = append(results, result.NewEvent(event))
-		}
-		if ctx.Error != nil {
-			results = append(results, result.NewError(ctx.Error))
-		}
+		rcpt := types.NewReceipt(ctx.Events, err, ctx.Extra)
+		rcpt.FillMetadata(block, txn, ctx.LeiCost)
+		receipts[txn.TxnHash] = rcpt
 	}
 	blockNumber := uint64(block.Height)
 	//blockTimestamp := block.Timestamp
@@ -101,7 +94,7 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 	//	}
 	//
 	//}
-	return c.TxDB.SetResults(results)
+	return c.TxDB.SetReceipts(receipts)
 }
 
 func (c *Cairo) execute(

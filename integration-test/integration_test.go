@@ -12,6 +12,7 @@ import (
 	"github.com/yu-org/yu/core/startup"
 	"github.com/yu-org/yu/example/client/callchain"
 	"itachi/cairo"
+	"itachi/cairo/config"
 	"itachi/cmd/node/app"
 	"sync"
 	"testing"
@@ -23,7 +24,7 @@ var chain *kernel.Kernel
 func init() {
 	startup.InitDefaultKernelConfig()
 	poaCfg := poa.DefaultCfg(0)
-	crCfg := cairo.DefaultCfg()
+	crCfg := config.DefaultCfg()
 
 	chain = app.InitItachi(poaCfg, crCfg)
 }
@@ -48,7 +49,6 @@ func TestIntegration(t *testing.T) {
 		"Call",
 		&cairo.CallRequest{
 			ContractAddr: &felt.Zero,
-			ClassHash:    &felt.Zero,
 			Selector:     &felt.Zero,
 			Calldata:     []felt.Felt{felt.Zero},
 		})
