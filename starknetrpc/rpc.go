@@ -160,9 +160,9 @@ func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxR
 	}
 
 	return &rpc.AddTxResponse{
-		TransactionHash: nil,
-		ContractAddress: nil,
-		ClassHash:       nil,
+		TransactionHash: tx.Hash,
+		ContractAddress: tx.ContractAddress,
+		ClassHash:       tx.ClassHash,
 	}, nil
 }
 
