@@ -6,6 +6,7 @@ import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
+	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
 	"net/http"
 )
@@ -26,7 +27,18 @@ func (c *Cairo) GetTransaction(ctx *context.ReadContext) {
 		ctx.Json(http.StatusBadRequest, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
 	}
-
+	signedTx, err := c.TxDB.GetTxn(tq.Hash.Bytes())
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		return
+	}
+	txReq := new(TxRequest)
+	err = common.BindJsonParams(signedTx.Raw.WrCall.Params, txReq)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		return
+	}
+	ctx.JsonOk(TransactionResponse{Tx: &txReq.Tx.Transaction})
 }
 
 type ReceiptRequest struct {
