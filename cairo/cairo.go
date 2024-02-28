@@ -87,7 +87,12 @@ func (c *Cairo) InitChain() {
 }
 
 func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
-	// TODO: check tx, if illegal, will not insert to txpool.
+	txReq := new(TxRequest)
+	err := txn.BindJson(txReq)
+	if err != nil {
+		return err
+	}
+	txn.TxnHash = txReq.Tx.Hash.Bytes()
 	return nil
 }
 
