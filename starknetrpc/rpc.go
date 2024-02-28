@@ -192,15 +192,13 @@ func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *j
 }
 
 func (s *StarknetRPC) GetTransactionStatus(ctx context.Context, hash felt.Felt) (*rpc.TransactionStatus, *jsonrpc.Error) {
-	receipt, jsonErr := s.GetReceiptByHash(hash)
+	tsReq := &cairo.TransactionStatusRequest{Hash: hash}
+	resp, jsonErr := s.adaptChainRead(tsReq, "GetTransactionStatus")
 	if jsonErr != nil {
-		// TODO: when ErrTxnHashNotFound, should fetch from ETH L1
 		return nil, jsonErr
 	}
-	return &rpc.TransactionStatus{
-		Finality:  rpc.TxnStatus(receipt.FinalityStatus),
-		Execution: receipt.ExecutionStatus,
-	}, nil
+	tsr := resp.DataInterface.(*cairo.TransactionStatusResponse)
+	return tsr.Status, tsr.Err
 }
 
 func (s *StarknetRPC) GetReceiptByHash(hash felt.Felt) (*rpc.TransactionReceipt, *jsonrpc.Error) {

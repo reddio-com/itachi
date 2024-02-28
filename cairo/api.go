@@ -58,19 +58,50 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 		return
 	}
 
-	receipt, err := c.TxDB.GetReceipt(rq.Hash.Bytes())
-	if err != nil {
-		ctx.Json(http.StatusInternalServerError, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
-		return
-	}
-
-	starkReceipt := new(rpc.TransactionReceipt)
-	err = json.Unmarshal(receipt.Extra, starkReceipt)
+	starkReceipt, err := c.getReceipt(rq.Hash)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
 		return
 	}
 	ctx.JsonOk(ReceiptResponse{Receipt: starkReceipt})
+}
+
+func (c *Cairo) getReceipt(hash felt.Felt) (*rpc.TransactionReceipt, error) {
+	receipt, err := c.TxDB.GetReceipt(hash.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	starkReceipt := new(rpc.TransactionReceipt)
+	err = json.Unmarshal(receipt.Extra, starkReceipt)
+	return starkReceipt, err
+}
+
+type TransactionStatusRequest struct {
+	Hash felt.Felt `json:"hash"`
+}
+
+type TransactionStatusResponse struct {
+	Status *rpc.TransactionStatus `json:"status"`
+	Err    *jsonrpc.Error         `json:"err"`
+}
+
+func (c *Cairo) GetTransactionStatus(ctx *context.ReadContext) {
+	var tr TransactionStatusRequest
+	err := ctx.BindJson(&tr)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		return
+	}
+	starkReceipt, err := c.getReceipt(tr.Hash)
+	if err != nil {
+		// TODO: when ErrTxnHashNotFound, should fetch from ETH L1
+		ctx.Json(http.StatusInternalServerError, TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		return
+	}
+	ctx.JsonOk(TransactionStatusResponse{Status: &rpc.TransactionStatus{
+		Finality:  rpc.TxnStatus(starkReceipt.FinalityStatus),
+		Execution: starkReceipt.ExecutionStatus,
+	}})
 }
 
 type NonceRequest struct {
