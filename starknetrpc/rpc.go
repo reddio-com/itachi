@@ -129,6 +129,11 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.GetNonce,
 		},
 		{
+			Name:    "starknet_getStorageAt",
+			Params:  []jsonrpc.Parameter{{Name: "contract_address"}, {Name: "key"}, {Name: "block_id"}},
+			Handler: s.GetStorage,
+		},
+		{
 			Name:    "starknet_getClass",
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "class_hash"}},
 			Handler: s.GetClass,
@@ -219,6 +224,20 @@ func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *
 	}
 	nr := resp.DataInterface.(*cairo.NonceResponse)
 	return nr.Nonce, nr.Err
+}
+
+func (s *StarknetRPC) GetStorage(address, key felt.Felt, id rpc.BlockID) (*felt.Felt, *jsonrpc.Error) {
+	storageReq := &cairo.StorageRequest{
+		BlockID: id,
+		Addr:    &address,
+		Key:     &key,
+	}
+	resp, jsonErr := s.adaptChainRead(storageReq, "GetStorage")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	sr := resp.DataInterface.(*cairo.StorageResponse)
+	return sr.Value, sr.Err
 }
 
 func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class, *jsonrpc.Error) {

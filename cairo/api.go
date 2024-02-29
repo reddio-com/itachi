@@ -237,8 +237,8 @@ func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
 
 type StorageRequest struct {
 	BlockID rpc.BlockID `json:"block_id"`
-	Addr    felt.Felt   `json:"addr"`
-	Key     felt.Felt   `json:"key"`
+	Addr    *felt.Felt  `json:"addr"`
+	Key     *felt.Felt  `json:"key"`
 }
 
 type StorageResponse struct {
@@ -247,7 +247,25 @@ type StorageResponse struct {
 }
 
 func (c *Cairo) GetStorage(ctx *context.ReadContext) {
+	var sr StorageRequest
+	err := ctx.BindJson(&sr)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, StorageResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		return
+	}
 
+	var value *felt.Felt
+	switch {
+	case sr.BlockID.Latest:
+		value, err = c.cairoState.ContractStorage(sr.Addr, sr.Key)
+	default:
+		value, err = c.cairoState.ContractStorageAt(sr.Addr, sr.Key, sr.BlockID.Number)
+	}
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, StorageResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		return
+	}
+	ctx.JsonOk(StorageResponse{Value: value})
 }
 
 func declaredClassToClass(declared *core.DeclaredClass) (rpcClass *rpc.Class) {
