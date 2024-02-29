@@ -33,5 +33,5 @@ make build
 - [ ] traceTransaction
 - [ ] simulateTransactions
 - [ ] traceBlockTransactions
-- [ ] getStorageAt
+- [x] getStorageAt
 - [ ] getStateUpdate
