@@ -6,14 +6,15 @@ import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/db/pebble"
 	"github.com/NethermindEth/juno/utils"
+	"itachi/cairo/config"
 )
 
 type CairoState struct {
 	*junostate.PendingStateWriter
-	state *core.State
+	*core.State
 }
 
-func NewCairoState(cfg *Config) (*CairoState, error) {
+func NewCairoState(cfg *config.Config) (*CairoState, error) {
 	state, err := newState(cfg)
 	if err != nil {
 		return nil, err
@@ -21,21 +22,21 @@ func NewCairoState(cfg *Config) (*CairoState, error) {
 	pendingState := junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), state)
 	return &CairoState{
 		PendingStateWriter: pendingState,
-		state:              state,
+		State:              state,
 	}, nil
 }
 
 func (cs *CairoState) Commit(blockNum uint64) error {
 	stateDiff, newClasses := cs.StateDiffAndClasses()
-	err := cs.state.Update(blockNum, stateDiff, newClasses)
+	err := cs.State.Update(blockNum, stateDiff, newClasses)
 	if err != nil {
 		return err
 	}
-	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.state)
+	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.State)
 	return nil
 }
 
-func newState(cfg *Config) (*core.State, error) {
+func newState(cfg *config.Config) (*core.State, error) {
 	dbLog, err := utils.NewZapLogger(utils.ERROR, cfg.Colour)
 	if err != nil {
 		return nil, err

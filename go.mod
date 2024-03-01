@@ -12,7 +12,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.4
-	github.com/yu-org/yu v0.0.0-20240213133356-9fd0534568cd
+	github.com/yu-org/yu v0.0.0-20240228105243-c649358a3ef4
 )
 
 require (
