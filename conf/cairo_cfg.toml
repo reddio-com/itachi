@@ -16,7 +16,44 @@ skip_validate = false
 err_on_revert = true
 
 [genesis_classes]
-1 = "./conf/genesis/NoValidateAccount.json"
+# No validation account class
+0x0279d77db761fba82e0054125a6fdb5f6baa6286fa3fb73450cc44d193c2d37f = "./conf/genesis/NoValidateAccount.json"
+# No validataion account class hash cairo 1
+# 0x02f99bf9799ada84cd5ac0d0fe36b9d8f65efcb377cd2e8cf8309ad2daf15e4b = "./conf/genesis/cairo1/NoValidateAccount.json"
+# Argent account class hash
+0x06f0d6f6ae72e1a507ff4b65181291642889742dbf8f1a53e9ec1c595d01ba7d = "./conf/genesis/ArgentAccount.json"
+
+# Braavos account class hash
+0x2c2b8f559e1221468140ad7b2352b1a5be32660d0bf1a3ae3a054a4ec5254e4 = "./conf/genesis/BraavosAccount.json"
+
+# Braavos account base implementation class hash
+0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570 = "./conf/genesis/BraavosAccountBaseImpl.json"
+# Braavos account call aggregator class hash
+0x07db5c2c2676c2a5bfc892ee4f596b49514e3056a0eee8ad125870b4fb1dd909 = "./conf/genesis/BraavosCallAggregator.json"
+# Braavos proxy class hash
+0x3131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e = "./conf/genesis/BraavosProxy.json"
+
+
+# 	Openzeppelin account class hash
+0x006280083f8c2a2db9f737320d5e3029b380e0e820fe24b8d312a6a34fdba0cd = "./conf/gensis/OpenzeppelinAccount.json"
+
+# ERC20 class hash
+0x0372ee6669dc86563007245ed7343d5180b96221ce28f44408cff2898038dbd4 = "./conf/gensis/ERC20.json"
+
+# ERC721 class hash
+0x077cc28ed3c661419fda16bf120fb81f1f8f28617f5543b05a86d63b0926bbf4 = "./conf/gensis/ERC721.json"
+
+# Universal deployer class hash
+0x04569ffd48c2a3d455437c16dc843801fb896b1af845bc8bc7ba83ebc4358b7f = "./conf/genesis/UniversalDeployer.json"
+
+# Argent Cairo 1 Account
+0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003 = "./conf/gensis/ArgentAccountCairoOne.json"
+
+# OpenZepplin Cairo 1 Account
+0x04c6d6cf894f8bc96bb9c525e6853e5483177841f7388f74a46cfda6f028c755 = "./conf/gensis/OpenZeppelinAccountCairoOne.sierra.json"
+
+
+#1 = "./conf/genesis/NoValidateAccount.json"
 #2 = "./conf/genesis/"
 #3 = "./conf/genesis/"
 #4 = "./conf/genesis/"
