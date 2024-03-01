@@ -1,6 +1,6 @@
 import json
 
-directory = "conf/pre-handle/"
+directory = "conf/pre-build/"
 file_lists = ["NoValidateAccount.json",
     "ArgentAccount.json", "ArgentAccountCairoOne.json",
     "BraavosAccount.json", "BraavosAccountBaseImpl.json", "BraavosCallAggregator.json", "BraavosProxy.json",
