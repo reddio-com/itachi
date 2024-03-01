@@ -16,8 +16,7 @@ for file in file_lists:
     with open(origin_file, 'r') as f:
         data = json.load(f)
         data_abi = data['abi']
-        # data_abi = json.dumps(data_abi, indent=4)
-        data["abi"] = json.dumps(data_abi, indent=4)
+        data["abi"] = json.dumps(data_abi, indent=2)
     
     data_str = json.dumps(data, indent=1)
     target_file = target_directory + file
