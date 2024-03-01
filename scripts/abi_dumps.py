@@ -1,7 +1,13 @@
 import json
 
 directory = "conf/pre-handle/"
-file_lists = ["NoValidateAccount.json"]
+file_lists = ["NoValidateAccount.json",
+    "ArgentAccount.json", "ArgentAccountCairoOne.json",
+    "BraavosAccount.json", "BraavosAccountBaseImpl.json", "BraavosCallAggregator.json", "BraavosProxy.json",
+    "ERC20.json", "ERC721.json",
+    "OpenzeppelinAccount.json", "OpenZeppelinAccountCairoOne.sierra.json",
+    "UniversalDeployer.json"
+]
 
 target_directory = "conf/genesis/"
 

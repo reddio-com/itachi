@@ -19,7 +19,7 @@ err_on_revert = true
 # No validation account class
 0x0279d77db761fba82e0054125a6fdb5f6baa6286fa3fb73450cc44d193c2d37f = "./conf/genesis/NoValidateAccount.json"
 # No validataion account class hash cairo 1
-0x02f99bf9799ada84cd5ac0d0fe36b9d8f65efcb377cd2e8cf8309ad2daf15e4b = "./conf/genesis/cairo1/NoValidateAccount.json"
+# 0x02f99bf9799ada84cd5ac0d0fe36b9d8f65efcb377cd2e8cf8309ad2daf15e4b = "./conf/genesis/cairo1/NoValidateAccount.json"
 # Argent account class hash
 0x06f0d6f6ae72e1a507ff4b65181291642889742dbf8f1a53e9ec1c595d01ba7d = "./conf/genesis/ArgentAccount.json"
 
@@ -53,7 +53,7 @@ err_on_revert = true
 0x04c6d6cf894f8bc96bb9c525e6853e5483177841f7388f74a46cfda6f028c755 = "./conf/gensis/OpenZeppelinAccountCairoOne.sierra.json"
 
 
-1 = "./conf/genesis/NoValidateAccount.json"
+#1 = "./conf/genesis/NoValidateAccount.json"
 #2 = "./conf/genesis/"
 #3 = "./conf/genesis/"
 #4 = "./conf/genesis/"
