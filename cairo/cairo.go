@@ -173,7 +173,7 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	if err != nil {
 		return err
 	}
-	ctx.Extra = receiptByt
+	ctx.EmitExtra(receiptByt)
 	return nil
 }
 
