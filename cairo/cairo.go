@@ -129,8 +129,8 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 		return err
 	}
 
-	txn.Raw.WrCall.Params = string(newTxReqByt)
-	
+	txn.SetParams(string(newTxReqByt))
+
 	return nil
 }
 
