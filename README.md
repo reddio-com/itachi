@@ -1,11 +1,16 @@
 # itachi
 a decentralized sequencer for Starknet
 
-#### Build
+#### Build Code
 ```shell
 git submodule init
 git submodule update --recursive --checkout
 make build
+```
+
+#### Reset Chain
+```shell
+make reset
 ```
 
 ### Build genesis contract
