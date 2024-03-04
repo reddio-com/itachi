@@ -13,16 +13,17 @@ import (
 
 func (c *Cairo) buildGenesisClasses() error {
 	for addrStr, classPath := range c.cfg.GenesisClasses {
+		fmt.Println("load class ", classPath)
 		bytes, err := os.ReadFile(classPath)
 		if err != nil {
 			return fmt.Errorf("read class file: %v", err)
 		}
 
-		var response *starknet.ClassDefinition
+		var response starknet.ClassDefinition
 		if err = json.Unmarshal(bytes, &response); err != nil {
-			return fmt.Errorf("unmarshal class: %v", err)
+			return fmt.Errorf("unmarshal class(%s): %v", classPath, err)
 		}
-
+		
 		var coreClass core.Class
 		if response.V0 != nil {
 			if coreClass, err = sn2core.AdaptCairo0Class(response.V0); err != nil {
@@ -36,7 +37,7 @@ func (c *Cairo) buildGenesisClasses() error {
 
 		classHash, err := coreClass.Hash()
 		if err != nil {
-			return fmt.Errorf("calculate class hash: %v", err)
+			return fmt.Errorf("calculate class hash (%s): %v", classPath, err)
 		}
 		err = storeClasses(c.cairoState, addrStr, *classHash, coreClass)
 		if err != nil {
