@@ -3,6 +3,6 @@
 test:
 	go test -v ./...
 
-clean:
+reset:
 	@rm yu.log
 	@rm -r yu cairo_db
