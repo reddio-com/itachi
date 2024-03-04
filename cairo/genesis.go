@@ -18,9 +18,9 @@ func (c *Cairo) buildGenesisClasses() error {
 			return fmt.Errorf("read class file: %v", err)
 		}
 
-		var response *starknet.ClassDefinition
+		var response starknet.ClassDefinition
 		if err = json.Unmarshal(bytes, &response); err != nil {
-			return fmt.Errorf("unmarshal class: %v", err)
+			return fmt.Errorf("unmarshal class(%s): %v", classPath, err)
 		}
 
 		var coreClass core.Class
@@ -36,7 +36,7 @@ func (c *Cairo) buildGenesisClasses() error {
 
 		classHash, err := coreClass.Hash()
 		if err != nil {
-			return fmt.Errorf("calculate class hash: %v", err)
+			return fmt.Errorf("calculate class hash (%s): %v", classPath, err)
 		}
 		err = storeClasses(c.cairoState, addrStr, *classHash, coreClass)
 		if err != nil {
@@ -62,6 +62,5 @@ func storeClasses(stateReadWriter vm.StateReadWriter, addrStr string, classHash 
 	if err != nil {
 		return err
 	}
-	fmt.Println("Genesis.SetClassHash = ", classHash.String())
 	return stateReadWriter.SetClassHash(addrFelt, &classHash)
 }
