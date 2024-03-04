@@ -107,7 +107,7 @@ func callItachi(funcName string, callReq *CallReq) ([]*felt.Felt, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("call Response is ", callResp.Err)
+	fmt.Println("call Response error is ", callResp.Err)
 	return callResp.ReturnData, nil
 }
 
