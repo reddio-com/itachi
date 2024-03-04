@@ -13,7 +13,6 @@ import (
 
 func (c *Cairo) buildGenesisClasses() error {
 	for addrStr, classPath := range c.cfg.GenesisClasses {
-		fmt.Println("load class ", classPath)
 		bytes, err := os.ReadFile(classPath)
 		if err != nil {
 			return fmt.Errorf("read class file: %v", err)
@@ -23,7 +22,7 @@ func (c *Cairo) buildGenesisClasses() error {
 		if err = json.Unmarshal(bytes, &response); err != nil {
 			return fmt.Errorf("unmarshal class(%s): %v", classPath, err)
 		}
-		
+
 		var coreClass core.Class
 		if response.V0 != nil {
 			if coreClass, err = sn2core.AdaptCairo0Class(response.V0); err != nil {
@@ -43,6 +42,7 @@ func (c *Cairo) buildGenesisClasses() error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("%s stores into Genesis,  ClassHash = %s \n", classPath, classHash.String())
 	}
 	return c.cairoState.Commit(0)
 }
@@ -63,6 +63,5 @@ func storeClasses(stateReadWriter vm.StateReadWriter, addrStr string, classHash 
 	if err != nil {
 		return err
 	}
-	fmt.Println("Genesis.SetClassHash = ", classHash.String())
 	return stateReadWriter.SetClassHash(addrFelt, &classHash)
 }
