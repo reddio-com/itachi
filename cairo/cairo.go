@@ -181,7 +181,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	callReq := new(CallRequest)
 	err := ctx.BindJson(callReq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		ctx.Json(http.StatusBadRequest, CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
@@ -215,7 +215,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		c.cairoState.State, c.network,
 	)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err)})
+		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 

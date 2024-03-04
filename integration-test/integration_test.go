@@ -2,9 +2,11 @@ package integration_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
+	starkrpc "github.com/NethermindEth/starknet.go/rpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/yu-org/yu/apps/poa"
 	"github.com/yu-org/yu/common"
@@ -47,10 +49,11 @@ func TestIntegration(t *testing.T) {
 
 	retData, err := callItachi(
 		"Call",
-		&cairo.CallRequest{
+		&CallReq{
 			ContractAddr: &felt.Zero,
 			Selector:     &felt.Zero,
 			Calldata:     []felt.Felt{felt.Zero},
+			BlockID:      starkrpc.BlockID{Tag: "latest"},
 		})
 	assert.NoError(t, err)
 	t.Logf("the return data of Call is %v", retData)
@@ -79,7 +82,14 @@ func addTxToItachi(funcName string, tx *rpc.BroadcastedTransaction) error {
 	})
 }
 
-func callItachi(funcName string, callReq *cairo.CallRequest) ([]*felt.Felt, error) {
+type CallReq struct {
+	ContractAddr *felt.Felt       `json:"contract_addr"`
+	Selector     *felt.Felt       `json:"selector"`
+	Calldata     []felt.Felt      `json:"calldata"`
+	BlockID      starkrpc.BlockID `json:"block_id"`
+}
+
+func callItachi(funcName string, callReq *CallReq) ([]*felt.Felt, error) {
 	byt, err := json.Marshal(callReq)
 	if err != nil {
 		return nil, err
@@ -97,6 +107,7 @@ func callItachi(funcName string, callReq *cairo.CallRequest) ([]*felt.Felt, erro
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("call Response error is ", callResp.Err)
 	return callResp.ReturnData, nil
 }
 
