@@ -42,7 +42,6 @@ func (c *Cairo) buildGenesisClasses() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s stores into Genesis,  ClassHash = %s \n", classPath, classHash.String())
 	}
 	return c.cairoState.Commit(0)
 }
