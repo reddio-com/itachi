@@ -35,22 +35,22 @@ err_on_revert = true
 
 
 # 	Openzeppelin account class hash
-0x006280083f8c2a2db9f737320d5e3029b380e0e820fe24b8d312a6a34fdba0cd = "./conf/gensis/OpenzeppelinAccount.json"
+0x006280083f8c2a2db9f737320d5e3029b380e0e820fe24b8d312a6a34fdba0cd = "./conf/genesis/OpenzeppelinAccount.json"
 
 # ERC20 class hash
-0x0372ee6669dc86563007245ed7343d5180b96221ce28f44408cff2898038dbd4 = "./conf/gensis/ERC20.json"
+0x0372ee6669dc86563007245ed7343d5180b96221ce28f44408cff2898038dbd4 = "./conf/genesis/ERC20.json"
 
 # ERC721 class hash
-0x077cc28ed3c661419fda16bf120fb81f1f8f28617f5543b05a86d63b0926bbf4 = "./conf/gensis/ERC721.json"
+0x077cc28ed3c661419fda16bf120fb81f1f8f28617f5543b05a86d63b0926bbf4 = "./conf/genesis/ERC721.json"
 
 # Universal deployer class hash
 0x04569ffd48c2a3d455437c16dc843801fb896b1af845bc8bc7ba83ebc4358b7f = "./conf/genesis/UniversalDeployer.json"
 
 # Argent Cairo 1 Account
-0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003 = "./conf/gensis/ArgentAccountCairoOne.json"
+0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003 = "./conf/genesis/ArgentAccountCairoOne.json"
 
 # OpenZepplin Cairo 1 Account
-0x04c6d6cf894f8bc96bb9c525e6853e5483177841f7388f74a46cfda6f028c755 = "./conf/gensis/OpenZeppelinAccountCairoOne.sierra.json"
+0x04c6d6cf894f8bc96bb9c525e6853e5483177841f7388f74a46cfda6f028c755 = "./conf/genesis/OpenZeppelinAccountCairoOne.sierra.json"
 
 
 #1 = "./conf/genesis/NoValidateAccount.json"
