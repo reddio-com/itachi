@@ -1,14 +1,14 @@
 # itachi
 a decentralized sequencer for Starknet
 
-#### Build Code
+### Build Code
 ```shell
 git submodule init
 git submodule update --recursive --checkout
 make build
 ```
 
-#### Reset Chain
+### Reset Chain
 ```shell
 make reset
 ```
@@ -18,7 +18,7 @@ make reset
 python3 scripts/abi_dumps.py
 ```
 
-#### RPC
+### RPC
 - [x] addDeclareTransaction
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
