@@ -4,6 +4,7 @@ db_path = "cairo_db"
 db_cache = 1
 db_max_open_files = 10
 
+# cairoVM
 mock_vm = false
 max_vms = 3
 max_vm_queue = 3
@@ -14,6 +15,11 @@ sequencer_addr = "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6d
 skip_charge_fee = true
 skip_validate = false
 err_on_revert = true
+
+# starknet RPC
+enable_starknet_rpc = true
+starknet_host = "localhost"
+starknet_port = "9091"
 
 [genesis_classes]
 # No validation account class
