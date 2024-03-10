@@ -212,7 +212,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		callReq.Selector,
 		callReq.Calldata,
 		blockNumber, blockTimestamp,
-		c.cairoState, c.network,
+		c.cairoState.State, c.network,
 	)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
