@@ -33,12 +33,21 @@ type Config struct {
 	SkipValidate  bool   `toml:"skip_validate"`
 	ErrOnRevert   bool   `toml:"err_on_revert"`
 
-	// map[contractAddress]classFilePath
+	// map[ClassHash]ClassFilePath
 	GenesisClasses map[string]string `toml:"genesis_classes"`
+	// map[ContractAddress]ClassHash
+	GenesisContracts map[string]string `toml:"genesis_contracts"`
+	GenesisStorages  []*GenesisStorage `toml:"genesis_storages"`
 
 	EnableStarknetRPC bool   `toml:"enable_starknet_rpc"`
 	StarknetHost      string `toml:"starknet_host"`
 	StarknetPort      string `toml:"starknet_port"`
+}
+
+type GenesisStorage struct {
+	ContractAddress string `toml:"contract_address"`
+	Key             string `toml:"key"`
+	Value           string `toml:"value"`
 }
 
 func LoadCairoCfg(fpath string) *Config {

@@ -12,6 +12,8 @@ import (
 type CairoState struct {
 	*junostate.PendingStateWriter
 	*core.State
+	// ContractAddress -> ClassHash
+	deployedContracts map[felt.Felt]*felt.Felt
 }
 
 func NewCairoState(cfg *config.Config) (*CairoState, error) {
@@ -23,16 +25,25 @@ func NewCairoState(cfg *config.Config) (*CairoState, error) {
 	return &CairoState{
 		PendingStateWriter: pendingState,
 		State:              state,
+		deployedContracts:  make(map[felt.Felt]*felt.Felt),
 	}, nil
+}
+
+func (cs *CairoState) DeployContracts(contractAddr felt.Felt, classHash *felt.Felt) {
+	cs.deployedContracts[contractAddr] = classHash
 }
 
 func (cs *CairoState) Commit(blockNum uint64) error {
 	stateDiff, newClasses := cs.StateDiffAndClasses()
+	for contractAddr, classHash := range cs.deployedContracts {
+		stateDiff.DeployedContracts[contractAddr] = classHash
+	}
 	err := cs.State.Update(blockNum, stateDiff, newClasses)
 	if err != nil {
 		return err
 	}
 	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.State)
+	cs.deployedContracts = make(map[felt.Felt]*felt.Felt)
 	return nil
 }
 
