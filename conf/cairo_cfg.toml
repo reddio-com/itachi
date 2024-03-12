@@ -77,97 +77,97 @@ starknet_port = "9091"
 
 
 # ERC20_name
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x341c1bdfd89f69748aa00b5742b03adbffd79b8e80cab5c50d91cd8c2a79be1"
 value = "0x4574686572"
 
 # ERC20_symbol
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x0b6ce5410fca59d078ee9b2a4371a9d684c530d697c64fbef0ae6d5e8f0ac72"
 value = "0x455448"
 
 # ERC20_decimals
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x1f0d4aa99431d246bac9b8e48c33e888245b15e9678f64f9bdfc8823dc8f979"
 value = "0x12"
 
 # ERC20_balances(0x1).low
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x7b62949c85c6af8a50c11c22927f9302f7a2e40bc93b4c988415915b0f97f09"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x1).high
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x7b62949c85c6af8a50c11c22927f9302f7a2e40bc93b4c988415915b0f97f0a"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x2).low
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x1d8bbc4f93f5ab9858f6c0c0de2769599fb97511503d5bf2872ef6846f2146f"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x2).high
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x1d8bbc4f93f5ab9858f6c0c0de2769599fb97511503d5bf2872ef6846f21470"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x3).low
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x262e096a838c0d8f34f641ff917d47d7dcb345c69efe61d9ab6b675e7340fc6"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x3).high
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x262e096a838c0d8f34f641ff917d47d7dcb345c69efe61d9ab6b675e7340fc7"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x4).low
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x45abe05a3e7fb0c2ae1fa912be22a7dbc4832915e00562e2783dee710b9e4bc"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x4).high
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7"
 key = "0x45abe05a3e7fb0c2ae1fa912be22a7dbc4832915e00562e2783dee710b9e4bd"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x1).low
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x040e59c2c182a58fb0a74349bfa4769cbbcba32547591dd3fb1def8623997d00"
 key = "0x7b62949c85c6af8a50c11c22927f9302f7a2e40bc93b4c988415915b0f97f09"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # ERC20_balances(0x1).high
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x040e59c2c182a58fb0a74349bfa4769cbbcba32547591dd3fb1def8623997d00"
 key = "0x7b62949c85c6af8a50c11c22927f9302f7a2e40bc93b4c988415915b0f97f0a"
 value = "0xffffffffffffffffffffffffffffffff"
 
 # _signer
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x2"
 key = "0x1ccc09c8a19948e048de7add6929589945e25f22059c7345aaf7837188d8d05"
 value = "0x3603a2692a2ae60abb343e832ee53b55d6b25f02a3ef1565ec691edc7a209b2"
 
 # Account_public_key
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x3"
 key = "0x1379ac0624b939ceb9dede92211d7db5ee174fe28be72245b0a1a2abd81c98f"
 value = "0x3603a2692a2ae60abb343e832ee53b55d6b25f02a3ef1565ec691edc7a209b2"
 
 # Ownable_owner
-[[genesis_storage]]
+[[genesis_storages]]
 contract_address = "0x040e59c2c182a58fb0a74349bfa4769cbbcba32547591dd3fb1def8623997d02"
 key = "0x2bd557f4ba80dfabefabe45e9b2dd35db1b9a78e96c72bc2b69b655ce47a930"
 value = "0x1"

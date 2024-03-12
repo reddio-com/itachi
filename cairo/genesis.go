@@ -8,6 +8,7 @@ import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/starknet"
 	"github.com/NethermindEth/juno/vm"
+	"itachi/cairo/config"
 	"os"
 )
 
@@ -43,6 +44,14 @@ func (c *Cairo) buildGenesisClasses() error {
 			return err
 		}
 	}
+	err := storeContracts(c.cairoState, c.cfg.GenesisContracts)
+	if err != nil {
+		return err
+	}
+	err = storeStorage(c.cairoState, c.cfg.GenesisStorages)
+	if err != nil {
+		return err
+	}
 	return c.cairoState.Commit(0)
 }
 
@@ -65,6 +74,28 @@ func storeClasses(stateReadWriter vm.StateReadWriter, addrStr string, classHash 
 	return stateReadWriter.SetClassHash(addrFelt, &classHash)
 }
 
-func storeStorage() {
+func storeContracts(stateReadWriter vm.StateReadWriter, contracts map[string]string) error {
 
+}
+
+func storeStorage(stateReadWriter vm.StateReadWriter, storages []*config.GenesisStorage) error {
+	for _, storage := range storages {
+		contractAddr, err := new(felt.Felt).SetString(storage.ContractAddress)
+		if err != nil {
+			return err
+		}
+		key, err := new(felt.Felt).SetString(storage.Key)
+		if err != nil {
+			return err
+		}
+		value, err := new(felt.Felt).SetString(storage.Value)
+		if err != nil {
+			return err
+		}
+		err = stateReadWriter.SetStorage(contractAddr, key, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
