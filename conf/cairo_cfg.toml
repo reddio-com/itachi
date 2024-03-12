@@ -59,7 +59,7 @@ starknet_port = "9091"
 0x04c6d6cf894f8bc96bb9c525e6853e5483177841f7388f74a46cfda6f028c755 = "./conf/genesis/OpenZeppelinAccountCairoOne.sierra.json"
 
 [genesis_contracts]
-# contract address = class hash
+# contract address -> class hash
 # No Validation Account
 0x1 = "0x0279d77db761fba82e0054125a6fdb5f6baa6286fa3fb73450cc44d193c2d37f"
 # Argent Account, need private key

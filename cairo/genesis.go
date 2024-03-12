@@ -7,7 +7,6 @@ import (
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/starknet"
-	"github.com/NethermindEth/juno/vm"
 	"itachi/cairo/config"
 	"os"
 )
@@ -39,30 +38,33 @@ func (c *Cairo) buildGenesisClasses() error {
 		if err != nil {
 			return fmt.Errorf("calculate class hash (%s): %v", classPath, err)
 		}
-		err = storeClasses(c.cairoState, addrStr, *classHash, coreClass)
+		err = c.storeClasses(addrStr, *classHash, coreClass)
 		if err != nil {
 			return err
 		}
 	}
-	err := storeContracts(c.cairoState, c.cfg.GenesisContracts)
+
+	err := c.storeContracts(c.cfg.GenesisContracts)
 	if err != nil {
 		return err
 	}
-	err = storeStorage(c.cairoState, c.cfg.GenesisStorages)
+
+	err = c.storeStorage(c.cfg.GenesisStorages)
 	if err != nil {
 		return err
 	}
+	
 	return c.cairoState.Commit(0)
 }
 
-func storeClasses(stateReadWriter vm.StateReadWriter, addrStr string, classHash felt.Felt, class core.Class) error {
+func (c *Cairo) storeClasses(addrStr string, classHash felt.Felt, class core.Class) error {
 	// Sets pending.newClasses, DeclaredV0Classes, (not DeclaredV1Classes)
-	if err := stateReadWriter.SetContractClass(&classHash, class); err != nil {
+	if err := c.cairoState.SetContractClass(&classHash, class); err != nil {
 		return fmt.Errorf("declare class: %v", err)
 	}
 
 	if cairo1Class, isCairo1 := class.(*core.Cairo1Class); isCairo1 {
-		if err := stateReadWriter.SetCompiledClassHash(&classHash, cairo1Class.Compiled.Hash()); err != nil {
+		if err := c.cairoState.SetCompiledClassHash(&classHash, cairo1Class.Compiled.Hash()); err != nil {
 			return fmt.Errorf("set compiled class hash: %v", err)
 		}
 	}
@@ -71,14 +73,25 @@ func storeClasses(stateReadWriter vm.StateReadWriter, addrStr string, classHash 
 	if err != nil {
 		return err
 	}
-	return stateReadWriter.SetClassHash(addrFelt, &classHash)
+	return c.cairoState.SetClassHash(addrFelt, &classHash)
 }
 
-func storeContracts(stateReadWriter vm.StateReadWriter, contracts map[string]string) error {
-
+func (c *Cairo) storeContracts(contracts map[string]string) error {
+	for addrStr, hashStr := range contracts {
+		contractAddr, err := new(felt.Felt).SetString(addrStr)
+		if err != nil {
+			return err
+		}
+		classHash, err := new(felt.Felt).SetString(hashStr)
+		if err != nil {
+			return err
+		}
+		c.cairoState.DeployContracts(*contractAddr, classHash)
+	}
+	return nil
 }
 
-func storeStorage(stateReadWriter vm.StateReadWriter, storages []*config.GenesisStorage) error {
+func (c *Cairo) storeStorage(storages []*config.GenesisStorage) error {
 	for _, storage := range storages {
 		contractAddr, err := new(felt.Felt).SetString(storage.ContractAddress)
 		if err != nil {
@@ -92,7 +105,7 @@ func storeStorage(stateReadWriter vm.StateReadWriter, storages []*config.Genesis
 		if err != nil {
 			return err
 		}
-		err = stateReadWriter.SetStorage(contractAddr, key, value)
+		err = c.cairoState.SetStorage(contractAddr, key, value)
 		if err != nil {
 			return err
 		}
