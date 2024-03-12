@@ -33,9 +33,11 @@ type Config struct {
 	SkipValidate  bool   `toml:"skip_validate"`
 	ErrOnRevert   bool   `toml:"err_on_revert"`
 
-	// map[contractAddress]classFilePath
+	// map[classHash]classFilePath
 	GenesisClasses map[string]string `toml:"genesis_classes"`
-	GenesisStorage *GenesisStorage   `toml:"genesis_storage"`
+	// map[contractAddress]classHash
+	GenesisContracts map[string]string `toml:"genesis_contracts"`
+	GenesisStorage   *GenesisStorage   `toml:"genesis_storage"`
 
 	EnableStarknetRPC bool   `toml:"enable_starknet_rpc"`
 	StarknetHost      string `toml:"starknet_host"`

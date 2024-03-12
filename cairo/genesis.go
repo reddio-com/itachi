@@ -65,6 +65,6 @@ func storeClasses(stateReadWriter vm.StateReadWriter, addrStr string, classHash 
 	return stateReadWriter.SetClassHash(addrFelt, &classHash)
 }
 
-func loadStorage() {
+func storeStorage() {
 
 }
