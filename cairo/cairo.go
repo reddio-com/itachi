@@ -81,7 +81,7 @@ func (c *Cairo) InitChain() {
 	// init codec for juno types
 	junostate.RegisterCoreTypesToEncoder()
 
-	err := c.buildGenesisClasses()
+	err := c.buildGenesis()
 	if err != nil {
 		logrus.Fatal("build genesis classes failed: ", err)
 	}
