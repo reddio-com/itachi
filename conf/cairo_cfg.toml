@@ -22,6 +22,7 @@ starknet_host = "localhost"
 starknet_port = "9091"
 
 [genesis_classes]
+# ClassHash -> ContractClass FilePath
 # No validation account class
 0x0279d77db761fba82e0054125a6fdb5f6baa6286fa3fb73450cc44d193c2d37f = "./conf/genesis/NoValidateAccount.json"
 # No validataion account class hash cairo 1

@@ -30,7 +30,7 @@ func (c *Cairo) buildGenesis() error {
 }
 
 func (c *Cairo) storeClasses() error {
-	for addrStr, classPath := range c.cfg.GenesisClasses {
+	for classHashStr, classPath := range c.cfg.GenesisClasses {
 		bytes, err := os.ReadFile(classPath)
 		if err != nil {
 			return fmt.Errorf("read class file: %v", err)
@@ -57,7 +57,12 @@ func (c *Cairo) storeClasses() error {
 			return fmt.Errorf("calculate class hash (%s): %v", classPath, err)
 		}
 		// Sets pending.newClasses, DeclaredV0Classes, (not DeclaredV1Classes)
-		if err := c.cairoState.SetContractClass(classHash, coreClass); err != nil {
+		fmt.Println("set class: ", classHashStr)
+		classHashFelt, err := new(felt.Felt).SetString(classHashStr)
+		if err != nil {
+			return err
+		}
+		if err := c.cairoState.SetContractClass(classHashFelt, coreClass); err != nil {
 			return fmt.Errorf("declare class: %v", err)
 		}
 
@@ -67,14 +72,6 @@ func (c *Cairo) storeClasses() error {
 			}
 		}
 
-		addrFelt, err := new(felt.Felt).SetString(addrStr)
-		if err != nil {
-			return err
-		}
-		err = c.cairoState.SetClassHash(addrFelt, classHash)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -89,7 +86,7 @@ func (c *Cairo) storeContracts() error {
 		if err != nil {
 			return err
 		}
-		c.cairoState.DeployContracts(*contractAddr, classHash)
+		c.cairoState.SetClassHash(contractAddr, classHash)
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package cairo
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/NethermindEth/juno/adapters/sn2core"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -137,12 +136,6 @@ func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (
 			return nil, nil, nil, err
 		}
 	}
-
-	classHash, err := declaredClass.Hash()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("declared class is ", classHash)
 
 	txnHash, err := core.TransactionHash(txn, c.network)
 	if err != nil {
