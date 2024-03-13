@@ -2,7 +2,6 @@ package cairo
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -203,7 +202,6 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 func (c *Cairo) getClass(ctx *context.ReadContext, blockID *BlockID, classHash *felt.Felt) {
 	class, err := c.cairoState.Class(classHash)
 	if err != nil {
-		fmt.Printf("getClass error: %v, classHash = %s \n", err, classHash.String())
 		ctx.Json(http.StatusInternalServerError, &ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}

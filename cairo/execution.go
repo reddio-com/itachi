@@ -109,7 +109,7 @@ func (c *Cairo) execute(
 	)
 }
 
-func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (core.Transaction, core.Class, *felt.Felt, error) {
+func AdaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction, network utils.Network) (core.Transaction, core.Class, *felt.Felt, error) {
 	var feederTxn starknet.Transaction
 	if err := copier.Copy(&feederTxn, bcTxn.Transaction); err != nil {
 		return nil, nil, nil, err
@@ -137,7 +137,7 @@ func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (
 		}
 	}
 
-	txnHash, err := core.TransactionHash(txn, c.network)
+	txnHash, err := core.TransactionHash(txn, network)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -161,6 +161,10 @@ func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (
 		return nil, nil, nil, errors.New("deprecated transaction type")
 	}
 	return txn, declaredClass, paidFeeOnL1, nil
+}
+
+func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (core.Transaction, core.Class, *felt.Felt, error) {
+	return AdaptBroadcastedTransaction(bcTxn, c.network)
 }
 
 func adaptDeclaredClass(declaredClass json.RawMessage) (core.Class, error) {

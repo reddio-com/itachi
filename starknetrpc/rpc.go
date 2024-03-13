@@ -26,9 +26,10 @@ import (
 const CairoTripod = "cairo"
 
 type StarknetRPC struct {
-	chain *kernel.Kernel
-	log   utils.SimpleLogger
-	srv   *http.Server
+	chain   *kernel.Kernel
+	log     utils.SimpleLogger
+	srv     *http.Server
+	network utils.Network
 }
 
 func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, error) {
@@ -63,6 +64,8 @@ func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, err
 		Handler:     cors.Default().Handler(mux),
 		ReadTimeout: 30 * time.Second,
 	}
+
+	s.network = utils.Network(cfg.Network)
 	return s, nil
 }
 
@@ -174,8 +177,13 @@ func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxR
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
 
+	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txReq.Tx, s.network)
+	if err != nil {
+		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	}
+
 	return &rpc.AddTxResponse{
-		TransactionHash: tx.Hash,
+		TransactionHash: bcTx.Hash(),
 		ContractAddress: tx.ContractAddress,
 		ClassHash:       tx.ClassHash,
 	}, nil

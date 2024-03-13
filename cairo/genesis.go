@@ -57,7 +57,7 @@ func (c *Cairo) storeClasses() error {
 			return fmt.Errorf("calculate class hash (%s): %v", classPath, err)
 		}
 		// Sets pending.newClasses, DeclaredV0Classes, (not DeclaredV1Classes)
-		fmt.Println("set class: ", classHashStr)
+		fmt.Printf("config classHash %s, set class: %s \n", classHashStr, classHash.String())
 		classHashFelt, err := new(felt.Felt).SetString(classHashStr)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ func (c *Cairo) storeClasses() error {
 		}
 
 		if cairo1Class, isCairo1 := coreClass.(*core.Cairo1Class); isCairo1 {
-			if err := c.cairoState.SetCompiledClassHash(classHash, cairo1Class.Compiled.Hash()); err != nil {
+			if err := c.cairoState.SetCompiledClassHash(classHashFelt, cairo1Class.Compiled.Hash()); err != nil {
 				return fmt.Errorf("set compiled class hash: %v", err)
 			}
 		}
