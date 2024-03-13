@@ -11,7 +11,8 @@ cairo0_file_lists = ["NoValidateAccount.json",
 ]
 
 cairo1_file_lists = ["ArgentAccountCairoOne.json",
-    "OpenZeppelinAccountCairoOne.sierra.json"
+    "OpenZeppelinAccountCairoOne.sierra.json",
+    "NoValidateAccountCairoOne.json"
 ]
 
 target_directory = "conf/genesis/"
