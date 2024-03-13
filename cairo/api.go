@@ -2,6 +2,7 @@ package cairo
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -9,6 +10,22 @@ import (
 	"github.com/yu-org/yu/core/context"
 	"net/http"
 )
+
+type BlockID struct {
+	Pending bool       `json:"pending"`
+	Latest  bool       `json:"latest"`
+	Hash    *felt.Felt `json:"hash"`
+	Number  uint64     `json:"number"`
+}
+
+func NewFromJunoBlockID(id rpc.BlockID) BlockID {
+	return BlockID{
+		Pending: id.Pending,
+		Latest:  id.Latest,
+		Hash:    id.Hash,
+		Number:  id.Number,
+	}
+}
 
 type TransactionRequest struct {
 	Hash felt.Felt `json:"hash"`
@@ -104,8 +121,8 @@ func (c *Cairo) GetTransactionStatus(ctx *context.ReadContext) {
 }
 
 type NonceRequest struct {
-	BlockID rpc.BlockID `json:"block_id"`
-	Addr    *felt.Felt  `json:"addr"`
+	BlockID BlockID    `json:"block_id"`
+	Addr    *felt.Felt `json:"addr"`
 }
 
 type NonceResponse struct {
@@ -129,6 +146,7 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 		nonce, err = c.cairoState.ContractNonceAt(nq.Addr, nq.BlockID.Number)
 	}
 	if err != nil {
+		fmt.Println("GetNonce error: ", err.Error())
 		ctx.Json(http.StatusInternalServerError, &NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
@@ -136,13 +154,13 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 }
 
 type ClassRequest struct {
-	BlockID   rpc.BlockID `json:"block_id"`
-	ClassHash *felt.Felt  `json:"class_hash"`
+	BlockID   BlockID    `json:"block_id"`
+	ClassHash *felt.Felt `json:"class_hash"`
 }
 
 type ClassAtRequest struct {
-	BlockID rpc.BlockID `json:"block_id"`
-	Addr    *felt.Felt  `json:"addr"`
+	BlockID BlockID    `json:"block_id"`
+	Addr    *felt.Felt `json:"addr"`
 }
 
 type ClassResponse struct {
@@ -183,7 +201,7 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 	c.getClass(ctx, &cq.BlockID, classHash)
 }
 
-func (c *Cairo) getClass(ctx *context.ReadContext, blockID *rpc.BlockID, classHash *felt.Felt) {
+func (c *Cairo) getClass(ctx *context.ReadContext, blockID *BlockID, classHash *felt.Felt) {
 	class, err := c.cairoState.Class(classHash)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, &ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
@@ -204,8 +222,8 @@ func (c *Cairo) getClass(ctx *context.ReadContext, blockID *rpc.BlockID, classHa
 }
 
 type ClassHashRequest struct {
-	BlockID rpc.BlockID `json:"block_id"`
-	Addr    *felt.Felt  `json:"addr"`
+	BlockID BlockID    `json:"block_id"`
+	Addr    *felt.Felt `json:"addr"`
 }
 
 type ClassHashResponse struct {
@@ -236,9 +254,9 @@ func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
 }
 
 type StorageRequest struct {
-	BlockID rpc.BlockID `json:"block_id"`
-	Addr    *felt.Felt  `json:"addr"`
-	Key     *felt.Felt  `json:"key"`
+	BlockID BlockID    `json:"block_id"`
+	Addr    *felt.Felt `json:"addr"`
+	Key     *felt.Felt `json:"key"`
 }
 
 type StorageResponse struct {

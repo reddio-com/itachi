@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
@@ -227,7 +228,8 @@ func (s *StarknetRPC) GetReceiptByHash(hash felt.Felt) (*rpc.TransactionReceipt,
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
-	nonceReq := &cairo.NonceRequest{BlockID: id, Addr: &address}
+	nonceReq := &cairo.NonceRequest{BlockID: cairo.NewFromJunoBlockID(id), Addr: &address}
+	fmt.Printf("get Nonce blockID(%v), addr %s \n", id, address.String())
 	resp, jsonErr := s.adaptChainRead(nonceReq, "GetNonce")
 	if jsonErr != nil {
 		return nil, jsonErr
@@ -238,7 +240,7 @@ func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *
 
 func (s *StarknetRPC) GetStorage(address, key felt.Felt, id rpc.BlockID) (*felt.Felt, *jsonrpc.Error) {
 	storageReq := &cairo.StorageRequest{
-		BlockID: id,
+		BlockID: cairo.NewFromJunoBlockID(id),
 		Addr:    &address,
 		Key:     &key,
 	}
@@ -251,7 +253,7 @@ func (s *StarknetRPC) GetStorage(address, key felt.Felt, id rpc.BlockID) (*felt.
 }
 
 func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class, *jsonrpc.Error) {
-	classReq := &cairo.ClassRequest{BlockID: id, ClassHash: &classHash}
+	classReq := &cairo.ClassRequest{BlockID: cairo.NewFromJunoBlockID(id), ClassHash: &classHash}
 	resp, jsonErr := s.adaptChainRead(classReq, "GetClass")
 	if jsonErr != nil {
 		return nil, jsonErr
@@ -261,7 +263,7 @@ func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class,
 }
 
 func (s *StarknetRPC) GetClassAt(id rpc.BlockID, address felt.Felt) (*rpc.Class, *jsonrpc.Error) {
-	classAtReq := &cairo.ClassAtRequest{BlockID: id, Addr: &address}
+	classAtReq := &cairo.ClassAtRequest{BlockID: cairo.NewFromJunoBlockID(id), Addr: &address}
 	resp, jsonErr := s.adaptChainRead(classAtReq, "GetClassAt")
 	if jsonErr != nil {
 		return nil, jsonErr
