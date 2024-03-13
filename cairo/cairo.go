@@ -181,13 +181,13 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	callReq := new(CallRequest)
 	err := ctx.BindJson(callReq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
 	block, err := c.GetCurrentBlock()
 	if err != nil {
-		ctx.JsonOk(CallResponse{Err: rpc.ErrBlockNotFound})
+		ctx.JsonOk(&CallResponse{Err: rpc.ErrBlockNotFound})
 		return
 	}
 	blockNumber := uint64(block.Height)
@@ -202,7 +202,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		classHash, err = c.cairoState.ContractClassHashAt(callReq.ContractAddr, callReq.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, CallResponse{Err: rpc.ErrContractNotFound})
+		ctx.Json(http.StatusBadRequest, &CallResponse{Err: rpc.ErrContractNotFound})
 		return
 	}
 
@@ -215,11 +215,11 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		c.cairoState.State, c.network,
 	)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 
-	ctx.JsonOk(CallResponse{ReturnData: retData})
+	ctx.JsonOk(&CallResponse{ReturnData: retData})
 }
 
 func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Transaction, amount *felt.Felt) *rpc.TransactionReceipt {

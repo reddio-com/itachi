@@ -23,21 +23,21 @@ func (c *Cairo) GetTransaction(ctx *context.ReadContext) {
 	var tq TransactionRequest
 	err := ctx.BindJson(&tq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &TransactionResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 	signedTx, err := c.TxDB.GetTxn(tq.Hash.Bytes())
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &TransactionResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 	txReq := new(TxRequest)
 	err = signedTx.BindJson(txReq)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, TransactionResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &TransactionResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(TransactionResponse{Tx: &txReq.Tx.Transaction})
+	ctx.JsonOk(&TransactionResponse{Tx: &txReq.Tx.Transaction})
 }
 
 type ReceiptRequest struct {
@@ -53,16 +53,16 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 	var rq ReceiptRequest
 	err := ctx.BindJson(&rq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
 	starkReceipt, err := c.getReceipt(rq.Hash)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(ReceiptResponse{Receipt: starkReceipt})
+	ctx.JsonOk(&ReceiptResponse{Receipt: starkReceipt})
 }
 
 func (c *Cairo) getReceipt(hash felt.Felt) (*rpc.TransactionReceipt, error) {
@@ -88,16 +88,16 @@ func (c *Cairo) GetTransactionStatus(ctx *context.ReadContext) {
 	var tr TransactionStatusRequest
 	err := ctx.BindJson(&tr)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 	starkReceipt, err := c.getReceipt(tr.Hash)
 	if err != nil {
 		// TODO: when ErrTxnHashNotFound, should fetch from ETH L1
-		ctx.Json(http.StatusInternalServerError, TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(TransactionStatusResponse{Status: &rpc.TransactionStatus{
+	ctx.JsonOk(&TransactionStatusResponse{Status: &rpc.TransactionStatus{
 		Finality:  rpc.TxnStatus(starkReceipt.FinalityStatus),
 		Execution: starkReceipt.ExecutionStatus,
 	}})
@@ -117,7 +117,7 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 	var nq NonceRequest
 	err := ctx.BindJson(&nq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &NonceResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
@@ -129,10 +129,10 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 		nonce, err = c.cairoState.ContractNonceAt(nq.Addr, nq.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(NonceResponse{Nonce: nonce})
+	ctx.JsonOk(&NonceResponse{Nonce: nonce})
 }
 
 type ClassRequest struct {
@@ -154,7 +154,7 @@ func (c *Cairo) GetClass(ctx *context.ReadContext) {
 	var cq ClassRequest
 	err := ctx.BindJson(&cq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, ClassResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
+		ctx.Json(http.StatusBadRequest, &ClassResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err)})
 		return
 	}
 
@@ -165,7 +165,7 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 	var cq ClassAtRequest
 	err := ctx.BindJson(&cq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, ClassResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &ClassResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 	var classHash *felt.Felt
@@ -176,7 +176,7 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 		classHash, err = c.cairoState.ContractClassHashAt(cq.Addr, cq.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 
@@ -186,20 +186,20 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 func (c *Cairo) getClass(ctx *context.ReadContext, blockID *rpc.BlockID, classHash *felt.Felt) {
 	class, err := c.cairoState.Class(classHash)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &ClassResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 	if !blockID.Latest {
 		if blockID.Number < class.At {
-			ctx.Json(http.StatusBadRequest, ClassResponse{Err: rpc.ErrClassHashNotFound})
+			ctx.Json(http.StatusBadRequest, &ClassResponse{Err: rpc.ErrClassHashNotFound})
 			return
 		}
 	}
 	rpcClass := declaredClassToClass(class)
 	if rpcClass != nil {
-		ctx.JsonOk(ClassResponse{Class: rpcClass})
+		ctx.JsonOk(&ClassResponse{Class: rpcClass})
 	} else {
-		ctx.Json(http.StatusBadRequest, ClassResponse{Err: rpc.ErrClassHashNotFound})
+		ctx.Json(http.StatusBadRequest, &ClassResponse{Err: rpc.ErrClassHashNotFound})
 	}
 }
 
@@ -217,7 +217,7 @@ func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
 	var cq ClassHashRequest
 	err := ctx.BindJson(&cq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, ClassHashResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &ClassHashResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
@@ -229,10 +229,10 @@ func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
 		classHash, err = c.cairoState.ContractClassHashAt(cq.Addr, cq.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, ClassHashResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &ClassHashResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(ClassHashResponse{ClassHash: classHash})
+	ctx.JsonOk(&ClassHashResponse{ClassHash: classHash})
 }
 
 type StorageRequest struct {
@@ -250,7 +250,7 @@ func (c *Cairo) GetStorage(ctx *context.ReadContext) {
 	var sr StorageRequest
 	err := ctx.BindJson(&sr)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, StorageResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
@@ -262,10 +262,10 @@ func (c *Cairo) GetStorage(ctx *context.ReadContext) {
 		value, err = c.cairoState.ContractStorageAt(sr.Addr, sr.Key, sr.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, StorageResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(StorageResponse{Value: value})
+	ctx.JsonOk(&StorageResponse{Value: value})
 }
 
 func declaredClassToClass(declared *core.DeclaredClass) (rpcClass *rpc.Class) {
