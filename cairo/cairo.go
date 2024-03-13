@@ -152,10 +152,19 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	}
 
 	var (
-		starknetTxns = []core.Transaction{tx}
-		classes      = []core.Class{class}
-		paidFeesOnL1 = []*felt.Felt{paidFeeOnL1}
+		starknetTxns []core.Transaction
+		classes      []core.Class
+		paidFeesOnL1 []*felt.Felt
 	)
+	if tx != nil {
+		starknetTxns = append(starknetTxns, tx)
+	}
+	if class != nil {
+		classes = append(classes, class)
+	}
+	if paidFeeOnL1 != nil {
+		paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
+	}
 
 	blockNumber := uint64(ctx.Block.Height)
 	blockTimestamp := ctx.Block.Timestamp
