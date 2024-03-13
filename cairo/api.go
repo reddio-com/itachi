@@ -2,7 +2,6 @@ package cairo
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -140,13 +139,12 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 
 	var nonce *felt.Felt
 	switch {
-	case nq.BlockID.Latest:
+	case nq.BlockID.Latest || nq.BlockID.Pending:
 		nonce, err = c.cairoState.ContractNonce(nq.Addr)
 	default:
 		nonce, err = c.cairoState.ContractNonceAt(nq.Addr, nq.BlockID.Number)
 	}
 	if err != nil {
-		fmt.Println("GetNonce error: ", err.Error())
 		ctx.Json(http.StatusInternalServerError, &NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
@@ -188,7 +186,7 @@ func (c *Cairo) GetClassAt(ctx *context.ReadContext) {
 	}
 	var classHash *felt.Felt
 	switch {
-	case cq.BlockID.Latest:
+	case cq.BlockID.Latest || cq.BlockID.Pending:
 		classHash, err = c.cairoState.ContractClassHash(cq.Addr)
 	default:
 		classHash, err = c.cairoState.ContractClassHashAt(cq.Addr, cq.BlockID.Number)
@@ -241,7 +239,7 @@ func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
 
 	var classHash *felt.Felt
 	switch {
-	case cq.BlockID.Latest:
+	case cq.BlockID.Latest || cq.BlockID.Pending:
 		classHash, err = c.cairoState.ContractClassHash(cq.Addr)
 	default:
 		classHash, err = c.cairoState.ContractClassHashAt(cq.Addr, cq.BlockID.Number)

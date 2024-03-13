@@ -93,8 +93,13 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 	if err != nil {
 		return err
 	}
+	starkTx, _, _, err := c.adaptBroadcastedTransaction(txReq.Tx)
+	if err != nil {
+		return err
+	}
+
 	// Replace the txHash with the Hash of starknet Txn
-	txn.TxnHash = txReq.Tx.Hash.Bytes()
+	txn.TxnHash = starkTx.Hash().Bytes()
 
 	if txReq.Tx.Type == rpc.TxnDeclare && txReq.Tx.Version.Cmp(new(felt.Felt).SetUint64(2)) != -1 {
 		contractClass := make(map[string]any)
@@ -196,7 +201,7 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	var classHash *felt.Felt
 
 	switch {
-	case callReq.BlockID.Latest:
+	case callReq.BlockID.Latest || callReq.BlockID.Pending:
 		classHash, err = c.cairoState.ContractClassHash(callReq.ContractAddr)
 	default:
 		classHash, err = c.cairoState.ContractClassHashAt(callReq.ContractAddr, callReq.BlockID.Number)
