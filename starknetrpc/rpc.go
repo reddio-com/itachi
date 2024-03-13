@@ -44,9 +44,19 @@ func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, err
 	if err != nil {
 		return nil, err
 	}
+
+	rpcServers := map[string]*jsonrpc.Server{
+		"/":           jsonrpcServer,
+		path:          jsonrpcServer,
+		"/rpc":        jsonrpcServer,
+		"/rpc" + path: jsonrpcServer,
+	}
+
 	mux := http.NewServeMux()
-	httpHandler := jsonrpc.NewHTTP(jsonrpcServer, s.log)
-	mux.Handle(path, exactPathServer(path, httpHandler))
+	for rpcPath, server := range rpcServers {
+		httpHandler := jsonrpc.NewHTTP(server, s.log)
+		mux.Handle(rpcPath, exactPathServer(rpcPath, httpHandler))
+	}
 
 	s.srv = &http.Server{
 		Addr:        net.JoinHostPort(cfg.StarknetHost, cfg.StarknetPort),
