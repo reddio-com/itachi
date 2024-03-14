@@ -3,7 +3,6 @@ package cairo
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -101,33 +100,33 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 	// Replace the txHash with the Hash of starknet Txn
 	txn.TxnHash = starkTx.Hash().Bytes()
 
-	if txReq.Tx.Type == rpc.TxnDeclare && txReq.Tx.Version.Cmp(new(felt.Felt).SetUint64(2)) != -1 {
-		contractClass := make(map[string]any)
-		if err := json.Unmarshal(txReq.Tx.ContractClass, &contractClass); err != nil {
-			return fmt.Errorf("unmarshal contract class: %v", err)
-		}
-		sierraProg, ok := contractClass["sierra_program"]
-		if !ok {
-			return fmt.Errorf("{'sierra_program': ['Missing data for required field.']}")
-		}
-
-		sierraProgBytes, errIn := json.Marshal(sierraProg)
-		if errIn != nil {
-			return errIn
-		}
-
-		gwSierraProg, errIn := utils.Gzip64Encode(sierraProgBytes)
-		if errIn != nil {
-			return errIn
-		}
-
-		contractClass["sierra_program"] = gwSierraProg
-		newContractClass, err := json.Marshal(contractClass)
-		if err != nil {
-			return fmt.Errorf("marshal revised contract class: %v", err)
-		}
-		txReq.Tx.ContractClass = newContractClass
-	}
+	//if txReq.Tx.Type == rpc.TxnDeclare && txReq.Tx.Version.Cmp(new(felt.Felt).SetUint64(2)) != -1 {
+	//	contractClass := make(map[string]any)
+	//	if err := json.Unmarshal(txReq.Tx.ContractClass, &contractClass); err != nil {
+	//		return fmt.Errorf("unmarshal contract class: %v", err)
+	//	}
+	//	sierraProg, ok := contractClass["sierra_program"]
+	//	if !ok {
+	//		return fmt.Errorf("{'sierra_program': ['Missing data for required field.']}")
+	//	}
+	//
+	//	sierraProgBytes, errIn := json.Marshal(sierraProg)
+	//	if errIn != nil {
+	//		return errIn
+	//	}
+	//
+	//	gwSierraProg, errIn := utils.Gzip64Encode(sierraProgBytes)
+	//	if errIn != nil {
+	//		return errIn
+	//	}
+	//
+	//	contractClass["sierra_program"] = gwSierraProg
+	//	newContractClass, err := json.Marshal(contractClass)
+	//	if err != nil {
+	//		return fmt.Errorf("marshal revised contract class: %v", err)
+	//	}
+	//	txReq.Tx.ContractClass = newContractClass
+	//}
 
 	newTxReqByt, err := json.Marshal(txReq)
 	if err != nil {
@@ -150,8 +149,6 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("-----bind json ok")
 
 	var (
 		starknetTxns = make([]core.Transaction, 0)
