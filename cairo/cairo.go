@@ -151,6 +151,8 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		return err
 	}
 
+	fmt.Println("-----bind json ok")
+
 	var (
 		starknetTxns = make([]core.Transaction, 0)
 		classes      = make([]core.Class, 0)
@@ -175,7 +177,6 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
 	)
 	if err != nil {
-		fmt.Println("execute error: ", err.Error())
 		return err
 	}
 

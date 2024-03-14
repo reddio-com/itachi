@@ -32,72 +32,21 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-		//txReq := new(TxRequest)
-		//err = ctx.BindJson(txReq)
-		//if err != nil {
-		//	return err
-		//}
-		//tx, class, paidFeeOnL1, err := c.adaptBroadcastedTransaction(txReq.Tx)
-		//if err != nil {
-		//	return err
-		//}
-		//starknetTxns = append(starknetTxns, tx)
-		//classes = append(classes, class)
-		//paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
 		err = wr(ctx)
 		rcpt := types.NewReceipt(ctx.Events, err, ctx.Extra)
 		rcpt.FillMetadata(block, txn, ctx.LeiCost)
 		receipts[txn.TxnHash] = rcpt
 
-		fmt.Printf("execute txHash %s, receipt: %s \n", txn.TxnHash.String(), string(rcpt.Extra))
+		fmt.Printf("execute txHash %s, error: %v, receipt: %s \n", txn.TxnHash.String(), err, string(rcpt.Extra))
 
 	}
 	blockNumber := uint64(block.Height)
-	//blockTimestamp := block.Timestamp
-	//blockHash := block.Hash
-
-	//pendingState := c.newPendingStateWriter()
-	//_, traces, err := c.execute(
-	//	pendingState, starknetTxns, classes, blockNumber, blockTimestamp,
-	//	paidFeesOnL1, &felt.Zero, &felt.Zero, false,
-	//)
-	//if err != nil {
-	//	return err
-	//}
 
 	// commit cairoState
 	err := c.cairoState.Commit(blockNumber)
 	if err != nil {
 		return err
 	}
-	//stateDiff, newClasses := pendingState.StateDiffAndClasses()
-	//err = c.cairoState.Update(blockNumber, stateDiff, newClasses)
-	//if err != nil {
-	//	return err
-	//}
-
-	// store events
-
-	//for _, trace := range traces {
-	//	if trace.ExecuteInvocation != nil {
-	//		for _, event := range trace.ExecuteInvocation.Events {
-	//			eventByt, terr := json.Marshal(event)
-	//			if terr != nil {
-	//				return terr
-	//			}
-	//			callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
-	//			caller := common.BytesToAddress(callerByt[:])
-	//			yuEvent := &result.Event{
-	//				Caller:    &caller,
-	//				BlockHash: blockHash,
-	//				Height:    block.Height,
-	//				Value:     eventByt,
-	//			}
-	//			results = append(results, result.NewEvent(yuEvent))
-	//		}
-	//	}
-	//
-	//}
 	return c.TxDB.SetReceipts(receipts)
 }
 
