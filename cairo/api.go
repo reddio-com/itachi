@@ -2,6 +2,8 @@ package cairo
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -75,6 +77,7 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 
 	starkReceipt, err := c.getReceipt(rq.Hash)
 	if err != nil {
+		fmt.Println("get receipt error: ", err.Error())
 		ctx.Json(http.StatusInternalServerError, &ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
@@ -82,9 +85,13 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 }
 
 func (c *Cairo) getReceipt(hash felt.Felt) (*rpc.TransactionReceipt, error) {
+	fmt.Println("get Receipt.... ", hash.String())
 	receipt, err := c.TxDB.GetReceipt(hash.Bytes())
 	if err != nil {
 		return nil, err
+	}
+	if receipt == nil {
+		return nil, errors.New("no receipt found")
 	}
 	starkReceipt := new(rpc.TransactionReceipt)
 	err = json.Unmarshal(receipt.Extra, starkReceipt)
@@ -107,12 +114,19 @@ func (c *Cairo) GetTransactionStatus(ctx *context.ReadContext) {
 		ctx.Json(http.StatusBadRequest, &TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
+	stxn, _ := c.Pool.GetTxn(tr.Hash.Bytes()) // will not return error here
+	if stxn != nil {
+		ctx.JsonOk(&TransactionStatusResponse{Status: &rpc.TransactionStatus{Finality: rpc.TxnStatusReceived}})
+		return
+	}
+
 	starkReceipt, err := c.getReceipt(tr.Hash)
 	if err != nil {
 		// TODO: when ErrTxnHashNotFound, should fetch from ETH L1
 		ctx.Json(http.StatusInternalServerError, &TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
+
 	ctx.JsonOk(&TransactionStatusResponse{Status: &rpc.TransactionStatus{
 		Finality:  rpc.TxnStatus(starkReceipt.FinalityStatus),
 		Execution: starkReceipt.ExecutionStatus,

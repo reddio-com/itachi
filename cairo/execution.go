@@ -3,6 +3,7 @@ package cairo
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/NethermindEth/juno/adapters/sn2core"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -47,6 +48,9 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		rcpt := types.NewReceipt(ctx.Events, err, ctx.Extra)
 		rcpt.FillMetadata(block, txn, ctx.LeiCost)
 		receipts[txn.TxnHash] = rcpt
+
+		fmt.Printf("execute txHash %s, receipt: %s \n", txn.TxnHash.String(), string(rcpt.Extra))
+
 	}
 	blockNumber := uint64(block.Height)
 	//blockTimestamp := block.Timestamp
