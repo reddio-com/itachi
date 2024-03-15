@@ -1,6 +1,10 @@
 # itachi
 a decentralized sequencer for Starknet
 
+### Prerequisites
+- rustc 1.74.0 (79e9716c9 2023-11-13)  
+- go 1.21.4
+
 ### Build Code
 ```shell
 git submodule init
