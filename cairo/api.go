@@ -1,11 +1,11 @@
 package cairo
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/juno/encoder"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/yu-org/yu/core/context"
@@ -94,7 +94,7 @@ func (c *Cairo) getReceipt(hash felt.Felt) (*rpc.TransactionReceipt, error) {
 		return nil, errors.New("no receipt found")
 	}
 	starkReceipt := new(rpc.TransactionReceipt)
-	err = json.Unmarshal(receipt.Extra, starkReceipt)
+	err = encoder.Unmarshal(receipt.Extra, starkReceipt)
 	return starkReceipt, err
 }
 

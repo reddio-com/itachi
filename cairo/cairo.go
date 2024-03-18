@@ -6,6 +6,7 @@ import (
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/juno/encoder"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/node"
 	"github.com/NethermindEth/juno/rpc"
@@ -182,7 +183,7 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
 
-	receiptByt, err := json.Marshal(starkReceipt)
+	receiptByt, err := encoder.Marshal(starkReceipt)
 	if err != nil {
 		return err
 	}
