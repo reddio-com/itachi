@@ -12,6 +12,7 @@ import (
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
@@ -170,9 +171,10 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	blockTimestamp := ctx.Block.Timestamp
 
 	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
+	gasPrice := new(felt.Felt).SetUint64(1)
 	actualFees, traces, err := c.execute(
 		starknetTxns, classes, blockNumber, blockTimestamp,
-		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
+		paidFeesOnL1, gasPrice, gasPrice, false,
 	)
 	if err != nil {
 		return err
@@ -182,6 +184,8 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	if len(traces) > 0 && len(actualFees) > 0 {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
+
+	spew.Dump(starkReceipt)
 
 	receiptByt, err := encoder.Marshal(starkReceipt)
 	if err != nil {

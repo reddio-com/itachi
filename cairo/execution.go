@@ -37,7 +37,7 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		rcpt.FillMetadata(block, txn, ctx.LeiCost)
 		receipts[txn.TxnHash] = rcpt
 
-		fmt.Printf("execute txHash %s, error: %v, receipt: %s \n", txn.TxnHash.String(), err, string(rcpt.Extra))
+		fmt.Printf("execute txHash %s, error: %v \n", txn.TxnHash.String(), err)
 
 	}
 	blockNumber := uint64(block.Height)

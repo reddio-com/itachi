@@ -77,7 +77,6 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 
 	starkReceipt, err := c.getReceipt(rq.Hash)
 	if err != nil {
-		fmt.Println("get receipt error: ", err.Error())
 		ctx.Json(http.StatusInternalServerError, &ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
