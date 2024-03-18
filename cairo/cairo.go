@@ -3,6 +3,7 @@ package cairo
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -185,6 +186,7 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
 
+	fmt.Println("-----------------receipt--------------------")
 	spew.Dump(starkReceipt)
 
 	receiptByt, err := encoder.Marshal(starkReceipt)
@@ -278,14 +280,22 @@ func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Tra
 }
 
 func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.TransactionReceipt {
+	fmt.Println("-----------trace--------------")
+	spew.Dump(invocation)
+
 	var starkReceipt rpc.TransactionReceipt
-	for _, event := range invocation.Events {
-		starkReceipt.Events = append(starkReceipt.Events, &rpc.Event{
-			From: event.From,
-			Keys: event.Keys,
-			Data: event.Data,
+
+	allOrderedEvents := allEvents(*invocation)
+	receiptEvents := make([]*rpc.Event, 0)
+	for _, orderedEvent := range allOrderedEvents {
+		receiptEvents = append(receiptEvents, &rpc.Event{
+			From: orderedEvent.From,
+			Keys: orderedEvent.Keys,
+			Data: orderedEvent.Data,
 		})
 	}
+	starkReceipt.Events = receiptEvents
+
 	resources := invocation.ExecutionResources
 	starkReceipt.ExecutionResources = &rpc.ExecutionResources{
 		Steps:        resources.Steps,
@@ -300,13 +310,16 @@ func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.Tran
 		SegmentArena: resources.SegmentArena,
 	}
 
-	for _, message := range invocation.Messages {
-		starkReceipt.MessagesSent = append(starkReceipt.MessagesSent, &rpc.MsgToL1{
-			From:    message.From,
-			To:      common.HexToAddress(message.To),
-			Payload: message.Payload,
+	allOrderedMsgs := allMessages(*invocation)
+	receiptMsgs := make([]*rpc.MsgToL1, 0)
+	for _, msg := range allOrderedMsgs {
+		receiptMsgs = append(receiptMsgs, &rpc.MsgToL1{
+			From:    msg.From,
+			To:      common.HexToAddress(msg.To),
+			Payload: msg.Payload,
 		})
 	}
+	starkReceipt.MessagesSent = receiptMsgs
 
 	return &starkReceipt
 }
@@ -319,6 +332,28 @@ func feeUnit(txn core.Transaction) rpc.FeeUnit {
 	}
 
 	return feeUnit
+}
+
+func allEvents(invocation vm.FunctionInvocation) []vm.OrderedEvent {
+	events := make([]vm.OrderedEvent, 0)
+	for i := range invocation.Calls {
+		events = append(events, allEvents(invocation.Calls[i])...)
+	}
+	return append(events, utils.Map(invocation.Events, func(e vm.OrderedEvent) vm.OrderedEvent {
+		e.From = &invocation.ContractAddress
+		return e
+	})...)
+}
+
+func allMessages(invocation vm.FunctionInvocation) []vm.OrderedL2toL1Message {
+	messages := make([]vm.OrderedL2toL1Message, 0)
+	for i := range invocation.Calls {
+		messages = append(messages, allMessages(invocation.Calls[i])...)
+	}
+	return append(messages, utils.Map(invocation.Messages, func(e vm.OrderedL2toL1Message) vm.OrderedL2toL1Message {
+		e.From = &invocation.ContractAddress
+		return e
+	})...)
 }
 
 //func (c *Cairo) newPendingStateWriter() *junostate.PendingStateWriter {
