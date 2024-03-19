@@ -295,6 +295,9 @@ func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.Tran
 	starkReceipt.Events = receiptEvents
 
 	resources := invocation.ExecutionResources
+	if resources == nil {
+		resources = &vm.ExecutionResources{}
+	}
 	starkReceipt.ExecutionResources = &rpc.ExecutionResources{
 		Steps:        resources.Steps,
 		MemoryHoles:  resources.MemoryHoles,
