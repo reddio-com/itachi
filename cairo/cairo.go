@@ -169,11 +169,11 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	blockNumber := uint64(ctx.Block.Height)
 	blockTimestamp := ctx.Block.Timestamp
 
-	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
+	// FIXME: GasPriceWEI, GasPriceSTRK should be filled.
 	gasPrice := new(felt.Felt).SetUint64(1)
 	actualFees, traces, err := c.execute(
 		starknetTxns, classes, blockNumber, blockTimestamp,
-		paidFeesOnL1, gasPrice, gasPrice, false,
+		paidFeesOnL1, gasPrice, gasPrice, txReq.LegacyTraceJson,
 	)
 	if err != nil {
 		return err

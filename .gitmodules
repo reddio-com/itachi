@@ -1,3 +1,4 @@
 [submodule "juno"]
 	path = juno
-	url = https://github.com/NethermindEth/juno.git
+	url = https://github.com/reddio-com/juno.git
+	branch = itachi
