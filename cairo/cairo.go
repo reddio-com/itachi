@@ -3,7 +3,6 @@ package cairo
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -13,7 +12,6 @@ import (
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
@@ -186,8 +184,8 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
 
-	fmt.Println("-----------------receipt--------------------")
-	spew.Dump(starkReceipt)
+	//fmt.Println("-----------------receipt--------------------")
+	//spew.Dump(starkReceipt)
 
 	receiptByt, err := encoder.Marshal(starkReceipt)
 	if err != nil {
@@ -280,8 +278,8 @@ func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Tra
 }
 
 func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.TransactionReceipt {
-	fmt.Println("-----------trace--------------")
-	spew.Dump(invocation)
+	//fmt.Println("-----------trace--------------")
+	//spew.Dump(invocation)
 
 	var starkReceipt rpc.TransactionReceipt
 
