@@ -77,7 +77,7 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 		ContractAddr: &call.ContractAddress,
 		Selector:     &call.EntryPointSelector,
 		Calldata:     call.Calldata,
-		BlockID:      id,
+		BlockID:      cairo.NewFromJunoBlockID(id),
 	}
 	resp, jsonErr := s.adaptChainRead(callReq, "Call")
 	if jsonErr != nil {
