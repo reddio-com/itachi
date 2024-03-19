@@ -3,10 +3,10 @@ package cairo
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/juno/encoder"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/node"
 	"github.com/NethermindEth/juno/rpc"
@@ -93,36 +93,41 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 	if err != nil {
 		return err
 	}
-	// Replace the txHash with the Hash of starknet Txn
-	txn.TxnHash = txReq.Tx.Hash.Bytes()
-
-	if txReq.Tx.Type == rpc.TxnDeclare && txReq.Tx.Version.Cmp(new(felt.Felt).SetUint64(2)) != -1 {
-		contractClass := make(map[string]any)
-		if err := json.Unmarshal(txReq.Tx.ContractClass, &contractClass); err != nil {
-			return fmt.Errorf("unmarshal contract class: %v", err)
-		}
-		sierraProg, ok := contractClass["sierra_program"]
-		if !ok {
-			return fmt.Errorf("{'sierra_program': ['Missing data for required field.']}")
-		}
-
-		sierraProgBytes, errIn := json.Marshal(sierraProg)
-		if errIn != nil {
-			return errIn
-		}
-
-		gwSierraProg, errIn := utils.Gzip64Encode(sierraProgBytes)
-		if errIn != nil {
-			return errIn
-		}
-
-		contractClass["sierra_program"] = gwSierraProg
-		newContractClass, err := json.Marshal(contractClass)
-		if err != nil {
-			return fmt.Errorf("marshal revised contract class: %v", err)
-		}
-		txReq.Tx.ContractClass = newContractClass
+	starkTx, _, _, err := c.adaptBroadcastedTransaction(txReq.Tx)
+	if err != nil {
+		return err
 	}
+
+	// Replace the txHash with the Hash of starknet Txn
+	txn.TxnHash = starkTx.Hash().Bytes()
+
+	//if txReq.Tx.Type == rpc.TxnDeclare && txReq.Tx.Version.Cmp(new(felt.Felt).SetUint64(2)) != -1 {
+	//	contractClass := make(map[string]any)
+	//	if err := json.Unmarshal(txReq.Tx.ContractClass, &contractClass); err != nil {
+	//		return fmt.Errorf("unmarshal contract class: %v", err)
+	//	}
+	//	sierraProg, ok := contractClass["sierra_program"]
+	//	if !ok {
+	//		return fmt.Errorf("{'sierra_program': ['Missing data for required field.']}")
+	//	}
+	//
+	//	sierraProgBytes, errIn := json.Marshal(sierraProg)
+	//	if errIn != nil {
+	//		return errIn
+	//	}
+	//
+	//	gwSierraProg, errIn := utils.Gzip64Encode(sierraProgBytes)
+	//	if errIn != nil {
+	//		return errIn
+	//	}
+	//
+	//	contractClass["sierra_program"] = gwSierraProg
+	//	newContractClass, err := json.Marshal(contractClass)
+	//	if err != nil {
+	//		return fmt.Errorf("marshal revised contract class: %v", err)
+	//	}
+	//	txReq.Tx.ContractClass = newContractClass
+	//}
 
 	newTxReqByt, err := json.Marshal(txReq)
 	if err != nil {
@@ -147,18 +152,28 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	}
 
 	var (
-		starknetTxns = []core.Transaction{tx}
-		classes      = []core.Class{class}
-		paidFeesOnL1 = []*felt.Felt{paidFeeOnL1}
+		starknetTxns = make([]core.Transaction, 0)
+		classes      = make([]core.Class, 0)
+		paidFeesOnL1 = make([]*felt.Felt, 0)
 	)
+	if tx != nil {
+		starknetTxns = append(starknetTxns, tx)
+	}
+	if class != nil {
+		classes = append(classes, class)
+	}
+	if paidFeeOnL1 != nil {
+		paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
+	}
 
 	blockNumber := uint64(ctx.Block.Height)
 	blockTimestamp := ctx.Block.Timestamp
 
 	// FIXME: GasPriceWEI, GasPriceSTRK and legacyTraceJSON should be filled.
+	gasPrice := new(felt.Felt).SetUint64(1)
 	actualFees, traces, err := c.execute(
 		starknetTxns, classes, blockNumber, blockTimestamp,
-		paidFeesOnL1, &felt.Zero, &felt.Zero, false,
+		paidFeesOnL1, gasPrice, gasPrice, false,
 	)
 	if err != nil {
 		return err
@@ -169,7 +184,10 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
 
-	receiptByt, err := json.Marshal(starkReceipt)
+	//fmt.Println("-----------------receipt--------------------")
+	//spew.Dump(starkReceipt)
+
+	receiptByt, err := encoder.Marshal(starkReceipt)
 	if err != nil {
 		return err
 	}
@@ -181,13 +199,13 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	callReq := new(CallRequest)
 	err := ctx.BindJson(callReq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
 	block, err := c.GetCurrentBlock()
 	if err != nil {
-		ctx.JsonOk(CallResponse{Err: rpc.ErrBlockNotFound})
+		ctx.JsonOk(&CallResponse{Err: rpc.ErrBlockNotFound})
 		return
 	}
 	blockNumber := uint64(block.Height)
@@ -196,13 +214,13 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	var classHash *felt.Felt
 
 	switch {
-	case callReq.BlockID.Latest:
+	case callReq.BlockID.Latest || callReq.BlockID.Pending:
 		classHash, err = c.cairoState.ContractClassHash(callReq.ContractAddr)
 	default:
 		classHash, err = c.cairoState.ContractClassHashAt(callReq.ContractAddr, callReq.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, CallResponse{Err: rpc.ErrContractNotFound})
+		ctx.Json(http.StatusBadRequest, &CallResponse{Err: rpc.ErrContractNotFound})
 		return
 	}
 
@@ -215,11 +233,11 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 		c.cairoState.State, c.network,
 	)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 
-	ctx.JsonOk(CallResponse{ReturnData: retData})
+	ctx.JsonOk(&CallResponse{ReturnData: retData})
 }
 
 func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Transaction, amount *felt.Felt) *rpc.TransactionReceipt {
@@ -260,14 +278,22 @@ func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Tra
 }
 
 func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.TransactionReceipt {
+	//fmt.Println("-----------trace--------------")
+	//spew.Dump(invocation)
+
 	var starkReceipt rpc.TransactionReceipt
-	for _, event := range invocation.Events {
-		starkReceipt.Events = append(starkReceipt.Events, &rpc.Event{
-			From: event.From,
-			Keys: event.Keys,
-			Data: event.Data,
+
+	allOrderedEvents := allEvents(*invocation)
+	receiptEvents := make([]*rpc.Event, 0)
+	for _, orderedEvent := range allOrderedEvents {
+		receiptEvents = append(receiptEvents, &rpc.Event{
+			From: orderedEvent.From,
+			Keys: orderedEvent.Keys,
+			Data: orderedEvent.Data,
 		})
 	}
+	starkReceipt.Events = receiptEvents
+
 	resources := invocation.ExecutionResources
 	starkReceipt.ExecutionResources = &rpc.ExecutionResources{
 		Steps:        resources.Steps,
@@ -282,13 +308,16 @@ func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.Tran
 		SegmentArena: resources.SegmentArena,
 	}
 
-	for _, message := range invocation.Messages {
-		starkReceipt.MessagesSent = append(starkReceipt.MessagesSent, &rpc.MsgToL1{
-			From:    message.From,
-			To:      common.HexToAddress(message.To),
-			Payload: message.Payload,
+	allOrderedMsgs := allMessages(*invocation)
+	receiptMsgs := make([]*rpc.MsgToL1, 0)
+	for _, msg := range allOrderedMsgs {
+		receiptMsgs = append(receiptMsgs, &rpc.MsgToL1{
+			From:    msg.From,
+			To:      common.HexToAddress(msg.To),
+			Payload: msg.Payload,
 		})
 	}
+	starkReceipt.MessagesSent = receiptMsgs
 
 	return &starkReceipt
 }
@@ -301,6 +330,28 @@ func feeUnit(txn core.Transaction) rpc.FeeUnit {
 	}
 
 	return feeUnit
+}
+
+func allEvents(invocation vm.FunctionInvocation) []vm.OrderedEvent {
+	events := make([]vm.OrderedEvent, 0)
+	for i := range invocation.Calls {
+		events = append(events, allEvents(invocation.Calls[i])...)
+	}
+	return append(events, utils.Map(invocation.Events, func(e vm.OrderedEvent) vm.OrderedEvent {
+		e.From = &invocation.ContractAddress
+		return e
+	})...)
+}
+
+func allMessages(invocation vm.FunctionInvocation) []vm.OrderedL2toL1Message {
+	messages := make([]vm.OrderedL2toL1Message, 0)
+	for i := range invocation.Calls {
+		messages = append(messages, allMessages(invocation.Calls[i])...)
+	}
+	return append(messages, utils.Map(invocation.Messages, func(e vm.OrderedL2toL1Message) vm.OrderedL2toL1Message {
+		e.From = &invocation.ContractAddress
+		return e
+	})...)
 }
 
 //func (c *Cairo) newPendingStateWriter() *junostate.PendingStateWriter {

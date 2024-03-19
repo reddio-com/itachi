@@ -31,69 +31,21 @@ func (c *Cairo) TxnExecute(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-		//txReq := new(TxRequest)
-		//err = ctx.BindJson(txReq)
-		//if err != nil {
-		//	return err
-		//}
-		//tx, class, paidFeeOnL1, err := c.adaptBroadcastedTransaction(txReq.Tx)
-		//if err != nil {
-		//	return err
-		//}
-		//starknetTxns = append(starknetTxns, tx)
-		//classes = append(classes, class)
-		//paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
 		err = wr(ctx)
 		rcpt := types.NewReceipt(ctx.Events, err, ctx.Extra)
 		rcpt.FillMetadata(block, txn, ctx.LeiCost)
 		receipts[txn.TxnHash] = rcpt
+
+		// fmt.Printf("execute txHash %s, error: %v \n", txn.TxnHash.String(), err)
+
 	}
 	blockNumber := uint64(block.Height)
-	//blockTimestamp := block.Timestamp
-	//blockHash := block.Hash
-
-	//pendingState := c.newPendingStateWriter()
-	//_, traces, err := c.execute(
-	//	pendingState, starknetTxns, classes, blockNumber, blockTimestamp,
-	//	paidFeesOnL1, &felt.Zero, &felt.Zero, false,
-	//)
-	//if err != nil {
-	//	return err
-	//}
 
 	// commit cairoState
 	err := c.cairoState.Commit(blockNumber)
 	if err != nil {
 		return err
 	}
-	//stateDiff, newClasses := pendingState.StateDiffAndClasses()
-	//err = c.cairoState.Update(blockNumber, stateDiff, newClasses)
-	//if err != nil {
-	//	return err
-	//}
-
-	// store events
-
-	//for _, trace := range traces {
-	//	if trace.ExecuteInvocation != nil {
-	//		for _, event := range trace.ExecuteInvocation.Events {
-	//			eventByt, terr := json.Marshal(event)
-	//			if terr != nil {
-	//				return terr
-	//			}
-	//			callerByt := trace.ExecuteInvocation.CallerAddress.Bytes()
-	//			caller := common.BytesToAddress(callerByt[:])
-	//			yuEvent := &result.Event{
-	//				Caller:    &caller,
-	//				BlockHash: blockHash,
-	//				Height:    block.Height,
-	//				Value:     eventByt,
-	//			}
-	//			results = append(results, result.NewEvent(yuEvent))
-	//		}
-	//	}
-	//
-	//}
 	return c.TxDB.SetReceipts(receipts)
 }
 
@@ -109,7 +61,7 @@ func (c *Cairo) execute(
 	)
 }
 
-func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (core.Transaction, core.Class, *felt.Felt, error) {
+func AdaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction, network utils.Network) (core.Transaction, core.Class, *felt.Felt, error) {
 	var feederTxn starknet.Transaction
 	if err := copier.Copy(&feederTxn, bcTxn.Transaction); err != nil {
 		return nil, nil, nil, err
@@ -137,7 +89,7 @@ func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (
 		}
 	}
 
-	txnHash, err := core.TransactionHash(txn, c.network)
+	txnHash, err := core.TransactionHash(txn, network)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -161,6 +113,10 @@ func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (
 		return nil, nil, nil, errors.New("deprecated transaction type")
 	}
 	return txn, declaredClass, paidFeeOnL1, nil
+}
+
+func (c *Cairo) adaptBroadcastedTransaction(bcTxn *rpc.BroadcastedTransaction) (core.Transaction, core.Class, *felt.Felt, error) {
+	return AdaptBroadcastedTransaction(bcTxn, c.network)
 }
 
 func adaptDeclaredClass(declaredClass json.RawMessage) (core.Class, error) {

@@ -26,9 +26,10 @@ import (
 const CairoTripod = "cairo"
 
 type StarknetRPC struct {
-	chain *kernel.Kernel
-	log   utils.SimpleLogger
-	srv   *http.Server
+	chain   *kernel.Kernel
+	log     utils.SimpleLogger
+	srv     *http.Server
+	network utils.Network
 }
 
 func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, error) {
@@ -63,6 +64,8 @@ func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, err
 		Handler:     cors.Default().Handler(mux),
 		ReadTimeout: 30 * time.Second,
 	}
+
+	s.network = utils.Network(cfg.Network)
 	return s, nil
 }
 
@@ -174,8 +177,13 @@ func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxR
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
 
+	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txReq.Tx, s.network)
+	if err != nil {
+		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	}
+
 	return &rpc.AddTxResponse{
-		TransactionHash: tx.Hash,
+		TransactionHash: bcTx.Hash(),
 		ContractAddress: tx.ContractAddress,
 		ClassHash:       tx.ClassHash,
 	}, nil
@@ -227,7 +235,7 @@ func (s *StarknetRPC) GetReceiptByHash(hash felt.Felt) (*rpc.TransactionReceipt,
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
-	nonceReq := &cairo.NonceRequest{BlockID: id, Addr: &address}
+	nonceReq := &cairo.NonceRequest{BlockID: cairo.NewFromJunoBlockID(id), Addr: &address}
 	resp, jsonErr := s.adaptChainRead(nonceReq, "GetNonce")
 	if jsonErr != nil {
 		return nil, jsonErr
@@ -238,7 +246,7 @@ func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *
 
 func (s *StarknetRPC) GetStorage(address, key felt.Felt, id rpc.BlockID) (*felt.Felt, *jsonrpc.Error) {
 	storageReq := &cairo.StorageRequest{
-		BlockID: id,
+		BlockID: cairo.NewFromJunoBlockID(id),
 		Addr:    &address,
 		Key:     &key,
 	}
@@ -251,7 +259,7 @@ func (s *StarknetRPC) GetStorage(address, key felt.Felt, id rpc.BlockID) (*felt.
 }
 
 func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class, *jsonrpc.Error) {
-	classReq := &cairo.ClassRequest{BlockID: id, ClassHash: &classHash}
+	classReq := &cairo.ClassRequest{BlockID: cairo.NewFromJunoBlockID(id), ClassHash: &classHash}
 	resp, jsonErr := s.adaptChainRead(classReq, "GetClass")
 	if jsonErr != nil {
 		return nil, jsonErr
@@ -261,7 +269,7 @@ func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class,
 }
 
 func (s *StarknetRPC) GetClassAt(id rpc.BlockID, address felt.Felt) (*rpc.Class, *jsonrpc.Error) {
-	classAtReq := &cairo.ClassAtRequest{BlockID: id, Addr: &address}
+	classAtReq := &cairo.ClassAtRequest{BlockID: cairo.NewFromJunoBlockID(id), Addr: &address}
 	resp, jsonErr := s.adaptChainRead(classAtReq, "GetClassAt")
 	if jsonErr != nil {
 		return nil, jsonErr
