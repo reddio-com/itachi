@@ -3,11 +3,12 @@ package starknetrpc
 import (
 	"context"
 	"encoding/json"
+	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/yu-org/yu/common"
-	"github.com/yu-org/yu/core"
+	yucore "github.com/yu-org/yu/core"
 	yucontext "github.com/yu-org/yu/core/context"
 	"itachi/cairo"
 )
@@ -18,7 +19,7 @@ func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxR
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
 	}
-	signedWrCall := &core.SignedWrCall{
+	signedWrCall := &yucore.SignedWrCall{
 		Call: &common.WrCall{
 			TripodName: CairoTripod,
 			FuncName:   "ExecuteTxn",
@@ -33,6 +34,10 @@ func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxR
 	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txReq.Tx, s.network)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+	}
+
+	if tx.ContractAddress == nil && tx.Type == rpc.TxnDeployAccount {
+		tx.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
 	}
 
 	return &rpc.AddTxResponse{
@@ -48,7 +53,7 @@ func (s *StarknetRPC) LegacyAddTransaction(tx rpc.BroadcastedTransaction) (*rpc.
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
 	}
-	signedWrCall := &core.SignedWrCall{
+	signedWrCall := &yucore.SignedWrCall{
 		Call: &common.WrCall{
 			TripodName: CairoTripod,
 			FuncName:   "ExecuteTxn",
@@ -65,6 +70,9 @@ func (s *StarknetRPC) LegacyAddTransaction(tx rpc.BroadcastedTransaction) (*rpc.
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
 
+	if tx.ContractAddress == nil && tx.Type == rpc.TxnDeployAccount {
+		tx.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
+	}
 	return &rpc.AddTxResponse{
 		TransactionHash: bcTx.Hash(),
 		ContractAddress: tx.ContractAddress,
