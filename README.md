@@ -1,5 +1,5 @@
 # itachi
-a decentralized sequencer for Starknet
+A decentralized sequencer for Starknet
 
 ### Prerequisites
 - rustc 1.74.0 (79e9716c9 2023-11-13)  
@@ -22,7 +22,7 @@ make reset
 python3 scripts/abi_dumps.py
 ```
 
-### RPC
+### Starknet RPC
 - [x] addDeclareTransaction
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
