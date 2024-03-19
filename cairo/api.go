@@ -2,7 +2,6 @@ package cairo
 
 import (
 	"errors"
-	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/encoder"
@@ -80,11 +79,11 @@ func (c *Cairo) GetReceipt(ctx *context.ReadContext) {
 		ctx.Json(http.StatusInternalServerError, &ReceiptResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
+
 	ctx.JsonOk(&ReceiptResponse{Receipt: starkReceipt})
 }
 
 func (c *Cairo) getReceipt(hash felt.Felt) (*rpc.TransactionReceipt, error) {
-	fmt.Println("get Receipt.... ", hash.String())
 	receipt, err := c.TxDB.GetReceipt(hash.Bytes())
 	if err != nil {
 		return nil, err
