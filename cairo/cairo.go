@@ -3,7 +3,6 @@ package cairo
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -182,11 +181,10 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
 	if err != nil {
-		fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
+		// fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
 		starkReceipt = makeErrStarkReceipt(ctx.Block, tx, err)
 	}
 
-	//fmt.Println("-----------------receipt--------------------")
 	//spew.Dump(starkReceipt)
 
 	receiptByt, err := encoder.Marshal(starkReceipt)
@@ -316,7 +314,6 @@ func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Tra
 }
 
 func makeStarkReceiptFromInvocation(invocation *vm.FunctionInvocation) *rpc.TransactionReceipt {
-	//fmt.Println("-----------trace--------------")
 	//spew.Dump(invocation)
 
 	var starkReceipt rpc.TransactionReceipt
