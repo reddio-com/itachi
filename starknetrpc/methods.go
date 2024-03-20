@@ -3,7 +3,6 @@ package starknetrpc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -29,8 +28,6 @@ func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJ
 	if txn.ContractAddress == nil && txn.Type == rpc.TxnDeployAccount {
 		txn.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
 	}
-
-	fmt.Printf("--------- txn %s, classHash: %s \n", txn.Type.String(), txn.ClassHash)
 	if txn.ClassHash == nil && txn.Type == rpc.TxnDeclare {
 		var class sdk.ContractClass
 		err := json.Unmarshal(tx.ContractClass, &class)
@@ -42,8 +39,6 @@ func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJ
 			return nil, jsonrpc.Err(jsonrpc.InvalidParams, err.Error())
 		}
 	}
-
-	fmt.Printf("txn %s, classHash: %s \n", txn.Type.String(), txn.ClassHash)
 
 	txReq := cairo.TxRequest{Tx: txn, LegacyTraceJson: legacyTraceJson}
 	byt, err := json.Marshal(txReq)
