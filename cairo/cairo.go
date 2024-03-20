@@ -3,6 +3,7 @@ package cairo
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -175,13 +176,14 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starknetTxns, classes, blockNumber, blockTimestamp,
 		paidFeesOnL1, gasPrice, gasPrice, txReq.LegacyTraceJson,
 	)
-	if err != nil {
-		return err
-	}
 
 	var starkReceipt *rpc.TransactionReceipt
 	if len(traces) > 0 && len(actualFees) > 0 {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
+	}
+	if err != nil {
+		fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
+		starkReceipt = makeErrStarkReceipt(ctx.Block, tx, err)
 	}
 
 	//fmt.Println("-----------------receipt--------------------")
@@ -238,6 +240,42 @@ func (c *Cairo) Call(ctx *context.ReadContext) {
 	}
 
 	ctx.JsonOk(&CallResponse{ReturnData: retData})
+}
+
+func makeErrStarkReceipt(block *types.Block, tx core.Transaction, err error) *rpc.TransactionReceipt {
+	starkReceipt := new(rpc.TransactionReceipt)
+	starkReceipt.RevertReason = err.Error()
+	starkReceipt.ExecutionStatus = rpc.TxnFailure
+	blockNum := uint64(block.Height)
+	starkReceipt.BlockNumber = &blockNum
+	starkReceipt.BlockHash = new(felt.Felt).SetBytes(block.Hash.Bytes())
+	starkReceipt.FinalityStatus = rpc.TxnAcceptedOnL2
+	starkReceipt.Hash = tx.Hash()
+	starkReceipt.ActualFee = &rpc.FeePayment{
+		Amount: &felt.Zero,
+		Unit:   feeUnit(tx),
+	}
+	starkReceipt.ExecutionResources = &rpc.ExecutionResources{}
+	starkReceipt.Events = make([]*rpc.Event, 0)
+	starkReceipt.MessagesSent = make([]*rpc.MsgToL1, 0)
+
+	switch v := tx.(type) {
+	case *core.DeployTransaction:
+		starkReceipt.ContractAddress = v.ContractAddress
+		starkReceipt.Type = rpc.TxnDeploy
+	case *core.DeployAccountTransaction:
+		starkReceipt.ContractAddress = v.ContractAddress
+		starkReceipt.Type = rpc.TxnDeployAccount
+	case *core.L1HandlerTransaction:
+		starkReceipt.MessageHash = "0x" + hex.EncodeToString(v.MessageHash())
+		starkReceipt.Type = rpc.TxnL1Handler
+	case *core.DeclareTransaction:
+		starkReceipt.Type = rpc.TxnDeclare
+	case *core.InvokeTransaction:
+		starkReceipt.Type = rpc.TxnInvoke
+	}
+
+	return starkReceipt
 }
 
 func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Transaction, amount *felt.Felt) *rpc.TransactionReceipt {
