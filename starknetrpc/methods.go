@@ -24,7 +24,23 @@ func (s *StarknetRPC) LegacyAddTransaction(tx rpc.BroadcastedTransaction) (*rpc.
 }
 
 func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJson bool) (*rpc.AddTxResponse, *jsonrpc.Error) {
-	txReq := cairo.TxRequest{Tx: &tx, LegacyTraceJson: legacyTraceJson}
+	txn := &tx
+	if txn.ContractAddress == nil && txn.Type == rpc.TxnDeployAccount {
+		txn.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
+	}
+	if txn.ClassHash == nil && txn.Type == rpc.TxnDeclare {
+		var class sdk.ContractClass
+		err := json.Unmarshal(tx.ContractClass, &class)
+		if err != nil {
+			return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
+		}
+		txn.ClassHash, err = hash.ClassHash(class)
+		if err != nil {
+			return nil, jsonrpc.Err(jsonrpc.InvalidParams, err.Error())
+		}
+	}
+
+	txReq := cairo.TxRequest{Tx: txn, LegacyTraceJson: legacyTraceJson}
 	byt, err := json.Marshal(txReq)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())
@@ -41,30 +57,15 @@ func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJ
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
 	}
 
-	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txReq.Tx, s.network)
+	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txn, s.network)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
 	}
 
-	if tx.ContractAddress == nil && tx.Type == rpc.TxnDeployAccount {
-		tx.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
-	}
-	if tx.ClassHash == nil && tx.Type == rpc.TxnDeclare {
-		var class sdk.ContractClass
-		err = json.Unmarshal(tx.ContractClass, &class)
-		if err != nil {
-			return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
-		}
-		tx.ClassHash, err = hash.ClassHash(class)
-		if err != nil {
-			return nil, jsonrpc.Err(jsonrpc.InvalidParams, err.Error())
-		}
-	}
-
 	return &rpc.AddTxResponse{
 		TransactionHash: bcTx.Hash(),
-		ContractAddress: tx.ContractAddress,
-		ClassHash:       tx.ClassHash,
+		ContractAddress: txn.ContractAddress,
+		ClassHash:       txn.ClassHash,
 	}, nil
 }
 

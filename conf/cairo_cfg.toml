@@ -51,7 +51,7 @@ starknet_port = "9091"
 0x077cc28ed3c661419fda16bf120fb81f1f8f28617f5543b05a86d63b0926bbf4 = "./conf/genesis/ERC721.json"
 
 # Universal deployer class hash
-0x04569ffd48c2a3d455437c16dc843801fb896b1af845bc8bc7ba83ebc4358b7f = "./conf/genesis/UniversalDeployer.json"
+0x07b3e05f48f0c69e4a65ce5e076a66271a527aff2c34ce1083ec6e1526997a69 = "./conf/genesis/UniversalDeployer.json"
 
 # Argent Cairo 1 Account
 0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003 = "./conf/genesis/ArgentAccountCairoOne.json"
