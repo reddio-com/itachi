@@ -7,6 +7,8 @@ import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
+	"github.com/NethermindEth/starknet.go/hash"
+	sdk "github.com/NethermindEth/starknet.go/rpc"
 	"github.com/yu-org/yu/common"
 	yucore "github.com/yu-org/yu/core"
 	yucontext "github.com/yu-org/yu/core/context"
@@ -14,44 +16,18 @@ import (
 )
 
 func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxResponse, *jsonrpc.Error) {
-	txReq := cairo.TxRequest{Tx: &tx}
-	byt, err := json.Marshal(txReq)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
-	}
-	signedWrCall := &yucore.SignedWrCall{
-		Call: &common.WrCall{
-			TripodName: CairoTripod,
-			FuncName:   "ExecuteTxn",
-			Params:     string(byt),
-		},
-	}
-	err = s.chain.HandleTxn(signedWrCall)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
-	}
-
-	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txReq.Tx, s.network)
-	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
-	}
-
-	if tx.ContractAddress == nil && tx.Type == rpc.TxnDeployAccount {
-		tx.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
-	}
-
-	return &rpc.AddTxResponse{
-		TransactionHash: bcTx.Hash(),
-		ContractAddress: tx.ContractAddress,
-		ClassHash:       tx.ClassHash,
-	}, nil
+	return s.addTransaction(tx, false)
 }
 
 func (s *StarknetRPC) LegacyAddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxResponse, *jsonrpc.Error) {
-	txReq := cairo.TxRequest{Tx: &tx, LegacyTraceJson: true}
+	return s.addTransaction(tx, true)
+}
+
+func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJson bool) (*rpc.AddTxResponse, *jsonrpc.Error) {
+	txReq := cairo.TxRequest{Tx: &tx, LegacyTraceJson: legacyTraceJson}
 	byt, err := json.Marshal(txReq)
 	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err)
+		return nil, jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())
 	}
 	signedWrCall := &yucore.SignedWrCall{
 		Call: &common.WrCall{
@@ -62,17 +38,29 @@ func (s *StarknetRPC) LegacyAddTransaction(tx rpc.BroadcastedTransaction) (*rpc.
 	}
 	err = s.chain.HandleTxn(signedWrCall)
 	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
 	}
 
 	bcTx, _, _, err := cairo.AdaptBroadcastedTransaction(txReq.Tx, s.network)
 	if err != nil {
-		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
+		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
 	}
 
 	if tx.ContractAddress == nil && tx.Type == rpc.TxnDeployAccount {
 		tx.ContractAddress = core.ContractAddress(&felt.Zero, tx.ClassHash, tx.ContractAddressSalt, *tx.ConstructorCallData)
 	}
+	if tx.ClassHash == nil && tx.Type == rpc.TxnDeclare {
+		var class sdk.ContractClass
+		err = json.Unmarshal(tx.ContractClass, &class)
+		if err != nil {
+			return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
+		}
+		tx.ClassHash, err = hash.ClassHash(class)
+		if err != nil {
+			return nil, jsonrpc.Err(jsonrpc.InvalidParams, err.Error())
+		}
+	}
+
 	return &rpc.AddTxResponse{
 		TransactionHash: bcTx.Hash(),
 		ContractAddress: tx.ContractAddress,
