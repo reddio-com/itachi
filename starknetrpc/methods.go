@@ -15,6 +15,10 @@ import (
 	"itachi/cairo"
 )
 
+func (s *StarknetRPC) GetChainID() (*felt.Felt, *jsonrpc.Error) {
+	return s.network.ChainID(), nil
+}
+
 func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxResponse, *jsonrpc.Error) {
 	return s.addTransaction(tx, false)
 }
