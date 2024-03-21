@@ -34,7 +34,7 @@ python3 scripts/abi_dumps.py
 - [x] getTransactionStatus
 - [x] getClass
 - [x] getClassAt
-- [ ] getClassHashAt
+- [x] getClassHashAt
 - [ ] blockHashAndNumber
 - [ ] chainId
 - [ ] syncing

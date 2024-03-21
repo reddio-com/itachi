@@ -231,21 +231,21 @@ func (c *Cairo) getClass(ctx *context.ReadContext, blockID *BlockID, classHash *
 	}
 }
 
-type ClassHashRequest struct {
+type ClassHashAtRequest struct {
 	BlockID BlockID    `json:"block_id"`
 	Addr    *felt.Felt `json:"addr"`
 }
 
-type ClassHashResponse struct {
+type ClassHashAtResponse struct {
 	ClassHash *felt.Felt     `json:"class_hash"`
 	Err       *jsonrpc.Error `json:"err"`
 }
 
-func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
-	var cq ClassHashRequest
+func (c *Cairo) GetClassHashAt(ctx *context.ReadContext) {
+	var cq ClassHashAtRequest
 	err := ctx.BindJson(&cq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, &ClassHashResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &ClassHashAtResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
@@ -257,10 +257,10 @@ func (c *Cairo) GetClassHash(ctx *context.ReadContext) {
 		classHash, err = c.cairoState.ContractClassHashAt(cq.Addr, cq.BlockID.Number)
 	}
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, &ClassHashResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &ClassHashAtResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
-	ctx.JsonOk(&ClassHashResponse{ClassHash: classHash})
+	ctx.JsonOk(&ClassHashAtResponse{ClassHash: classHash})
 }
 
 type StorageRequest struct {

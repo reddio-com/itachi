@@ -168,6 +168,16 @@ func (s *StarknetRPC) GetClassAt(id rpc.BlockID, address felt.Felt) (*rpc.Class,
 	return cr.Class, cr.Err
 }
 
+func (s *StarknetRPC) GetClassHashAt(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
+	classHashAtReq := &cairo.ClassHashAtRequest{BlockID: cairo.NewFromJunoBlockID(id), Addr: &address}
+	resp, jsonErr := s.adaptChainRead(classHashAtReq, "GetClassHashAt")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	cr := resp.DataInterface.(*cairo.ClassHashAtResponse)
+	return cr.ClassHash, cr.Err
+}
+
 func (s *StarknetRPC) adaptChainRead(req any, funcName string) (*yucontext.ResponseData, *jsonrpc.Error) {
 	byt, err := json.Marshal(req)
 	if err != nil {
