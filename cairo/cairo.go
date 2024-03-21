@@ -56,7 +56,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 	cairo.SetWritings(cairo.ExecuteTxn)
 	cairo.SetReadings(
 		cairo.Call, cairo.GetClass, cairo.GetClassAt,
-		cairo.GetClassHash, cairo.GetNonce, cairo.GetStorage,
+		cairo.GetClassHashAt, cairo.GetNonce, cairo.GetStorage,
 		cairo.GetTransaction, cairo.GetTransactionStatus, cairo.GetReceipt,
 	)
 	cairo.SetInit(cairo)

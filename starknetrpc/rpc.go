@@ -157,6 +157,11 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
 			Handler: s.GetClassAt,
 		},
+		{
+			Name:    "starknet_getClassHashAt",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
+			Handler: s.GetClassHashAt,
+		},
 	}, "/v0_6"
 }
 
@@ -216,6 +221,11 @@ func (s *StarknetRPC) LegacyMethods() ([]jsonrpc.Method, string) {
 			Name:    "starknet_getClassAt",
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
 			Handler: s.GetClassAt,
+		},
+		{
+			Name:    "starknet_getClassHashAt",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
+			Handler: s.GetClassHashAt,
 		},
 	}, "/v0_5"
 }
