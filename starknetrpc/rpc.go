@@ -103,6 +103,10 @@ func exactPathServer(path string, handler http.Handler) http.HandlerFunc {
 func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 	return []jsonrpc.Method{
 		{
+			Name:    "starknet_chainId",
+			Handler: s.GetChainID(),
+		},
+		{
 			Name:    "starknet_addDeployAccountTransaction",
 			Params:  []jsonrpc.Parameter{{Name: "deploy_account_transaction"}},
 			Handler: s.AddTransaction,
@@ -167,6 +171,10 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 
 func (s *StarknetRPC) LegacyMethods() ([]jsonrpc.Method, string) {
 	return []jsonrpc.Method{
+		{
+			Name:    "starknet_chainId",
+			Handler: s.GetChainID(),
+		},
 		{
 			Name:    "starknet_addDeployAccountTransaction",
 			Params:  []jsonrpc.Parameter{{Name: "deploy_account_transaction"}},
