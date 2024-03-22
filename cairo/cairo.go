@@ -58,6 +58,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 		cairo.Call, cairo.GetClass, cairo.GetClassAt,
 		cairo.GetClassHashAt, cairo.GetNonce, cairo.GetStorage,
 		cairo.GetTransaction, cairo.GetTransactionStatus, cairo.GetReceipt,
+		cairo.SimulateTransactions,
 	)
 	cairo.SetInit(cairo)
 	cairo.SetTxnChecker(cairo)

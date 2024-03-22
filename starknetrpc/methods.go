@@ -3,10 +3,12 @@ package starknetrpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
+	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/starknet.go/hash"
 	sdk "github.com/NethermindEth/starknet.go/rpc"
 	"github.com/yu-org/yu/common"
@@ -86,6 +88,70 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 	}
 	cr := resp.DataInterface.(*cairo.CallResponse)
 	return cr.ReturnData, cr.Err
+}
+
+func (s *StarknetRPC) EstimateFee(broadcastedTxns []rpc.BroadcastedTransaction,
+	simulationFlags []rpc.SimulationFlag, id rpc.BlockID,
+) ([]rpc.FeeEstimate, *jsonrpc.Error) {
+	result, err := s.simulateTransactions(id, broadcastedTxns, append(simulationFlags, rpc.SkipFeeChargeFlag), false, true)
+	if err != nil {
+		return nil, err
+	}
+	return utils.Map(result, func(tx rpc.SimulatedTransaction) rpc.FeeEstimate {
+		return tx.FeeEstimation
+	}), nil
+}
+
+func (s *StarknetRPC) LegacyEstimateFee(broadcastedTxns []rpc.BroadcastedTransaction, id rpc.BlockID) ([]rpc.FeeEstimate, *jsonrpc.Error) {
+	result, err := s.simulateTransactions(id, broadcastedTxns, []rpc.SimulationFlag{rpc.SkipFeeChargeFlag}, true, true)
+	if err != nil && err.Code == rpc.ErrTransactionExecutionError.Code {
+		return nil, makeContractError(errors.New(err.Data.(rpc.TransactionExecutionErrorData).ExecutionError))
+	}
+
+	return utils.Map(result, func(tx rpc.SimulatedTransaction) rpc.FeeEstimate {
+		return tx.FeeEstimation
+	}), nil
+}
+
+func (s *StarknetRPC) SimulateTransactions(
+	id rpc.BlockID,
+	transactions []rpc.BroadcastedTransaction,
+	simulationFlags []rpc.SimulationFlag,
+) ([]rpc.SimulatedTransaction, *jsonrpc.Error) {
+	return s.simulateTransactions(id, transactions, simulationFlags, false, false)
+}
+
+func (s *StarknetRPC) LegacySimulateTransactions(
+	id rpc.BlockID,
+	transactions []rpc.BroadcastedTransaction,
+	simulationFlags []rpc.SimulationFlag,
+) ([]rpc.SimulatedTransaction, *jsonrpc.Error) {
+	simu, err := s.simulateTransactions(id, transactions, simulationFlags, true, true)
+	if err.Code == rpc.ErrTransactionExecutionError.Code {
+		return nil, makeContractError(errors.New(err.Data.(rpc.TransactionExecutionErrorData).ExecutionError))
+	}
+	return simu, err
+}
+
+func (s *StarknetRPC) simulateTransactions(
+	id rpc.BlockID,
+	transactions []rpc.BroadcastedTransaction,
+	simulationFlags []rpc.SimulationFlag,
+	legacyJson, errOnRevert bool,
+) ([]rpc.SimulatedTransaction, *jsonrpc.Error) {
+	simuReq := &cairo.SimulateRequest{
+		BlockID:         cairo.NewFromJunoBlockID(id),
+		Txs:             transactions,
+		SimulationFlags: simulationFlags,
+		LegacyJson:      legacyJson,
+		ErrOnRevert:     errOnRevert,
+	}
+	resp, jsonErr := s.adaptChainRead(simuReq, "SimulateTransactions")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	sr := resp.DataInterface.(*cairo.SimulateResponse)
+	return sr.Txs, sr.Err
 }
 
 func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *jsonrpc.Error) {
@@ -197,4 +263,10 @@ func (s *StarknetRPC) adaptChainRead(req any, funcName string) (*yucontext.Respo
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err)
 	}
 	return resp, nil
+}
+
+func makeContractError(err error) *jsonrpc.Error {
+	return rpc.ErrContractError.CloneWithData(rpc.ContractErrorData{
+		RevertError: err.Error(),
+	})
 }

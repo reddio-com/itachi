@@ -296,6 +296,29 @@ func (c *Cairo) GetStorage(ctx *context.ReadContext) {
 	ctx.JsonOk(&StorageResponse{Value: value})
 }
 
+type SimulateRequest struct {
+	BlockID         BlockID                      `json:"block_id"`
+	Txs             []rpc.BroadcastedTransaction `json:"txs"`
+	SimulationFlags []rpc.SimulationFlag         `json:"simulation_flags"`
+	LegacyJson      bool                         `json:"legacy_json"`
+	ErrOnRevert     bool                         `json:"err_on_revert"`
+}
+
+type SimulateResponse struct {
+	Txs []rpc.SimulatedTransaction `json:"txs"`
+	Err *jsonrpc.Error             `json:"err"`
+}
+
+func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
+	var sq SimulateRequest
+	err := ctx.BindJson(&sq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+
+}
+
 func declaredClassToClass(declared *core.DeclaredClass) (rpcClass *rpc.Class) {
 	switch c := declared.Class.(type) {
 	case *core.Cairo0Class:
