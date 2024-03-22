@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  itachi:
+    image: ghcr.io/reddio-com/itachi:latest
+    restart: always
+    volumes:
+      - ./data/cairo_db:/cairo_db
+      - ./data/yu:/yu
+    ports:
+      -  8887:8887
+      -  9091:9091
