@@ -27,7 +27,7 @@ python3 scripts/abi_dumps.py
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
 - [x] call
-- [ ] estimateFee
+- [x] estimateFee
 - [x] getTransactionReceipt
 - [x] getTransactionByHash
 - [x] getNonce
@@ -44,7 +44,7 @@ python3 scripts/abi_dumps.py
 - [ ] blockNumber
 - [ ] specVersion
 - [ ] traceTransaction
-- [ ] simulateTransactions
+- [x] simulateTransactions
 - [ ] traceBlockTransactions
 - [x] getStorageAt
 - [ ] getStateUpdate

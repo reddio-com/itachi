@@ -127,6 +127,16 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.Call,
 		},
 		{
+			Name:    "starknet_simulateTransactions",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "transactions"}, {Name: "simulation_flags"}},
+			Handler: s.SimulateTransactions,
+		},
+		{
+			Name:    "starknet_estimateFee",
+			Params:  []jsonrpc.Parameter{{Name: "request"}, {Name: "simulation_flags"}, {Name: "block_id"}},
+			Handler: s.EstimateFee,
+		},
+		{
 			Name:    "starknet_getTransactionByHash",
 			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
 			Handler: s.GetTransactionByHash,
@@ -194,6 +204,16 @@ func (s *StarknetRPC) LegacyMethods() ([]jsonrpc.Method, string) {
 			Name:    "starknet_call",
 			Params:  []jsonrpc.Parameter{{Name: "request"}, {Name: "block_id"}},
 			Handler: s.Call,
+		},
+		{
+			Name:    "starknet_simulateTransactions",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "transactions"}, {Name: "simulation_flags"}},
+			Handler: s.LegacySimulateTransactions,
+		},
+		{
+			Name:    "starknet_estimateFee",
+			Params:  []jsonrpc.Parameter{{Name: "request"}, {Name: "block_id"}},
+			Handler: s.LegacyEstimateFee,
 		},
 		{
 			Name:    "starknet_getTransactionByHash",
