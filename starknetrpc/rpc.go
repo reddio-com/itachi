@@ -107,6 +107,10 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.GetChainID(),
 		},
 		{
+			Name:    "starknet_specVersion",
+			Handler: s.SpecVersion,
+		},
+		{
 			Name:    "starknet_addDeployAccountTransaction",
 			Params:  []jsonrpc.Parameter{{Name: "deploy_account_transaction"}},
 			Handler: s.AddTransaction,
@@ -184,6 +188,10 @@ func (s *StarknetRPC) LegacyMethods() ([]jsonrpc.Method, string) {
 		{
 			Name:    "starknet_chainId",
 			Handler: s.GetChainID(),
+		},
+		{
+			Name:    "starknet_specVersion",
+			Handler: s.LegacySpecVersion,
 		},
 		{
 			Name:    "starknet_addDeployAccountTransaction",

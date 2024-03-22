@@ -248,6 +248,14 @@ func (s *StarknetRPC) GetClassHashAt(id rpc.BlockID, address felt.Felt) (*felt.F
 	return cr.ClassHash, cr.Err
 }
 
+func (s *StarknetRPC) SpecVersion() (string, *jsonrpc.Error) {
+	return "0.6.0", nil
+}
+
+func (s *StarknetRPC) LegacySpecVersion() (string, *jsonrpc.Error) {
+	return "0.5.1", nil
+}
+
 func (s *StarknetRPC) adaptChainRead(req any, funcName string) (*yucontext.ResponseData, *jsonrpc.Error) {
 	byt, err := json.Marshal(req)
 	if err != nil {

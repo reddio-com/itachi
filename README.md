@@ -42,7 +42,7 @@ python3 scripts/abi_dumps.py
 - [ ] getBlockTransactionCount
 - [ ] estimateMessageFee
 - [ ] blockNumber
-- [ ] specVersion
+- [x] specVersion
 - [ ] traceTransaction
 - [x] simulateTransactions
 - [ ] traceBlockTransactions
