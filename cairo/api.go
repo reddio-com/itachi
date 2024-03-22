@@ -7,8 +7,11 @@ import (
 	"github.com/NethermindEth/juno/encoder"
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/rpc"
+	"github.com/NethermindEth/juno/utils"
+	"github.com/NethermindEth/juno/vm"
 	"github.com/yu-org/yu/core/context"
 	"net/http"
+	"slices"
 )
 
 type BlockID struct {
@@ -284,7 +287,7 @@ func (c *Cairo) GetStorage(ctx *context.ReadContext) {
 
 	var value *felt.Felt
 	switch {
-	case sr.BlockID.Latest:
+	case sr.BlockID.Latest || sr.BlockID.Pending:
 		value, err = c.cairoState.ContractStorage(sr.Addr, sr.Key)
 	default:
 		value, err = c.cairoState.ContractStorageAt(sr.Addr, sr.Key, sr.BlockID.Number)
@@ -310,13 +313,96 @@ type SimulateResponse struct {
 }
 
 func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
+	var (
+		gasPrice     = new(felt.Felt).SetUint64(1)
+		gasPriceSTRK = new(felt.Felt).SetUint64(1)
+	)
+
 	var sq SimulateRequest
 	err := ctx.BindJson(&sq)
 	if err != nil {
 		ctx.Json(http.StatusBadRequest, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
+	skipFeeCharge := slices.Contains(sq.SimulationFlags, rpc.SkipFeeChargeFlag)
+	skipValidate := slices.Contains(sq.SimulationFlags, rpc.SkipValidateFlag)
+	// TODO: try get more BlockID
+	block, err := c.GetCurrentBlock()
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
 
+	var txns []core.Transaction
+	var classes []core.Class
+
+	paidFeesOnL1 := make([]*felt.Felt, 0)
+	for idx := range sq.Txs {
+		txn, declaredClass, paidFeeOnL1, aErr := AdaptBroadcastedTransaction(&sq.Txs[idx], c.network)
+		if aErr != nil {
+			ctx.Json(http.StatusInternalServerError, &SimulateResponse{Err: jsonrpc.Err(jsonrpc.InvalidParams, aErr.Error())})
+			return
+		}
+
+		if paidFeeOnL1 != nil {
+			paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
+		}
+
+		txns = append(txns, txn)
+		if declaredClass != nil {
+			classes = append(classes, declaredClass)
+		}
+	}
+	if c.sequencerAddr == nil {
+		c.sequencerAddr = core.NetworkBlockHashMetaInfo(c.network).FallBackSequencerAddress
+	}
+
+	fees, traces, err := c.cairoVM.Execute(
+		txns, classes, uint64(block.Height),
+		block.Timestamp, c.sequencerAddr,
+		c.cairoState.State, c.network, paidFeesOnL1,
+		skipFeeCharge, skipValidate, sq.ErrOnRevert,
+		gasPrice, gasPriceSTRK, sq.LegacyJson,
+	)
+	if err != nil {
+		if errors.Is(err, utils.ErrResourceBusy) {
+			ctx.Json(http.StatusInternalServerError, &SimulateResponse{Err: rpc.ErrInternal.CloneWithData(err.Error())})
+			return
+		}
+		var txnExecutionError vm.TransactionExecutionError
+		if errors.As(err, &txnExecutionError) {
+			ctx.Json(http.StatusInternalServerError, &SimulateResponse{Err: makeTransactionExecutionError(&txnExecutionError)})
+			return
+		}
+		ctx.Json(http.StatusInternalServerError, &SimulateResponse{Err: rpc.ErrUnexpectedError.CloneWithData(err.Error())})
+		return
+	}
+
+	var result []rpc.SimulatedTransaction
+	for i, overallFee := range fees {
+		feeUnit := feeUnit(txns[i])
+
+		if feeUnit == rpc.FRI {
+			if gasPrice = gasPriceSTRK; gasPrice == nil {
+				gasPrice = &felt.Zero
+			}
+		}
+
+		estimate := rpc.FeeEstimate{
+			GasConsumed: new(felt.Felt).Div(overallFee, gasPrice),
+			GasPrice:    gasPrice,
+			OverallFee:  overallFee,
+		}
+
+		if !sq.LegacyJson {
+			estimate.Unit = utils.Ptr(feeUnit)
+		}
+		result = append(result, rpc.SimulatedTransaction{
+			TransactionTrace: &traces[i],
+			FeeEstimation:    estimate,
+		})
+	}
+	ctx.JsonOk(&SimulateResponse{Txs: result})
 }
 
 func declaredClassToClass(declared *core.DeclaredClass) (rpcClass *rpc.Class) {
@@ -388,4 +474,11 @@ func declaredClassToClass(declared *core.DeclaredClass) (rpcClass *rpc.Class) {
 		}
 	}
 	return
+}
+
+func makeTransactionExecutionError(err *vm.TransactionExecutionError) *jsonrpc.Error {
+	return rpc.ErrTransactionExecutionError.CloneWithData(rpc.TransactionExecutionErrorData{
+		TransactionIndex: err.Index,
+		ExecutionError:   err.Cause.Error(),
+	})
 }
