@@ -3,17 +3,18 @@ package starknetrpc
 import (
 	"context"
 	"errors"
+	"itachi/cairo/config"
+	"net"
+	"net/http"
+	"runtime"
+	"time"
+
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/validator"
 	"github.com/rs/cors"
 	"github.com/sourcegraph/conc"
 	"github.com/yu-org/yu/core/kernel"
-	"itachi/cairo/config"
-	"net"
-	"net/http"
-	"runtime"
-	"time"
 )
 
 const CairoTripod = "cairo"
@@ -104,7 +105,7 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 	return []jsonrpc.Method{
 		{
 			Name:    "starknet_chainId",
-			Handler: s.GetChainID(),
+			Handler: s.GetChainID,
 		},
 		{
 			Name:    "starknet_specVersion",
@@ -187,7 +188,7 @@ func (s *StarknetRPC) LegacyMethods() ([]jsonrpc.Method, string) {
 	return []jsonrpc.Method{
 		{
 			Name:    "starknet_chainId",
-			Handler: s.GetChainID(),
+			Handler: s.GetChainID,
 		},
 		{
 			Name:    "starknet_specVersion",
