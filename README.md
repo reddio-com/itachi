@@ -23,6 +23,7 @@ python3 scripts/abi_dumps.py
 ```
 
 ### Starknet RPC
+Compatible Versions: 0.5.1/0.6.0
 - [x] addDeclareTransaction
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
