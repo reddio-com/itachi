@@ -12,7 +12,7 @@ jobs:
     name: Build Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
@@ -20,6 +20,59 @@ jobs:
         with:
           go-version: '1.22'
 
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            juno/vm/rust/target
+            juno/core/rust/target
+            juno/starknet/rust/target
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('juno/vm/rust/Cargo.lock') }}
+    
       - name: Try make
         run: |
-          make build
+          make build && ls -lh
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: itachi-${{ github.sha }}
+          path: |
+            ./itachi
+            ./conf
+          retention-days: 1
+
+  testing:
+    name: Integration Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 'reddio-com/itachi-testing'
+          submodules: 'recursive'
+          token: ${{ secrets.REDDIO_PAT }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: itachi-${{ github.sha }}
+      
+      - name: Run tests
+        run: |
+          pwd && ls -lh && ls ./itachi && chmod +x ./itachi
+          # Run itachi in the background
+          ./itachi &
+      
+      - name: Run tests
+        run: |
+          cd python
+          python3 transfer_100_eth.py
