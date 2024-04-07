@@ -32,6 +32,16 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('juno/vm/rust/Cargo.lock') }}
+
+      - name: Cache go mods
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
     
       - name: Try make
         run: |
@@ -71,7 +81,7 @@ jobs:
       
       - name: Run tests
         run: |
-          pwd && ls
+          pwd && ls -lh && file ./itachi
           # Run itachi in the background
           ./itachi &
 
