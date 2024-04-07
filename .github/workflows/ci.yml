@@ -69,3 +69,9 @@ jobs:
         run: |
           pwd && ls -lh && ls ./itachi
           # Run itachi in the background
+          ./itachi &
+      
+      - name: Run tests
+        run: |
+          cd python
+          python3 transfer_100_eth.py
