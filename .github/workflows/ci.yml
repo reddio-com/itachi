@@ -42,6 +42,7 @@ jobs:
           name: itachi-${{ github.sha }}
           path: |
             ./itachi
+            ./conf
           retention-days: 1
 
   testing:
@@ -67,7 +68,7 @@ jobs:
       
       - name: Run tests
         run: |
-          pwd && ls -lh && ls ./itachi
+          pwd && ls -lh && ls ./itachi && chmod +x ./itachi
           # Run itachi in the background
           ./itachi &
       
