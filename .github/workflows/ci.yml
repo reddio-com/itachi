@@ -71,10 +71,5 @@ jobs:
       
       - name: Run tests
         run: |
-          pwd && ls -lh && file ./itachi
+          pwd && ls -lh && ls ./itachi
           # Run itachi in the background
-          ./itachi &
-
-      - name: Run tests
-        run: |
-          pwd && ls
