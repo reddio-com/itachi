@@ -42,7 +42,6 @@ jobs:
           name: itachi-${{ github.sha }}
           path: |
             itachi
-            conf
           retention-days: 1
 
   testing:
