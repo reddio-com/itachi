@@ -72,3 +72,9 @@ jobs:
       - name: Run tests
         run: |
           pwd && ls
+          # Run itachi in the background
+          ./itachi &
+
+      - name: Run tests
+        run: |
+          pwd && ls
