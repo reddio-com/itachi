@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: juno/vm/rust/target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('juno/vm/rust/Cargo.lock') }
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('juno/vm/rust/Cargo.lock') }}
     
       - name: Try make
         run: |
