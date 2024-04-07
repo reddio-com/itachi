@@ -21,9 +21,16 @@ jobs:
           go-version: '1.22'
 
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
-          path: juno/vm/rust/target
+          path: |
+            juno/vm/rust/target
+            juno/core/rust/target
+            juno/starknet/rust/target
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('juno/vm/rust/Cargo.lock') }}
     
       - name: Try make
