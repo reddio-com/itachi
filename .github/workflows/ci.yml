@@ -35,7 +35,7 @@ jobs:
     
       - name: Try make
         run: |
-          make build
+          make build && ls -lh
       
       - uses: actions/upload-artifact@v4
         with:
