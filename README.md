@@ -1,5 +1,5 @@
 # itachi
-A decentralized sequencer for Starknet.   
+A decentralized modular sequencer for Starknet.   
 
 ## Overall Structure
 ![image](docs/images/itachi_arch.png)
@@ -34,7 +34,7 @@ make reset
 
 
 ### Use [starknet.py](https://github.com/software-mansion/starknet.py)
-You can use our python demo: https://github.com/reddio-com/itachi-testing
+You can use our python tests: https://github.com/reddio-com/itachi-testing
 
 
 ## Configs  
