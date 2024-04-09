@@ -1,5 +1,9 @@
 # itachi
-A decentralized modular sequencer for Starknet.   
+Welcome to **itachi**, the much easier and more flexible modular stack to build chains using Cairo and the Starknet technology.
+It's open source for everyone to use.  
+Itachi is built on the [Yu](https://github.com/yu-org/yu) framework which not only makes it modular but also gives developers
+a simpler and more user-friendly development experience, just as simple as developing a web backend.  
+It is specifically easy and helpful if you want to quickly own more of the stack and get more control over your chain.
 
 ## Overall Structure
 ![image](docs/images/itachi_arch.png)
@@ -30,11 +34,8 @@ Reset Chain will clean all the stored history data locally.
 make reset
 ```  
 ## Test
-### Use [Starkli](https://github.com/xJonathanLEI/starkli)  
-
-
-### Use [starknet.py](https://github.com/software-mansion/starknet.py)
-You can use our python tests: https://github.com/reddio-com/itachi-testing
+### With [starknet.py](https://github.com/software-mansion/starknet.py)
+You can use more complete python tests: https://github.com/reddio-com/itachi-testing
 
 
 ## Configs  
