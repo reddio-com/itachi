@@ -8,7 +8,7 @@ a simpler and more user-friendly development experience, just as simple as devel
 It is specifically easy and helpful if you want to quickly own more of the stack and get more control over your chain.
 
 ## Overall Structure
-![image](docs/images/itachi_arch.png)
+![image](docs/images/itachi_arch.png)  
 
 ## Build & Run
 ### Prerequisites
@@ -28,7 +28,9 @@ git submodule update --recursive --checkout
 make build
 
 ./itachi
-```
+```   
+You can see the running results on your terminal.
+![image](docs/images/itachi_running.jpg)
 
 ### Reset Chain
 Reset Chain will clean all the stored history data locally. 
@@ -36,8 +38,8 @@ Reset Chain will clean all the stored history data locally.
 make reset
 ```  
 ## Test
-### With [starknet.py](https://github.com/software-mansion/starknet.py)
-You can use more complete python tests: https://github.com/reddio-com/itachi-testing
+### [Starknet.py](https://github.com/software-mansion/starknet.py)
+You can use more complete python tests with `starknet.py`: https://github.com/reddio-com/itachi-testing
 
 
 ## Configs  
