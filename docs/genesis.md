@@ -5,14 +5,8 @@ The genesis of the chain can be found in the [configs]
 folder. The genesis is defined in the form of a JSON file containing the
 following:
 
-- contract_classes: list of tuples containing the class hash and the class. The
-  class can be provided in two formats:
-  - An object containing a field "path" with the path to the compiled class from
-    the root of the repository and a field "version" to indicate which cairo
-    version this class belongs to (0 or 1). Example:
-    `{ "path": "cairo-contracts/NoValidateAccount.json", "version": 0 }`
-  - The whole serialized class
-- contracts: list of tuples containing the contract address and the associated
+- contract_classes: list of maps containing the class hash and the class.
+- contracts: list of maps containing the contract address and the associated
   class hash.
 - storage: list of tuples containing the storage key and the storage value.
   Please note that the storage key is itself a tuple, containing the contract
