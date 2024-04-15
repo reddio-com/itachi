@@ -1,5 +1,5 @@
 # itachi
-Welcome to **itachi**, the much easier and more flexible modular stack to build chains using Cairo and the Starknet technology.
+Welcome to **itachi**, the much easier and more flexible modular stack to build Layer 2 or Layer 3 chains using Cairo and the Starknet technology.
 It's open source for everyone to use.  
 
 Itachi is built on the [Yu](https://github.com/yu-org/yu) framework which not only makes it modular but also gives developers
