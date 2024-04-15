@@ -6,8 +6,8 @@ db_max_open_files = 10
 
 # cairoVM
 mock_vm = false
-max_vms = 3
-max_vm_queue = 3
+max_vms = 100000
+max_vm_queue = 100000
 log_level = 1
 colour = true
 
