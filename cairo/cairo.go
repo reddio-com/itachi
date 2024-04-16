@@ -2,7 +2,6 @@ package cairo
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -101,13 +100,6 @@ func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
 
 	// Replace the txHash with the Hash of starknet Txn
 	txn.TxnHash = starkTx.Hash().Bytes()
-
-	newTxReqByt, err := json.Marshal(txReq)
-	if err != nil {
-		return err
-	}
-
-	txn.SetParams(string(newTxReqByt))
 
 	return nil
 }
