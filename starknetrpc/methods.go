@@ -21,6 +21,16 @@ func (s *StarknetRPC) GetChainID() (*felt.Felt, *jsonrpc.Error) {
 	return s.network.ChainID(), nil
 }
 
+func (s *StarknetRPC) GetBlockWithTxHashes(id rpc.BlockID) (*rpc.BlockWithTxHashes, *jsonrpc.Error) {
+	req := &cairo.BlockWithTxHashesRequest{BlockID: cairo.NewFromJunoBlockID(id)}
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockWithTxHashes")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockWithTxHashesResponse)
+	return res.BlockWithTxHashes, res.Err
+}
+
 func (s *StarknetRPC) GetBlockWithTxs(id rpc.BlockID) (*rpc.BlockWithTxs, *jsonrpc.Error) {
 	req := &cairo.BlockWithTxsRequest{BlockID: cairo.NewFromJunoBlockID(id)}
 	resp, jsonErr := s.adaptChainRead(req, "GetBlockWithTxs")

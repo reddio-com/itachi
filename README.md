@@ -64,6 +64,7 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] getClassAt
 - [x] getClassHashAt
 - [ ] blockHashAndNumber  
+- [ ] getBlockWithTxHashes
 - [ ] getBlockWithTxs  
 - [x] chainId
 - [ ] syncing
@@ -93,6 +94,7 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] getClassAt
 - [x] getClassHashAt
 - [ ] blockHashAndNumber
+- [x] getBlockWithTxHashes  
 - [x] getBlockWithTxs
 - [x] chainId
 - [ ] syncing
