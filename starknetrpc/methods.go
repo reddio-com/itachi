@@ -21,6 +21,16 @@ func (s *StarknetRPC) GetChainID() (*felt.Felt, *jsonrpc.Error) {
 	return s.network.ChainID(), nil
 }
 
+func (s *StarknetRPC) GetBlockWithTxs(id rpc.BlockID) (*rpc.BlockWithTxs, *jsonrpc.Error) {
+	req := &cairo.BlockWithTxsRequest{BlockID: cairo.NewFromJunoBlockID(id)}
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockWithTxs")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockWithTxsResponse)
+	return res.BlockWithTxs, res.Err
+}
+
 func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxResponse, *jsonrpc.Error) {
 	return s.addTransaction(tx, false)
 }

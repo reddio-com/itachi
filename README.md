@@ -50,10 +50,36 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 
 
 ## Starknet RPC
-#### Compatible Versions: 
-- 0.5.1
-- 0.6.0   
-#### Compatible RPC methods
+### 0.5.1  
+- [x] addDeclareTransaction
+- [x] addDeployAccountTransaction
+- [x] addInvokeTransaction
+- [x] call
+- [x] estimateFee
+- [x] getTransactionReceipt
+- [x] getTransactionByHash
+- [x] getNonce
+- [x] getTransactionStatus
+- [x] getClass
+- [x] getClassAt
+- [x] getClassHashAt
+- [ ] blockHashAndNumber  
+- [ ] getBlockWithTxs  
+- [x] chainId
+- [ ] syncing
+- [ ] getTransactionByBlockIdAndIndex
+- [ ] getBlockTransactionCount
+- [ ] estimateMessageFee
+- [ ] blockNumber
+- [x] specVersion
+- [ ] traceTransaction
+- [x] simulateTransactions
+- [ ] traceBlockTransactions
+- [x] getStorageAt
+- [ ] getStateUpdate  
+
+
+### 0.6.0   
 - [x] addDeclareTransaction
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
@@ -67,6 +93,7 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] getClassAt
 - [x] getClassHashAt
 - [ ] blockHashAndNumber
+- [x] getBlockWithTxs
 - [x] chainId
 - [ ] syncing
 - [ ] getTransactionByBlockIdAndIndex
