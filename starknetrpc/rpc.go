@@ -112,6 +112,11 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Handler: s.SpecVersion,
 		},
 		{
+			Name:    "starknet_getBlockWithTxs",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
+			Handler: s.GetBlockWithTxs,
+		},
+		{
 			Name:    "starknet_addDeployAccountTransaction",
 			Params:  []jsonrpc.Parameter{{Name: "deploy_account_transaction"}},
 			Handler: s.AddTransaction,

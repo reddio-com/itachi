@@ -9,7 +9,9 @@ import (
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
+	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
+	"github.com/yu-org/yu/core/types"
 	"net/http"
 	"slices"
 )
@@ -97,6 +99,71 @@ func (c *Cairo) getReceipt(hash felt.Felt) (*rpc.TransactionReceipt, error) {
 	starkReceipt := new(rpc.TransactionReceipt)
 	err = encoder.Unmarshal(receipt.Extra, starkReceipt)
 	return starkReceipt, err
+}
+
+type BlockWithTxsRequest struct {
+	BlockID BlockID `json:"block_id"`
+}
+
+type BlockWithTxsResponse struct {
+	BlockWithTxs *rpc.BlockWithTxs `json:"block_with_txs"`
+	Err          *jsonrpc.Error    `json:"err"`
+}
+
+func (c *Cairo) GetBlockWithTxs(ctx *context.ReadContext) {
+	var br BlockWithTxsRequest
+	err := ctx.BindJson(&br)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+
+	var compactBlock *types.CompactBlock
+	switch {
+	case br.BlockID.Latest || br.BlockID.Pending:
+		compactBlock, err = c.Chain.GetEndBlock()
+	default:
+		compactBlock, err = c.Chain.GetBlockByHeight(common.BlockNum(br.BlockID.Number))
+	}
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+
+	starkTxs := make([]*rpc.Transaction, 0)
+	for _, txHash := range compactBlock.TxnsHashes {
+		var yuTxn *types.SignedTxn
+		yuTxn, err = c.TxDB.GetTxn(txHash)
+		if err != nil {
+			ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+			return
+		}
+		txReq := new(TxRequest)
+		err = yuTxn.BindJson(txReq)
+		if err != nil {
+			ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+			return
+		}
+		starkTxs = append(starkTxs, &txReq.Tx.Transaction)
+	}
+
+	num := uint64(compactBlock.Height)
+	blockWithTxs := &rpc.BlockWithTxs{
+		Status: rpc.BlockAcceptedL2,
+		BlockHeader: rpc.BlockHeader{
+			Hash:       new(felt.Felt).SetBytes(compactBlock.Hash.Bytes()),
+			ParentHash: new(felt.Felt).SetBytes(compactBlock.PrevHash.Bytes()),
+			Number:     &num,
+			// FIXME
+			NewRoot:          new(felt.Felt).SetBytes(compactBlock.StateRoot.Bytes()),
+			Timestamp:        compactBlock.Timestamp,
+			SequencerAddress: c.sequencerAddr,
+			// TODO：L1GasPrice, StarknetVersion
+		},
+		Transactions: starkTxs,
+	}
+
+	ctx.JsonOk(&BlockWithTxsResponse{BlockWithTxs: blockWithTxs})
 }
 
 type TransactionStatusRequest struct {
