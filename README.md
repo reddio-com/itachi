@@ -21,7 +21,7 @@ It is specifically easy and helpful if you want to quickly own more of the stack
 
 ### Docker Pull & Run
 ```shell
-docker pull ghcr.io/reddio-com/itachi:{version}
+docker pull ghcr.io/reddio-com/itachi:latest
 docker-compose up
 ```
 
