@@ -10,6 +10,10 @@ It is specifically easy and helpful if you want to quickly own more of the stack
 ## Overall Structure
 ![image](docs/images/itachi_arch.png)  
 
+## Cairo Compatible
+- cairo-vm: 0.8.3
+- cairo-lang: 2.4.0
+
 ## Build & Run
 ### Prerequisites
 - rustc 1.74.0 (79e9716c9 2023-11-13)  
