@@ -18,7 +18,7 @@ err_on_revert = true
 
 # starknet RPC
 enable_starknet_rpc = true
-starknet_host = "localhost"
+starknet_host = "0.0.0.0"
 starknet_port = "9091"
 
 [genesis_classes]
