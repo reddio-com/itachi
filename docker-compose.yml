@@ -7,7 +7,6 @@ services:
     volumes:
       - ./data/cairo_db:/cairo_db
       - ./data/yu:/yu
-      - ./data/yu.log:/yu.log
     ports:
       -  8887:8887
       -  9091:9091
