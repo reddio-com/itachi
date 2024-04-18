@@ -85,6 +85,6 @@ jobs:
           killall itachi
           rm -rf yu cairo_db && ./itachi &
         
-      - name: Run declear tests
+      - name: Run deploy tests
         run: |
-          python3 python/deploy_test.py
+          cd python && python3 deploy_test.py
