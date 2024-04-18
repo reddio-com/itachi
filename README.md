@@ -45,6 +45,8 @@ make reset
 ### [Starknet.py](https://github.com/software-mansion/starknet.py)
 You can use more complete python tests with `starknet.py`: https://github.com/reddio-com/itachi-testing
 
+## 🌐 Connect to Test Endpoint
+https://itachi-dev.reddio.com/
 
 ## Configs  
 ### Chain Configs
