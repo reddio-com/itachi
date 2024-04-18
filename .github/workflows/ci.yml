@@ -71,13 +71,20 @@ jobs:
         with:
           name: itachi-${{ github.sha }}
       
-      - name: Run tests
+      - name: Run itachi in the background
         run: |
-          pwd && ls -lh && ls ./itachi && chmod +x ./itachi
-          # Run itachi in the background
+          chmod +x ./itachi
           ./itachi &
       
-      - name: Run tests
+      - name: Run transfer tests
         run: |
-          cd python
-          python3 transfer_100_eth.py
+          python3 python/transfer_100_eth.py
+    
+      - name: Restart refresh itachi
+        run: |
+          killall itachi
+          rm -rf yu cairo_db && ./itachi &
+        
+      - name: Run deploy tests
+        run: |
+          cd python && python3 deploy_test.py
