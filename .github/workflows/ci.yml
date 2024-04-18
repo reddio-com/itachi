@@ -83,7 +83,7 @@ jobs:
       - name: Restart refresh itachi
         run: |
           killall itachi
-          make reset && ./itachi &
+          rm -rf yu cairo_db && ./itachi &
         
       - name: Run declear tests
         run: |
