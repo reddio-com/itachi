@@ -3,6 +3,7 @@ package starknetrpc
 import (
 	"context"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"itachi/cairo/config"
 	"net"
 	"net/http"
@@ -88,6 +89,23 @@ func (s *StarknetRPC) Serve(ctx context.Context) error {
 		return s.srv.Shutdown(context.Background())
 	case err := <-errCh:
 		return err
+	}
+}
+
+func StartUpStarknetRPC(chain *kernel.Kernel, cfg *config.Config) {
+	if cfg.EnableStarknetRPC {
+		rpcSrv, err := NewStarknetRPC(chain, cfg)
+		if err != nil {
+			logrus.Fatalf("init starknetRPC server failed, %v", err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			defer cancel()
+			err = rpcSrv.Serve(ctx)
+			if err != nil {
+				logrus.Errorf("starknetRPC serves failed, %v", err)
+			}
+		}()
 	}
 }
 

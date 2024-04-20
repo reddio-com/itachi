@@ -42,6 +42,9 @@ type Config struct {
 	EnableStarknetRPC bool   `toml:"enable_starknet_rpc"`
 	StarknetHost      string `toml:"starknet_host"`
 	StarknetPort      string `toml:"starknet_port"`
+
+	EnablePprof bool   `toml:"enable_pprof"`
+	PprofAddr   string `toml:"pprof_addr"`
 }
 
 type GenesisStorage struct {

@@ -8,5 +8,9 @@ services:
       - ./data/cairo_db:/cairo_db
       - ./data/yu:/yu
     ports:
+      # p2p port
       -  8887:8887
+      # starknet port
       -  9091:9091
+      # pprof port
+      -  8081:8081
