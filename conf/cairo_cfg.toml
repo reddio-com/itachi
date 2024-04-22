@@ -21,6 +21,10 @@ enable_starknet_rpc = true
 starknet_host = "0.0.0.0"
 starknet_port = "9091"
 
+# pprof
+enable_pprof = true
+pprof_addr = "localhost:8081"
+
 [genesis_classes]
 # ClassHash -> ContractClass FilePath
 # No validation account class
