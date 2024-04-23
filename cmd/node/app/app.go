@@ -26,6 +26,5 @@ func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config) *kernel.Kernel {
 	chain := startup.InitDefaultKernel(
 		poaTri, cairoTri,
 	)
-	// chain.WithExecuteFn(cairoTri.TxnExecute)
 	return chain
 }
