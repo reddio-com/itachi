@@ -11,40 +11,7 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/jinzhu/copier"
-	"github.com/yu-org/yu/common"
-	"github.com/yu-org/yu/core/context"
-	"github.com/yu-org/yu/core/startup"
-	"github.com/yu-org/yu/core/types"
 )
-
-func (c *Cairo) TxnExecute(block *types.Block) error {
-
-	receipts := make(map[common.Hash]*types.Receipt)
-
-	for _, txn := range block.Txns {
-		wrCall := txn.Raw.WrCall
-		ctx, err := context.NewWriteContext(txn, block)
-		if err != nil {
-			return err
-		}
-		wr, err := startup.Land.GetWriting(wrCall.TripodName, wrCall.FuncName)
-		if err != nil {
-			return err
-		}
-		err = wr(ctx)
-		rcpt := types.NewReceipt(ctx.Events, err, ctx.Extra)
-		rcpt.FillMetadata(block, txn, ctx.LeiCost)
-		receipts[txn.TxnHash] = rcpt
-	}
-	blockNumber := uint64(block.Height)
-
-	// commit cairoState
-	err := c.cairoState.Commit(blockNumber)
-	if err != nil {
-		return err
-	}
-	return c.TxDB.SetReceipts(receipts)
-}
 
 func (c *Cairo) execute(
 	txns []core.Transaction, declaredClasses []core.Class,

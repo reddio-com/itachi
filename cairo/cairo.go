@@ -62,6 +62,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 	)
 	cairo.SetInit(cairo)
 	cairo.SetTxnChecker(cairo)
+	cairo.SetCommitter(cairo)
 
 	return cairo
 }
@@ -159,6 +160,15 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 	}
 	ctx.EmitExtra(receiptByt)
 	return nil
+}
+
+func (c *Cairo) Commit(block *types.Block) {
+	blockNumber := uint64(block.Height)
+	// TODO: set the stateRoot into block
+	err := c.cairoState.Commit(blockNumber)
+	if err != nil {
+		logrus.Errorf("cairo commit failed on Block(%d), error: %v", blockNumber, err)
+	}
 }
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
