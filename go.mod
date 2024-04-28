@@ -7,7 +7,7 @@ replace github.com/NethermindEth/juno => ./juno
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/NethermindEth/juno v0.8.1-0.20231228072404-6222563f6218
-	github.com/NethermindEth/starknet.go v0.6.1
+	github.com/NethermindEth/starknet.go v0.7.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/jinzhu/copier v0.3.5
