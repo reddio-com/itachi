@@ -26,14 +26,14 @@ func NewCairoState(cfg *config.Config) (*CairoState, error) {
 	}, nil
 }
 
-func (cs *CairoState) Commit(blockNum uint64) error {
+func (cs *CairoState) Commit(blockNum uint64) (*felt.Felt, error) {
 	stateDiff, newClasses := cs.StateDiffAndClasses()
 	err := cs.State.Update(blockNum, stateDiff, newClasses)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cs.PendingStateWriter = junostate.NewPendingStateWriter(core.EmptyStateDiff(), make(map[felt.Felt]core.Class), cs.State)
-	return nil
+	return cs.State.Root()
 }
 
 func newState(cfg *config.Config) (*core.State, error) {

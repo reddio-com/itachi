@@ -10,20 +10,20 @@ import (
 	"os"
 )
 
-func (c *Cairo) buildGenesis() error {
+func (c *Cairo) buildGenesis() (*felt.Felt, error) {
 	err := c.storeClasses()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = c.storeContracts()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = c.storeStorages()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	return c.cairoState.Commit(0)
