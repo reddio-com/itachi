@@ -79,14 +79,15 @@ func newVM(cfg *config.Config) (vm.VM, error) {
 	return node.NewThrottledVM(vm.New(log), cfg.MaxVMs, cfg.MaxVMQueue), nil
 }
 
-func (c *Cairo) InitChain() {
+func (c *Cairo) InitChain(genesisBlock *types.Block) {
 	// init codec for juno types
 	junostate.RegisterCoreTypesToEncoder()
 
-	err := c.buildGenesis()
+	stateRoot, err := c.buildGenesis()
 	if err != nil {
 		logrus.Fatal("build genesis classes failed: ", err)
 	}
+	genesisBlock.StateRoot = stateRoot.Bytes()
 }
 
 func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
@@ -164,11 +165,11 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 
 func (c *Cairo) Commit(block *types.Block) {
 	blockNumber := uint64(block.Height)
-	// TODO: set the stateRoot into block
-	err := c.cairoState.Commit(blockNumber)
+	stateRoot, err := c.cairoState.Commit(blockNumber)
 	if err != nil {
 		logrus.Errorf("cairo commit failed on Block(%d), error: %v", blockNumber, err)
 	}
+	block.StateRoot = stateRoot.Bytes()
 }
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
