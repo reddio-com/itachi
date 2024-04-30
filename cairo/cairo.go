@@ -79,14 +79,15 @@ func newVM(cfg *config.Config) (vm.VM, error) {
 	return node.NewThrottledVM(vm.New(log), cfg.MaxVMs, cfg.MaxVMQueue), nil
 }
 
-func (c *Cairo) InitChain() {
+func (c *Cairo) InitChain(genesisBlock *types.Block) {
 	// init codec for juno types
 	junostate.RegisterCoreTypesToEncoder()
 
-	err := c.buildGenesis()
+	stateRoot, err := c.buildGenesis()
 	if err != nil {
 		logrus.Fatal("build genesis classes failed: ", err)
 	}
+	genesisBlock.StateRoot = stateRoot.Bytes()
 }
 
 func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
