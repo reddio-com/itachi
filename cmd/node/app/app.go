@@ -7,7 +7,7 @@ import (
 	"github.com/yu-org/yu/core/startup"
 	"itachi/cairo"
 	"itachi/cairo/config"
-	"itachi/starknetrpc"
+	"itachi/cairo/starknetrpc"
 	"itachi/utils"
 )
 
