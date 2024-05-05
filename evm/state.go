@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
@@ -54,32 +55,15 @@ func NewState(cfg *Config) (*State, error) {
 	if err != nil {
 		return nil, err
 	}
-	scheme, err := rawdb.ParseStateScheme(cfg.StateScheme, db)
+
+	cacheCfg, err := cacheConfig(cfg, db)
 	if err != nil {
 		return nil, err
 	}
-	cacheCfg := &core.CacheConfig{
-		TrieCleanLimit:      cfg.TrieCleanCache,
-		TrieCleanNoPrefetch: cfg.NoPrefetch,
-		TrieDirtyLimit:      cfg.TrieDirtyCache,
-		TrieDirtyDisabled:   cfg.NoPruning,
-		TrieTimeLimit:       cfg.TrieTimeout,
-		SnapshotLimit:       cfg.SnapshotCache,
-		Preimages:           cfg.Preimages,
-		StateHistory:        cfg.StateHistory,
-		StateScheme:         scheme,
-	}
+	snapCfg := snapsConfig(cfg)
 
 	trieDB := triedb.NewDatabase(db, trieConfig(cacheCfg, false))
-
 	stateCache := state.NewDatabaseWithNodeDB(db, trieDB)
-
-	snapCfg := snapshot.Config{
-		CacheSize:  cacheCfg.SnapshotLimit,
-		Recovery:   cfg.Recovery,
-		NoBuild:    cfg.NoBuild,
-		AsyncBuild: !cfg.SnapshotWait,
-	}
 
 	snaps, err := snapshot.New(snapCfg, db, trieDB, types.EmptyRootHash /* current block hash */)
 	if err != nil {
@@ -118,6 +102,33 @@ func trieConfig(c *core.CacheConfig, isVerkle bool) *triedb.Config {
 		}
 	}
 	return config
+}
+
+func cacheConfig(cfg *Config, db ethdb.Database) (*core.CacheConfig, error) {
+	scheme, err := rawdb.ParseStateScheme(cfg.StateScheme, db)
+	if err != nil {
+		return nil, err
+	}
+	return &core.CacheConfig{
+		TrieCleanLimit:      cfg.TrieCleanCache,
+		TrieCleanNoPrefetch: cfg.NoPrefetch,
+		TrieDirtyLimit:      cfg.TrieDirtyCache,
+		TrieDirtyDisabled:   cfg.NoPruning,
+		TrieTimeLimit:       cfg.TrieTimeout,
+		SnapshotLimit:       cfg.SnapshotCache,
+		Preimages:           cfg.Preimages,
+		StateHistory:        cfg.StateHistory,
+		StateScheme:         scheme,
+	}, nil
+}
+
+func snapsConfig(cfg *Config) snapshot.Config {
+	return snapshot.Config{
+		CacheSize:  cfg.SnapshotCache,
+		Recovery:   cfg.Recovery,
+		NoBuild:    cfg.NoBuild,
+		AsyncBuild: !cfg.SnapshotWait,
+	}
 }
 
 func (s *State) Commit(blockNum uint64) (common.Hash, error) {
