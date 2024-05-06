@@ -11,15 +11,15 @@ type Config struct {
 	EnablePreimageRecording bool `toml:"enable_preimage_recording"`
 
 	// snapshots config
-	Recovery     bool `toml:"recovery"`
-	NoBuild      bool `toml:"no_build"`
-	SnapshotWait bool `toml:"snapshot_wait"`
+	Recovery      bool `toml:"recovery"`
+	NoBuild       bool `toml:"no_build"`
+	SnapshotWait  bool `toml:"snapshot_wait"`
+	SnapshotCache int  `toml:"snapshot_cache"`
 
 	// cache config
 	TrieCleanCache int           `toml:"trie_clean_cache"`
 	TrieDirtyCache int           `toml:"trie_dirty_cache"`
 	TrieTimeout    time.Duration `toml:"trie_timeout"`
-	SnapshotCache  int           `toml:"snapshot_cache"`
 	Preimages      bool          `toml:"preimages"`
 	NoPruning      bool          `toml:"no_pruning"`
 	NoPrefetch     bool          `toml:"no_prefetch"`
