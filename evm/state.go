@@ -19,15 +19,15 @@ import (
 	"path/filepath"
 )
 
-type State struct {
-	cfg     *Config
-	stateDB *state.StateDB
-	trieDB  *triedb.Database
-	snaps   *snapshot.Tree
-	logger  *tracing.Hooks
+type EthState struct {
+	cfg        *Config
+	stateCache state.Database
+	trieDB     *triedb.Database
+	snaps      *snapshot.Tree
+	logger     *tracing.Hooks
 }
 
-func NewState(cfg *Config) (*State, error) {
+func NewState(cfg *Config, currentStateRoot common.Hash) (*EthState, error) {
 	vmConfig := vm.Config{
 		EnablePreimageRecording: cfg.EnablePreimageRecording,
 	}
@@ -65,23 +65,43 @@ func NewState(cfg *Config) (*State, error) {
 	trieDB := triedb.NewDatabase(db, trieConfig(cacheCfg, false))
 	stateCache := state.NewDatabaseWithNodeDB(db, trieDB)
 
-	snaps, err := snapshot.New(snapCfg, db, trieDB, types.EmptyRootHash /* current block hash */)
+	snaps, err := snapshot.New(snapCfg, db, trieDB, currentStateRoot)
 	if err != nil {
 		return nil, err
 	}
 
-	statedb, err := state.New(types.EmptyRootHash, stateCache, snaps)
-	if err != nil {
-		return nil, err
-	}
-
-	return &State{
-		cfg:     cfg,
-		stateDB: statedb,
-		trieDB:  trieDB,
-		snaps:   snaps,
-		logger:  vmConfig.Tracer,
+	return &EthState{
+		cfg:        cfg,
+		stateCache: stateCache,
+		trieDB:     trieDB,
+		snaps:      snaps,
+		logger:     vmConfig.Tracer,
 	}, nil
+}
+
+func (s *EthState) GenesisStateDB() (*state.StateDB, error) {
+	return state.New(types.EmptyRootHash, s.stateCache, nil)
+}
+
+func (s *EthState) NewStateDB(parentStateRoot common.Hash) (statedb *state.StateDB, err error) {
+	statedb, err = state.New(parentStateRoot, s.stateCache, s.snaps)
+	if err != nil {
+		return
+	}
+	statedb.SetLogger(s.logger)
+	// Enable prefetching to pull in trie node paths while processing transactions
+	statedb.StartPrefetcher("chain")
+	return
+}
+
+func (s *EthState) Commit(blockNum uint64, stateDB *state.StateDB) (common.Hash, error) {
+	stateDB.StopPrefetcher()
+	stateRoot, err := stateDB.Commit(blockNum, true)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	err = s.trieDB.Commit(stateRoot, true)
+	return stateRoot, err
 }
 
 func trieConfig(c *core.CacheConfig, isVerkle bool) *triedb.Config {
@@ -129,13 +149,4 @@ func snapsConfig(cfg *Config) snapshot.Config {
 		NoBuild:    cfg.NoBuild,
 		AsyncBuild: !cfg.SnapshotWait,
 	}
-}
-
-func (s *State) Commit(blockNum uint64) (common.Hash, error) {
-	stateRoot, err := s.stateDB.Commit(blockNum, true)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	err = s.trieDB.Commit(stateRoot, true)
-	return stateRoot, err
 }
