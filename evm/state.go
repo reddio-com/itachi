@@ -27,7 +27,7 @@ type EthState struct {
 	logger     *tracing.Hooks
 }
 
-func NewState(cfg *Config, currentStateRoot common.Hash) (*EthState, error) {
+func NewEthState(cfg *Config, currentStateRoot common.Hash) (*EthState, error) {
 	vmConfig := vm.Config{
 		EnablePreimageRecording: cfg.EnablePreimageRecording,
 	}
