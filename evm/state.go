@@ -16,18 +16,19 @@ import (
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
+	"itachi/evm/config"
 	"path/filepath"
 )
 
 type EthState struct {
-	cfg        *Config
+	cfg        *config.Config
 	stateCache state.Database
 	trieDB     *triedb.Database
 	snaps      *snapshot.Tree
 	logger     *tracing.Hooks
 }
 
-func NewEthState(cfg *Config, currentStateRoot common.Hash) (*EthState, error) {
+func NewEthState(cfg *config.Config, currentStateRoot common.Hash) (*EthState, error) {
 	vmConfig := vm.Config{
 		EnablePreimageRecording: cfg.EnablePreimageRecording,
 	}
@@ -124,7 +125,7 @@ func trieConfig(c *core.CacheConfig, isVerkle bool) *triedb.Config {
 	return config
 }
 
-func cacheConfig(cfg *Config, db ethdb.Database) (*core.CacheConfig, error) {
+func cacheConfig(cfg *config.Config, db ethdb.Database) (*core.CacheConfig, error) {
 	scheme, err := rawdb.ParseStateScheme(cfg.StateScheme, db)
 	if err != nil {
 		return nil, err
@@ -142,7 +143,7 @@ func cacheConfig(cfg *Config, db ethdb.Database) (*core.CacheConfig, error) {
 	}, nil
 }
 
-func snapsConfig(cfg *Config) snapshot.Config {
+func snapsConfig(cfg *config.Config) snapshot.Config {
 	return snapshot.Config{
 		CacheSize:  cfg.SnapshotCache,
 		Recovery:   cfg.Recovery,
