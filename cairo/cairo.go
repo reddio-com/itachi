@@ -60,9 +60,9 @@ func NewCairo(cfg *config.Config) *Cairo {
 		cairo.SimulateTransactions,
 		cairo.GetBlockWithTxs, cairo.GetBlockWithTxHashes,
 	)
-	cairo.SetInit(cairo)
-	cairo.SetTxnChecker(cairo)
-	cairo.SetCommitter(cairo)
+	//cairo.SetInit(cairo)
+	//cairo.SetTxnChecker(cairo)
+	//cairo.SetCommitter(cairo)
 
 	return cairo
 }

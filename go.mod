@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/sourcegraph/conc v0.2.0
 	github.com/stretchr/testify v1.8.4
-	github.com/yu-org/yu v0.0.0-20240507145856-d3546815096c
+	github.com/yu-org/yu v0.0.0-20240508033239-a3a7df0e0e35
 )
 
 require (
