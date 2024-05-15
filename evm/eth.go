@@ -1,16 +1,30 @@
 package evm
 
 import (
+	"math"
+	"math/big"
+
+	"github.com/NethermindEth/juno/core/felt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/yu-org/yu/core/context"
-	"math"
-	"math/big"
+	"github.com/yu-org/yu/core/tripod"
 
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 )
+
+type Cairo struct {
+	*tripod.Tripod
+	ethState      *EthState
+	cfg           *Config
+	sequencerAddr *felt.Felt
+}
 
 func NewEnv(cfg *Config) *vm.EVM {
 	txContext := vm.TxContext{
@@ -33,6 +47,8 @@ func NewEnv(cfg *Config) *vm.EVM {
 		Random:      cfg.Random,
 	}
 
+	// NewStateDB(parentStateRoot common.Hash);
+
 	return vm.NewEVM(blockContext, txContext, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
 }
 
@@ -54,7 +70,7 @@ type Config struct {
 	BlobFeeCap  *big.Int
 	Random      *common.Hash
 
-	State     *EthState
+	State     *state.StateDB
 	GetHashFn func(n uint64) common.Hash
 }
 
@@ -114,52 +130,54 @@ func (cfg *Config) ExecuteTxn(ctx *context.WriteContext) error {
 		return err
 	}
 
-	tx, class, paidFeeOnL1, err := e.adaptBroadcastedTransaction(txReq.Tx)
-	if err != nil {
-		return err
-	}
+	// blockNumber := uint64(ctx.Block.Height)
+	// blockTimestamp := ctx.Block.Timestamp
 
+	setDefaults(cfg)
+
+	if cfg.State == nil {
+		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
+	}
 	var (
-		starknetTxns = make([]core.Transaction, 0)
-		classes      = make([]core.Class, 0)
-		paidFeesOnL1 = make([]*felt.Felt, 0)
+		address = common.BytesToAddress([]byte("contract"))
+		vmenv   = NewEnv(cfg)
+		sender  = vm.AccountRef(cfg.Origin)
+		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
-	if tx != nil {
-		starknetTxns = append(starknetTxns, tx)
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
-	if class != nil {
-		classes = append(classes, class)
-	}
-	if paidFeeOnL1 != nil {
-		paidFeesOnL1 = append(paidFeesOnL1, paidFeeOnL1)
-	}
-
-	blockNumber := uint64(ctx.Block.Height)
-	blockTimestamp := ctx.Block.Timestamp
-
-	// FIXME: GasPriceWEI, GasPriceSTRK should be filled.
-	gasPrice := new(felt.Felt).SetUint64(1)
-	vmenv = NewEnv(cfg)
-	actualFees, traces, err := vmenv.execute(
-		starknetTxns, classes, blockNumber, blockTimestamp,
-		paidFeesOnL1, gasPrice, gasPrice, txReq.LegacyTraceJson,
+	// Execute the preparatory steps for state transition which includes:
+	// - prepare accessList(post-berlin)
+	// - reset transient storage(eip 1153)
+	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+	cfg.State.CreateAccount(address)
+	// set the receiver's (the executing contract) code for execution.
+	cfg.State.SetCode(address, code)
+	// Call the code with the given configuration.
+	ret, _, err := vmenv.Call(
+		sender,
+		common.BytesToAddress([]byte("contract")),
+		input,
+		cfg.GasLimit,
+		uint256.MustFromBig(cfg.Value),
 	)
 
-	var starkReceipt *rpc.TransactionReceipt
-	if len(traces) > 0 && len(actualFees) > 0 {
-		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
-	}
-	if err != nil {
-		// fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
-		starkReceipt = makeErrStarkReceipt(ctx.Block, tx, err)
-	}
+	// var starkReceipt *rpc.TransactionReceipt
+	// if len(traces) > 0 && len(actualFees) > 0 {
+	// 	starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
+	// }
+	// if err != nil {
+	// 	// fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
+	// 	starkReceipt = makeErrStarkReceipt(ctx.Block, tx, err)
+	// }
 
 	//spew.Dump(starkReceipt)
 
-	receiptByt, err := encoder.Marshal(starkReceipt)
-	if err != nil {
-		return err
-	}
-	ctx.EmitExtra(receiptByt)
+	// receiptByt, err := encoder.Marshal(starkReceipt)
+	// if err != nil {
+	// 	return err
+	// }
+	// ctx.EmitExtra(receiptByt)
 	return nil
 }
