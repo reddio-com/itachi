@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -55,7 +54,7 @@ type Config struct {
 	BlobFeeCap  *big.Int
 	Random      *common.Hash
 
-	State     *state.StateDB
+	State     *EthState
 	GetHashFn func(n uint64) common.Hash
 }
 
