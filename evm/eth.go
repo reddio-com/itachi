@@ -123,7 +123,7 @@ func setDefaults(cfg *Config) {
 	}
 }
 
-func (s *Solidity) ExecuteTxn(ctx *context.WriteContext, input []byte, code []byte) ([]byte, error) {
+func (s *Solidity) ExecuteTxn(ctx *context.WriteContext, input, code []byte) ([]byte, error) {
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
 	if err != nil {
