@@ -19,7 +19,7 @@ import (
 	"github.com/holiman/uint256"
 )
 
-type Cairo struct {
+type Solidity struct {
 	*tripod.Tripod
 	ethState      *EthState
 	cfg           *Config
@@ -123,16 +123,17 @@ func setDefaults(cfg *Config) {
 	}
 }
 
-func (cfg *Config) ExecuteTxn(ctx *context.WriteContext) error {
+func (s *Solidity) ExecuteTxn(ctx *context.WriteContext, input []byte, code []byte) ([]byte, error) {
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// blockNumber := uint64(ctx.Block.Height)
 	// blockTimestamp := ctx.Block.Timestamp
 
+	cfg := s.cfg
 	setDefaults(cfg)
 
 	if cfg.State == nil {
@@ -163,21 +164,5 @@ func (cfg *Config) ExecuteTxn(ctx *context.WriteContext) error {
 		uint256.MustFromBig(cfg.Value),
 	)
 
-	// var starkReceipt *rpc.TransactionReceipt
-	// if len(traces) > 0 && len(actualFees) > 0 {
-	// 	starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
-	// }
-	// if err != nil {
-	// 	// fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
-	// 	starkReceipt = makeErrStarkReceipt(ctx.Block, tx, err)
-	// }
-
-	//spew.Dump(starkReceipt)
-
-	// receiptByt, err := encoder.Marshal(starkReceipt)
-	// if err != nil {
-	// 	return err
-	// }
-	// ctx.EmitExtra(receiptByt)
-	return nil
+	return ret, err
 }
