@@ -4,10 +4,10 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/NethermindEth/juno/core/felt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
 
@@ -17,13 +17,14 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"itachi/evm/config"
 )
 
 type Solidity struct {
 	*tripod.Tripod
 	ethState      *EthState
 	cfg           *Config
-	sequencerAddr *felt.Felt
+	evm           *vm.EVM
 }
 
 func NewEnv(cfg *Config) *vm.EVM {
@@ -121,6 +122,49 @@ func setDefaults(cfg *Config) {
 	if cfg.BlobBaseFee == nil {
 		cfg.BlobBaseFee = big.NewInt(params.BlobTxMinBlobGasprice)
 	}
+}
+
+func (c *Solidity) InitChain(genesisBlock *types.Block) {
+	// init codec for juno types
+	// junostate.RegisterCoreTypesToEncoder()
+
+	// stateRoot, err := c.buildGenesis()
+	// if err != nil {
+	// 	logrus.Fatal("build genesis classes failed: ", err)
+	// }
+	// genesisBlock.StateRoot = stateRoot.Bytes()
+}
+
+func NewSolidity(cfg *config.Config, env_cfg *Config) *Solidity {
+	//TODO miss common.Hash
+	state, err := NewEthState(cfg)
+	if err != nil {
+		logrus.Fatal("init cairoState for Cairo failed: ", err)
+	}
+	evm := NewEnv(env_cfg)
+	if err != nil {
+		logrus.Fatal("init cairoVM failed: ", err)
+	}
+
+	solidity := &Solidity{
+		Tripod:        tripod.NewTripod(),
+		ethState:      state,
+		cfg:           env_cfg,
+		evm:           evm,
+		// network:       utils.Network(cfg.Network),
+	}
+
+	//TODO need update ExecuteTxn func
+	solidity.SetWritings(solidity.ExecuteTxn)
+	// solidity.SetReadings(
+	// 	solidity.Call, solidity.GetClass, solidity.GetClassAt,
+	// 	solidity.GetClassHashAt, solidity.GetNonce, solidity.GetStorage,
+	// 	solidity.GetTransaction, solidity.GetTransactionStatus, solidity.GetReceipt,
+	// 	solidity.SimulateTransactions,
+	// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
+	// )
+
+	return solidity
 }
 
 func (s *Solidity) ExecuteTxn(ctx *context.WriteContext, input, code []byte) ([]byte, error) {
