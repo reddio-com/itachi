@@ -19,8 +19,6 @@ type CallResponse struct {
 }
 
 type TxRequest struct {
-	Tx              *rpc.BroadcastedTransaction `json:"tx"`
-	GasPriceWEI     *felt.Felt                  `json:"gas_price_wei"`
-	GasPriceSTRK    *felt.Felt                  `json:"gas_price_strk"`
-	LegacyTraceJson bool                        `json:"legacy_trace_json"`
+	Input           []byte                      `json:"input"`
+	Code            []byte						`json:"code"`
 }

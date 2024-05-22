@@ -22,9 +22,9 @@ import (
 
 type Solidity struct {
 	*tripod.Tripod
-	ethState      *EthState
-	cfg           *Config
-	evm           *vm.EVM
+	ethState *EthState
+	cfg      *Config
+	evm      *vm.EVM
 }
 
 func NewEnv(cfg *Config) *vm.EVM {
@@ -147,10 +147,10 @@ func NewSolidity(cfg *config.Config, env_cfg *Config) *Solidity {
 	}
 
 	solidity := &Solidity{
-		Tripod:        tripod.NewTripod(),
-		ethState:      state,
-		cfg:           env_cfg,
-		evm:           evm,
+		Tripod:   tripod.NewTripod(),
+		ethState: state,
+		cfg:      env_cfg,
+		evm:      evm,
 		// network:       utils.Network(cfg.Network),
 	}
 
@@ -167,15 +167,17 @@ func NewSolidity(cfg *config.Config, env_cfg *Config) *Solidity {
 	return solidity
 }
 
-func (s *Solidity) ExecuteTxn(ctx *context.WriteContext, input, code []byte) ([]byte, error) {
+func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// blockNumber := uint64(ctx.Block.Height)
 	// blockTimestamp := ctx.Block.Timestamp
+	code := txReq.Code
+	input := txReq.Input
 
 	cfg := s.cfg
 	setDefaults(cfg)
@@ -208,5 +210,6 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext, input, code []byte) ([]
 		uint256.MustFromBig(cfg.Value),
 	)
 
-	return ret, err
+	println("Return ret value:", ret)
+	return err
 }
