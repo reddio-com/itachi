@@ -154,7 +154,6 @@ func NewSolidity(cfg *config.Config, env_cfg *Config) *Solidity {
 		// network:       utils.Network(cfg.Network),
 	}
 
-	//TODO need update ExecuteTxn func
 	solidity.SetWritings(solidity.ExecuteTxn)
 	// solidity.SetReadings(
 	// 	solidity.Call, solidity.GetClass, solidity.GetClassAt,

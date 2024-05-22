@@ -3,7 +3,6 @@ package evm
 import (
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
-	"github.com/NethermindEth/juno/rpc"
 )
 
 type CallRequest struct {
