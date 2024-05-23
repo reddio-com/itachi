@@ -134,11 +134,11 @@ func (s *Solidity) InitChain(cfg *config.Config, genesisBlock *types.Block) {
 	// }
 	// genesisBlock.StateRoot = stateRoot.Bytes()
 
-	block, err := c.GetCurrentBlock()
+	block, err := s.GetCurrentBlock()
 	if err != nil {
 		logrus.Fatal("GetCurrentBlock failed: ", err)
 	}
-	state, err := NewEthState(cfg, block.StateRoot)
+	state, err := NewEthState(cfg, common.Hash(block.StateRoot))
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
