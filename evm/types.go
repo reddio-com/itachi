@@ -1,23 +1,21 @@
 package evm
 
 import (
-	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type CallRequest struct {
-	ContractAddr *felt.Felt  `json:"contract_addr"`
-	Selector     *felt.Felt  `json:"selector"`
-	Calldata     []felt.Felt `json:"calldata"`
-	// BlockID      BlockID     `json:"block_id"`
+	Input   []byte         `json:"input"`
+	Address common.Address `json:"address"`
 }
 
 type CallResponse struct {
-	ReturnData []*felt.Felt   `json:"return_data"`
+	ReturnData []byte         `json:"return_data"`
 	Err        *jsonrpc.Error `json:"err"`
 }
 
 type TxRequest struct {
-	Input           []byte                      `json:"input"`
-	Code            []byte						`json:"code"`
+	Input []byte `json:"input"`
+	Code  []byte `json:"code"`
 }

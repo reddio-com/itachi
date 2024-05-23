@@ -18,6 +18,9 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 	"itachi/evm/config"
+
+	"github.com/NethermindEth/juno/jsonrpc"
+	"net/http"
 )
 
 type Solidity struct {
@@ -214,4 +217,50 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 
 	println("Return ret value:", ret)
 	return err
+}
+
+func (s *Solidity) Call(ctx *context.ReadContext) {
+	callReq := new(CallRequest)
+	err := ctx.BindJson(callReq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &CallResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+
+	cfg := s.cfg
+	setDefaults(cfg)
+	address := callReq.Address
+	input := callReq.Input
+
+	var (
+		vmenv   = NewEnv(cfg)
+		sender  = vm.AccountRef(cfg.Origin)
+		statedb = cfg.State
+		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
+	)
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	}
+	// Execute the preparatory steps for state transition which includes:
+	// - prepare accessList(post-berlin)
+	// - reset transient storage(eip 1153)
+	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+
+	// Call the code with the given configuration.
+	ret, leftOverGas, err := vmenv.Call(
+		sender,
+		address,
+		input,
+		cfg.GasLimit,
+		uint256.MustFromBig(cfg.Value),
+	)
+	println("Return ret value:", ret)
+	println("Return leftOverGas value:", leftOverGas)
+
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+
+	ctx.JsonOk(&CallResponse{ReturnData: ret})
 }
