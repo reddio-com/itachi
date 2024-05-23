@@ -160,7 +160,7 @@ func NewSolidity(env_cfg *Config) *Solidity {
 		// network:       utils.Network(cfg.Network),
 	}
 
-	solidity.SetWritings(solidity.ExecuteTxn)
+	solidity.SetWritings(solidity.ExecuteTxn, solidity.Create)
 	solidity.SetReadings(
 		solidity.Call,
 	// solidity.GetClass, solidity.GetClassAt,
@@ -185,8 +185,6 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 		return err
 	}
 
-	// blockNumber := uint64(ctx.Block.Height)
-	// blockTimestamp := ctx.Block.Timestamp
 	code := txReq.Code
 	input := txReq.Input
 
@@ -270,5 +268,48 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 		return
 	}
 
-	ctx.JsonOk(&CallResponse{ReturnData: ret})
+	ctx.JsonOk(&CallResponse{Ret: ret, LeftOverGas: leftOverGas})
+}
+
+// Create executes the code using the EVM create method
+func (s *Solidity) Create(ctx *context.WriteContext) error {
+	txCreate := new(CreateRequest)
+	err := ctx.BindJson(txCreate)
+	if err != nil {
+		return err
+	}
+
+	cfg := s.cfg
+	setDefaults(cfg)
+
+	input := txCreate.Input
+
+	if cfg.State == nil {
+		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
+	}
+	var (
+		vmenv  = NewEnv(cfg)
+		sender = vm.AccountRef(cfg.Origin)
+		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
+	)
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	}
+	// Execute the preparatory steps for state transition which includes:
+	// - prepare accessList(post-berlin)
+	// - reset transient storage(eip 1153)
+	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
+	// Call the code with the given configuration.
+	code, address, leftOverGas, err := vmenv.Create(
+		sender,
+		input,
+		cfg.GasLimit,
+		uint256.MustFromBig(cfg.Value),
+	)
+
+	println("Return code value:", code)
+	println("Return address value:", address.Bytes())
+	println("Return leftOverGas value:", leftOverGas)
+
+	return err
 }

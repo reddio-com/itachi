@@ -11,7 +11,8 @@ type CallRequest struct {
 }
 
 type CallResponse struct {
-	ReturnData []byte         `json:"return_data"`
+	Ret          []byte         `json:"ret"`
+	LeftOverGas  uint64         `json:"leftOverGas"`
 	Err        *jsonrpc.Error `json:"err"`
 }
 
@@ -19,3 +20,14 @@ type TxRequest struct {
 	Input []byte `json:"input"`
 	Code  []byte `json:"code"`
 }
+
+type CreateRequest struct {
+	Input []byte `json:"input"`
+}
+
+// type CreateResponse struct {
+// 	Ret          []byte         `json:"ret"`
+// 	ContractAddr common.Address `json:"contractAddr"`
+// 	LeftOverGas  uint64         `json:"leftOverGas"`
+// 	Err          error          `json:"err"`
+// }
