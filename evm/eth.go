@@ -173,6 +173,11 @@ func NewSolidity(env_cfg *Config) *Solidity {
 	return solidity
 }
 
+// Execute executes the code using the input as call data during the execution.
+// It returns the EVM's return value, the new state and an error if it failed.
+//
+// Execute sets up an in-memory, temporary, environment for the execution of
+// the given code. It makes sure that it's restored to its original state afterwards.
 func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
@@ -220,6 +225,8 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	return err
 }
 
+// Call executes the code given by the contract's address. It will return the
+// EVM's return value or an error if it failed.
 func (s *Solidity) Call(ctx *context.ReadContext) {
 	callReq := new(CallRequest)
 	err := ctx.BindJson(callReq)
