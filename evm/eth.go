@@ -124,7 +124,7 @@ func setDefaults(cfg *Config) {
 	}
 }
 
-func (c *Solidity) InitChain(genesisBlock *types.Block) {
+func (s *Solidity) InitChain(cfg *config.Config, genesisBlock *types.Block) {
 	// init codec for juno types
 	// junostate.RegisterCoreTypesToEncoder()
 
@@ -133,24 +133,27 @@ func (c *Solidity) InitChain(genesisBlock *types.Block) {
 	// 	logrus.Fatal("build genesis classes failed: ", err)
 	// }
 	// genesisBlock.StateRoot = stateRoot.Bytes()
+
+	block, err := c.GetCurrentBlock()
+	if err != nil {
+		logrus.Fatal("GetCurrentBlock failed: ", err)
+	}
+	state, err := NewEthState(cfg, block.StateRoot)
+	if err != nil {
+		logrus.Fatal("init NewEthState failed: ", err)
+	}
+	s.ethState = state
+
 }
 
-func NewSolidity(cfg *config.Config, env_cfg *Config) *Solidity {
-	//TODO miss common.Hash
-	state, err := NewEthState(cfg)
-	if err != nil {
-		logrus.Fatal("init cairoState for Cairo failed: ", err)
-	}
+func NewSolidity(env_cfg *Config) *Solidity {
+
 	evm := NewEnv(env_cfg)
-	if err != nil {
-		logrus.Fatal("init cairoVM failed: ", err)
-	}
 
 	solidity := &Solidity{
-		Tripod:   tripod.NewTripod(),
-		ethState: state,
-		cfg:      env_cfg,
-		evm:      evm,
+		Tripod: tripod.NewTripod(),
+		cfg:    env_cfg,
+		evm:    evm,
 		// network:       utils.Network(cfg.Network),
 	}
 
