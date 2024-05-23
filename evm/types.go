@@ -11,9 +11,9 @@ type CallRequest struct {
 }
 
 type CallResponse struct {
-	Ret          []byte         `json:"ret"`
-	LeftOverGas  uint64         `json:"leftOverGas"`
-	Err        *jsonrpc.Error `json:"err"`
+	Ret         []byte         `json:"ret"`
+	LeftOverGas uint64         `json:"leftOverGas"`
+	Err         *jsonrpc.Error `json:"err"`
 }
 
 type TxRequest struct {
