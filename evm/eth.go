@@ -161,13 +161,14 @@ func NewSolidity(env_cfg *Config) *Solidity {
 	}
 
 	solidity.SetWritings(solidity.ExecuteTxn)
-	// solidity.SetReadings(
-	// 	solidity.Call, solidity.GetClass, solidity.GetClassAt,
+	solidity.SetReadings(
+		solidity.Call,
+	// solidity.GetClass, solidity.GetClassAt,
 	// 	solidity.GetClassHashAt, solidity.GetNonce, solidity.GetStorage,
 	// 	solidity.GetTransaction, solidity.GetTransactionStatus, solidity.GetReceipt,
 	// 	solidity.SimulateTransactions,
 	// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
-	// )
+	)
 
 	return solidity
 }
