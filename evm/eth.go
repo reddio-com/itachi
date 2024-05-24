@@ -1,26 +1,28 @@
 package evm
 
 import (
+	"itachi/evm/config"
 	"math"
 	"math/big"
+	"net/http"
+
+	"github.com/sirupsen/logrus"
+	yu_common "github.com/yu-org/yu/common"
+	"github.com/yu-org/yu/core/context"
+	"github.com/yu-org/yu/core/tripod"
+	yu_types "github.com/yu-org/yu/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/sirupsen/logrus"
-	"github.com/yu-org/yu/core/context"
-	"github.com/yu-org/yu/core/tripod"
-
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/holiman/uint256"
-	"itachi/evm/config"
 
 	"github.com/NethermindEth/juno/jsonrpc"
-	"net/http"
+	"github.com/holiman/uint256"
 )
 
 type Solidity struct {
@@ -312,4 +314,23 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	println("Return leftOverGas value:", leftOverGas)
 
 	return err
+}
+
+func (s *Solidity) Commit(block *yu_types.Block) {
+	blockNumber := uint64(block.Height)
+	statedb, err := s.ethState.NewStateDB(common.Hash(block.StateRoot))
+	if err != nil {
+		logrus.Errorf("NewStateDB failed on Block(%d), error: %v", blockNumber, err)
+	}
+	stateRoot, err := s.ethState.Commit(blockNumber, statedb)
+	if err != nil {
+		logrus.Errorf("Solidity commit failed on Block(%d), error: %v", blockNumber, err)
+	}
+	block.StateRoot = AdaptHash(stateRoot)
+}
+
+func AdaptHash(ethHash common.Hash) yu_common.Hash {
+	var yuHash yu_common.Hash
+	copy(yuHash[:], ethHash[:])
+	return yuHash
 }
