@@ -130,14 +130,8 @@ func setDefaults(cfg *Config) {
 }
 
 func (s *Solidity) InitChain(cfg *config.Config, genesisBlock *types.Block) {
-	// init codec for juno types
-	// junostate.RegisterCoreTypesToEncoder()
 
-	// stateRoot, err := c.buildGenesis()
-	// if err != nil {
-	// 	logrus.Fatal("build genesis classes failed: ", err)
-	// }
-	// genesisBlock.StateRoot = stateRoot.Bytes()
+	DefaultGoerliGenesisBlock()
 
 	block, err := s.GetCurrentBlock()
 	if err != nil {
@@ -147,7 +141,18 @@ func (s *Solidity) InitChain(cfg *config.Config, genesisBlock *types.Block) {
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
+
+	blockNumber := uint64(block.Height)
+
 	s.ethState = state
+	state.GenesisStateDB()
+
+	statedb, err := s.ethState.NewStateDB(common.Hash(block.StateRoot))
+	if err != nil {
+		logrus.Errorf("NewStateDB failed on Block(%d), error: %v", blockNumber, err)
+	}
+
+	s.ethState.Commit(blockNumber, statedb)
 
 }
 
