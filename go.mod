@@ -10,6 +10,7 @@ require (
 	github.com/NethermindEth/starknet.go v0.7.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/ethereum/go-ethereum v1.14.0
+	github.com/holiman/uint256 v1.2.4
 	github.com/jinzhu/copier v0.3.5
 	github.com/rs/cors v1.10.1
 	github.com/sirupsen/logrus v1.9.0
@@ -92,7 +93,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
-	github.com/holiman/uint256 v1.2.4 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/ipfs/boxo v0.10.0 // indirect
 	github.com/ipfs/go-cid v0.4.1 // indirect
