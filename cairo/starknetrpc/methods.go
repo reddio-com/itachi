@@ -383,7 +383,7 @@ func (s *StarknetRPC) GetTransactionByBlockIdAndIndex(id rpc.BlockID, txIndex in
 	if err != nil {
 		return nil, err
 	}
-	hash := *blockWithTxHashes.TxnHashes[txIndex] //不是很确定这里是不是直接可以用index
+	hash := *blockWithTxHashes.TxnHashes[txIndex] // fixme: not sure if txIndex can be straightly used here
 
 	txReq := &cairo.TransactionRequest{Hash: hash}
 	resp, jsonErr := s.adaptChainRead(txReq, "GetTransaction")

@@ -38,7 +38,7 @@ type LatestBlockResponse struct {
 	Err   *jsonrpc.Error      `json:"err"`
 }
 
-// 不是很确定这里是不是其实不需要request的内容，直接response
+// fixme: not sure if request structure is a must
 func (c *Cairo) LatestBlock(ctx *context.ReadContext) {
 	Block, err := c.Chain.GetEndBlock()
 	if err != nil {
