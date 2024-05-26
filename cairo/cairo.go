@@ -2,6 +2,9 @@ package cairo
 
 import (
 	"encoding/hex"
+	"itachi/cairo/config"
+	"net/http"
+
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -16,8 +19,6 @@ import (
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
-	"itachi/cairo/config"
-	"net/http"
 )
 
 type Cairo struct {
@@ -59,6 +60,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 		cairo.GetTransaction, cairo.GetTransactionStatus, cairo.GetReceipt,
 		cairo.SimulateTransactions,
 		cairo.GetBlockWithTxs, cairo.GetBlockWithTxHashes,
+		cairo.LatestBlock,
 	)
 	cairo.SetInit(cairo)
 	cairo.SetTxnChecker(cairo)
