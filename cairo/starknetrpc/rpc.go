@@ -3,14 +3,20 @@ package starknetrpc
 import (
 	"context"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"itachi/cairo/config"
 	"net"
 	"net/http"
 	"runtime"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
+	"github.com/NethermindEth/juno/blockchain"
+	"github.com/NethermindEth/juno/db"
+	"github.com/NethermindEth/juno/db/pebble"
 	"github.com/NethermindEth/juno/jsonrpc"
+
+	// "github.com/NethermindEth/juno/sync"
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/validator"
 	"github.com/rs/cors"
@@ -21,10 +27,12 @@ import (
 const CairoTripod = "cairo"
 
 type StarknetRPC struct {
-	chain   *kernel.Kernel
-	log     utils.SimpleLogger
-	srv     *http.Server
-	network utils.Network
+	chain    *kernel.Kernel
+	log      utils.SimpleLogger
+	srv      *http.Server
+	network  utils.Network
+	bcReader blockchain.Reader
+	// syncReader sync.Reader
 }
 
 func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, error) {
@@ -69,6 +77,15 @@ func NewStarknetRPC(chain *kernel.Kernel, cfg *config.Config) (*StarknetRPC, err
 	}
 
 	s.network = utils.Network(cfg.Network)
+
+	var database db.DB
+	database, err = pebble.New(cfg.DbPath, cfg.DbCache, cfg.DbMaxOpenFiles, log)
+	if err != nil {
+		return nil, err
+	}
+	reader := blockchain.New(database, s.network)
+	s.bcReader = reader
+
 	return s, nil
 }
 

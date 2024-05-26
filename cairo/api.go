@@ -2,6 +2,9 @@ package cairo
 
 import (
 	"errors"
+	"net/http"
+	"slices"
+
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/encoder"
@@ -12,8 +15,6 @@ import (
 	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/types"
-	"net/http"
-	"slices"
 )
 
 type BlockID struct {
@@ -30,6 +31,22 @@ func NewFromJunoBlockID(id rpc.BlockID) BlockID {
 		Hash:    id.Hash,
 		Number:  id.Number,
 	}
+}
+
+type LatestBlockResponse struct {
+	Block *types.CompactBlock `json:"latest_block"`
+	Err   *jsonrpc.Error      `json:"err"`
+}
+
+// fixme: not sure if request structure is a must
+func (c *Cairo) LatestBlock(ctx *context.ReadContext) {
+	Block, err := c.Chain.GetEndBlock()
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &LatestBlockResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	// Height := uint64(Block.Height)
+	ctx.JsonOk(&LatestBlockResponse{Block: Block})
 }
 
 type TransactionRequest struct {
