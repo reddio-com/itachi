@@ -28,10 +28,10 @@ import (
 type Solidity struct {
 	*tripod.Tripod
 	ethState *EthState
-	cfg      *Config
+	cfg      *GethConfig
 }
 
-func NewEVM(cfg *Config) *vm.EVM {
+func newEVM(cfg *GethConfig) *vm.EVM {
 	txContext := vm.TxContext{
 		Origin:     cfg.Origin,
 		GasPrice:   cfg.GasPrice,
@@ -55,7 +55,7 @@ func NewEVM(cfg *Config) *vm.EVM {
 	return vm.NewEVM(blockContext, txContext, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
 }
 
-type Config struct {
+type GethConfig struct {
 	ChainConfig *params.ChainConfig
 	Difficulty  *big.Int
 	Origin      common.Address
@@ -78,7 +78,7 @@ type Config struct {
 }
 
 // sets defaults on the config
-func setDefaults(cfg *Config) {
+func (s *Solidity) setDefaults(cfg *GethConfig) {
 	if cfg.ChainConfig == nil {
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:             big.NewInt(1),
@@ -124,45 +124,42 @@ func setDefaults(cfg *Config) {
 	if cfg.BlobBaseFee == nil {
 		cfg.BlobBaseFee = big.NewInt(params.BlobTxMinBlobGasprice)
 	}
+	if cfg.State == nil {
+		cfg.State = s.ethState.StateDB
+	}
 }
 
 func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	cfg := s.ethState.cfg
-
 	genesis := DefaultGoerliGenesisBlock()
 
-	logrus.Println("Genesis Config: ", genesis.Config)
+	logrus.Println("Genesis GethConfig: ", genesis.Config)
 	logrus.Println("Genesis Timestamp: ", genesis.Timestamp)
 	logrus.Println("Genesis ExtraData: ", genesis.ExtraData)
 	logrus.Println("Genesis GasLimit: ", genesis.GasLimit)
 	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
+	// init ethState
 	block, err := s.GetCurrentBlock()
 	if err != nil {
 		logrus.Fatal("GetCurrentBlock failed: ", err)
 	}
-	state, err := NewEthState(cfg, common.Hash(block.StateRoot))
+	ethState, err := NewEthState(cfg, common.Hash(block.StateRoot))
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
+	s.ethState = ethState
 
-	blockNumber := uint64(block.Height)
-
-	s.ethState = state
-	stateDB, err := state.GenesisStateDB()
+	// commit genesis state
+	genesisStateRoot, err := s.ethState.GenesisCommit()
 	if err != nil {
-		logrus.Fatal("EVM GenesisStateDB failed: ", err)
+		logrus.Fatal("genesis state commit failed: ", err)
 	}
 
-	s.ethState.Commit(blockNumber, stateDB)
-
-	genesisBlock.StateRoot = block.StateRoot
-
+	genesisBlock.StateRoot = yu_common.Hash(genesisStateRoot)
 }
 
-func NewSolidity(envCfg *Config) *Solidity {
-
-	NewEVM(envCfg)
+func NewSolidity(envCfg *GethConfig) *Solidity {
 
 	solidity := &Solidity{
 		Tripod: tripod.NewTripod(),
@@ -173,11 +170,11 @@ func NewSolidity(envCfg *Config) *Solidity {
 	solidity.SetWritings(solidity.ExecuteTxn, solidity.Create)
 	solidity.SetReadings(
 		solidity.Call,
-	// solidity.GetClass, solidity.GetClassAt,
-	// 	solidity.GetClassHashAt, solidity.GetNonce, solidity.GetStorage,
-	// 	solidity.GetTransaction, solidity.GetTransactionStatus, solidity.GetReceipt,
-	// 	solidity.SimulateTransactions,
-	// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
+		// solidity.GetClass, solidity.GetClassAt,
+		// 	solidity.GetClassHashAt, solidity.GetNonce, solidity.GetStorage,
+		// 	solidity.GetTransaction, solidity.GetTransactionStatus, solidity.GetReceipt,
+		// 	solidity.SimulateTransactions,
+		// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
 	)
 
 	return solidity
@@ -199,14 +196,11 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	input := txReq.Input
 
 	cfg := s.cfg
-	setDefaults(cfg)
+	s.setDefaults(cfg)
 
-	if cfg.State == nil {
-		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
-	}
 	var (
 		address = common.BytesToAddress([]byte("contract"))
-		vmenv   = NewEVM(cfg)
+		vmenv   = newEVM(cfg)
 		sender  = vm.AccountRef(cfg.Origin)
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
@@ -244,12 +238,12 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	}
 
 	cfg := s.cfg
-	setDefaults(cfg)
+	s.setDefaults(cfg)
 	address := callReq.Address
 	input := callReq.Input
 
 	var (
-		vmenv   = NewEVM(cfg)
+		vmenv   = newEVM(cfg)
 		sender  = vm.AccountRef(cfg.Origin)
 		statedb = cfg.State
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
@@ -290,7 +284,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	}
 
 	cfg := s.cfg
-	setDefaults(cfg)
+	s.setDefaults(cfg)
 
 	input := txCreate.Input
 
@@ -298,7 +292,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 	}
 	var (
-		vmenv  = NewEVM(cfg)
+		vmenv  = newEVM(cfg)
 		sender = vm.AccountRef(cfg.Origin)
 		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
@@ -326,11 +320,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 
 func (s *Solidity) Commit(block *yu_types.Block) {
 	blockNumber := uint64(block.Height)
-	statedb, err := s.ethState.NewStateDB(common.Hash(block.StateRoot))
-	if err != nil {
-		logrus.Errorf("NewStateDB failed on Block(%d), error: %v", blockNumber, err)
-	}
-	stateRoot, err := s.ethState.Commit(blockNumber, statedb)
+	stateRoot, err := s.ethState.Commit(blockNumber, common.Hash(block.StateRoot))
 	if err != nil {
 		logrus.Errorf("Solidity commit failed on Block(%d), error: %v", blockNumber, err)
 	}

@@ -22,6 +22,7 @@ import (
 
 type EthState struct {
 	cfg        *config.Config
+	StateDB    *state.StateDB
 	stateCache state.Database
 	trieDB     *triedb.Database
 	snaps      *snapshot.Tree
@@ -71,38 +72,60 @@ func NewEthState(cfg *config.Config, currentStateRoot common.Hash) (*EthState, e
 		return nil, err
 	}
 
-	return &EthState{
+	ethState := &EthState{
 		cfg:        cfg,
 		stateCache: stateCache,
 		trieDB:     trieDB,
 		snaps:      snaps,
 		logger:     vmConfig.Tracer,
-	}, nil
-}
-
-func (s *EthState) GenesisStateDB() (*state.StateDB, error) {
-	return state.New(types.EmptyRootHash, s.stateCache, nil)
-}
-
-func (s *EthState) NewStateDB(parentStateRoot common.Hash) (statedb *state.StateDB, err error) {
-	statedb, err = state.New(parentStateRoot, s.stateCache, s.snaps)
-	if err != nil {
-		return
 	}
-	statedb.SetLogger(s.logger)
-	// Enable prefetching to pull in trie node paths while processing transactions
-	statedb.StartPrefetcher("chain")
-	return
+	err = ethState.newStateForNextBlock(currentStateRoot)
+	return ethState, err
 }
 
-func (s *EthState) Commit(blockNum uint64, stateDB *state.StateDB) (common.Hash, error) {
-	stateDB.StopPrefetcher()
-	stateRoot, err := stateDB.Commit(blockNum, true)
+func (s *EthState) GenesisCommit() (common.Hash, error) {
+	return s.Commit(0, types.EmptyRootHash)
+}
+
+//func (s *EthState) NewStateDB(parentStateRoot common.Hash) error {
+//	statedb, err := state.New(parentStateRoot, s.stateCache, s.snaps)
+//	if err != nil {
+//		return err
+//	}
+//	statedb.SetLogger(s.logger)
+//	// Enable prefetching to pull in trie node paths while processing transactions
+//	statedb.StartPrefetcher("chain")
+//	s.StateDB = statedb
+//	return err
+//}
+
+func (s *EthState) Commit(blockNum uint64, currentStateRoot common.Hash) (common.Hash, error) {
+	s.StateDB.StopPrefetcher()
+	stateRoot, err := s.StateDB.Commit(blockNum, true)
 	if err != nil {
 		return common.Hash{}, err
 	}
 	err = s.trieDB.Commit(stateRoot, true)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	// new stateDB for the next block
+	err = s.newStateForNextBlock(currentStateRoot)
 	return stateRoot, err
+}
+
+func (s *EthState) newStateForNextBlock(currentStateRoot common.Hash) error {
+	// new stateDB for the next block
+	newsStateDB, err := state.New(currentStateRoot, s.stateCache, s.snaps)
+	if err != nil {
+		return err
+	}
+	newsStateDB.SetLogger(s.logger)
+	// Enable prefetching to pull in trie node paths while processing transactions
+	newsStateDB.StartPrefetcher("chain")
+	s.StateDB = newsStateDB
+	return nil
 }
 
 func trieConfig(c *core.CacheConfig, isVerkle bool) *triedb.Config {
