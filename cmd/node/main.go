@@ -13,6 +13,5 @@ func main() {
 	poaCfg := poa.DefaultCfg(0)
 	cairoCfg := config.LoadCairoCfg("./conf/cairo_cfg.toml")
 
-	app.StartUpChain(poaCfg, cairoCfg)
-	app.StartUpEvmChain(poaCfg, &evm.Config{})
+	app.StartUpChain(poaCfg, cairoCfg, &evm.Config{})
 }

@@ -1,7 +1,7 @@
 package evm
 
 import (
-	"itachi/evm/config"
+	// "itachi/evm/config"
 	"math"
 	"math/big"
 	"net/http"
@@ -29,10 +29,9 @@ type Solidity struct {
 	*tripod.Tripod
 	ethState *EthState
 	cfg      *Config
-	evm      *vm.EVM
 }
 
-func NewEnv(cfg *Config) *vm.EVM {
+func NewEVM(cfg *Config) *vm.EVM {
 	txContext := vm.TxContext{
 		Origin:     cfg.Origin,
 		GasPrice:   cfg.GasPrice,
@@ -52,8 +51,6 @@ func NewEnv(cfg *Config) *vm.EVM {
 		BlobBaseFee: cfg.BlobBaseFee,
 		Random:      cfg.Random,
 	}
-
-	// NewStateDB(parentStateRoot common.Hash);
 
 	return vm.NewEVM(blockContext, txContext, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
 }
@@ -129,9 +126,16 @@ func setDefaults(cfg *Config) {
 	}
 }
 
-func (s *Solidity) InitChain(cfg *config.Config, genesisBlock *types.Block) {
+func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
+	cfg := s.ethState.cfg
 
-	DefaultGoerliGenesisBlock()
+	genesis := DefaultGoerliGenesisBlock()
+
+	logrus.Println("Genesis Config: ", genesis.Config)
+	logrus.Println("Genesis Timestamp: ", genesis.Timestamp)
+	logrus.Println("Genesis ExtraData: ", genesis.ExtraData)
+	logrus.Println("Genesis GasLimit: ", genesis.GasLimit)
+	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
 	block, err := s.GetCurrentBlock()
 	if err != nil {
@@ -145,25 +149,24 @@ func (s *Solidity) InitChain(cfg *config.Config, genesisBlock *types.Block) {
 	blockNumber := uint64(block.Height)
 
 	s.ethState = state
-	state.GenesisStateDB()
-
-	statedb, err := s.ethState.NewStateDB(common.Hash(block.StateRoot))
+	stateDB, err := state.GenesisStateDB()
 	if err != nil {
-		logrus.Errorf("NewStateDB failed on Block(%d), error: %v", blockNumber, err)
+		logrus.Fatal("EVM GenesisStateDB failed: ", err)
 	}
 
-	s.ethState.Commit(blockNumber, statedb)
+	s.ethState.Commit(blockNumber, stateDB)
+
+	genesisBlock.StateRoot = block.StateRoot
 
 }
 
-func NewSolidity(env_cfg *Config) *Solidity {
+func NewSolidity(envCfg *Config) *Solidity {
 
-	evm := NewEnv(env_cfg)
+	NewEVM(envCfg)
 
 	solidity := &Solidity{
 		Tripod: tripod.NewTripod(),
-		cfg:    env_cfg,
-		evm:    evm,
+		cfg:    envCfg,
 		// network:       utils.Network(cfg.Network),
 	}
 
@@ -180,7 +183,7 @@ func NewSolidity(env_cfg *Config) *Solidity {
 	return solidity
 }
 
-// Execute executes the code using the input as call data during the execution.
+// ExecuteTxn executes the code using the input as call data during the execution.
 // It returns the EVM's return value, the new state and an error if it failed.
 //
 // Execute sets up an in-memory, temporary, environment for the execution of
@@ -203,7 +206,7 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	}
 	var (
 		address = common.BytesToAddress([]byte("contract"))
-		vmenv   = NewEnv(cfg)
+		vmenv   = NewEVM(cfg)
 		sender  = vm.AccountRef(cfg.Origin)
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
@@ -246,7 +249,7 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	input := callReq.Input
 
 	var (
-		vmenv   = NewEnv(cfg)
+		vmenv   = NewEVM(cfg)
 		sender  = vm.AccountRef(cfg.Origin)
 		statedb = cfg.State
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
@@ -295,7 +298,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 	}
 	var (
-		vmenv  = NewEnv(cfg)
+		vmenv  = NewEVM(cfg)
 		sender = vm.AccountRef(cfg.Origin)
 		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
