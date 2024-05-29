@@ -1,7 +1,7 @@
 package evm
 
 import (
-	// "itachi/evm/config"
+	"itachi/evm/config"
 	"math"
 	"math/big"
 	"net/http"
@@ -23,12 +23,14 @@ import (
 
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/holiman/uint256"
+	"time"
 )
 
 type Solidity struct {
 	*tripod.Tripod
-	ethState *EthState
-	cfg      *GethConfig
+	ethState    *EthState
+	cfg         *GethConfig
+	stateConfig *config.Config
 }
 
 func newEVM(cfg *GethConfig) *vm.EVM {
@@ -129,8 +131,34 @@ func (s *Solidity) setDefaults(cfg *GethConfig) {
 	}
 }
 
+func setDefaultEthStateConfig() *config.Config {
+	return &config.Config{
+		VMTrace:                 "",
+		VMTraceConfig:           "",
+		EnablePreimageRecording: false,
+		Recovery:                false,
+		NoBuild:                 false,
+		SnapshotWait:            false,
+		SnapshotCache:           128,              // Default cache size
+		TrieCleanCache:          256,              // Default Trie cleanup cache size
+		TrieDirtyCache:          256,              // Default Trie dirty cache size
+		TrieTimeout:             60 * time.Second, // Default Trie timeout
+		Preimages:               false,
+		NoPruning:               false,
+		NoPrefetch:              false,
+		StateHistory:            0,                   // By default, there is no state history
+		StateScheme:             "full",              // Default state scheme
+		DbPath:                  "verse_db",          // Default database path
+		DbType:                  "pebble",            // Default database type
+		NameSpace:               "eth/db/chaindata/", // Default namespace
+		Ancient:                 "ancient",           // Default ancient data path
+		Cache:                   512,                 // Default cache size
+		Handles:                 64,                  // Default number of handles
+	}
+}
+
 func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
-	cfg := s.ethState.cfg
+	cfg := s.stateConfig
 	genesis := DefaultGoerliGenesisBlock()
 
 	logrus.Println("Genesis GethConfig: ", genesis.Config)
@@ -159,11 +187,13 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	genesisBlock.StateRoot = yu_common.Hash(genesisStateRoot)
 }
 
-func NewSolidity(envCfg *GethConfig) *Solidity {
+func NewSolidity(gethConfig *GethConfig) *Solidity {
+	ethStateConfig := setDefaultEthStateConfig()
 
 	solidity := &Solidity{
-		Tripod: tripod.NewTripod(),
-		cfg:    envCfg,
+		Tripod:      tripod.NewTripod(),
+		cfg:         gethConfig,
+		stateConfig: ethStateConfig,
 		// network:       utils.Network(cfg.Network),
 	}
 
