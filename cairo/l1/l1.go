@@ -2,13 +2,19 @@ package l1
 
 import (
 	"context"
-	"github.com/NethermindEth/juno/core"
-	"github.com/NethermindEth/juno/core/felt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/yu-org/yu/core/kernel"
 	"itachi/cairo/config"
 	"itachi/cairo/l1/contract"
+	"itachi/cairo/starknetrpc"
+	"log"
+
+	"github.com/NethermindEth/juno/core"
+	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/juno/rpc"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/yu-org/yu/core/kernel"
 )
+
+const CairoTripod = "cairo"
 
 type L1 struct {
 	itachi *kernel.Kernel
@@ -26,9 +32,29 @@ func NewL1(itachi *kernel.Kernel, cfg *config.Config) (*L1, error) {
 	}, nil
 }
 
-func (l *L1) Run(ctx context.Context) {
+func (l *L1) Run(ctx context.Context, s *starknetrpc.StarknetRPC) {
 	msgChan := make(chan *contract.StarknetLogMessageToL2)
 	l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
+
+	// Listen for msgChan
+	go func() {
+		for {
+			select {
+			case msg := <-msgChan:
+				l1Txn := parseEventToL1Txn(msg)
+				broadcastedTxn := convertL1TxnToBroadcastedTxn(l1Txn)
+				response, err := s.AddTransaction(*broadcastedTxn)
+				if err != nil {
+					log.Printf("Error adding transaction: %v", err)
+				} else {
+					log.Printf("Transaction added: %v", response)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 }
 
 func parseEventToL1Txn(event *contract.StarknetLogMessageToL2) *core.L1HandlerTransaction {
@@ -44,5 +70,17 @@ func parseEventToL1Txn(event *contract.StarknetLogMessageToL2) *core.L1HandlerTr
 		Nonce:              new(felt.Felt).SetBigInt(event.Nonce),
 		CallData:           callData,
 		Version:            new(core.TransactionVersion),
+	}
+}
+
+func convertL1TxnToBroadcastedTxn(l1Txn *core.L1HandlerTransaction) *rpc.BroadcastedTransaction {
+	return &rpc.BroadcastedTransaction{
+		Transaction: rpc.Transaction{
+			Type:            rpc.TxnL1Handler,
+			ContractAddress: l1Txn.ContractAddress,
+			Nonce:           l1Txn.Nonce,
+			CallData:        &l1Txn.CallData,
+		},
+		PaidFeeOnL1: nil, // Set this to the appropriate value if available
 	}
 }

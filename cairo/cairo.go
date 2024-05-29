@@ -2,6 +2,9 @@ package cairo
 
 import (
 	"encoding/hex"
+	"itachi/cairo/config"
+	"net/http"
+
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -16,8 +19,6 @@ import (
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
-	"itachi/cairo/config"
-	"net/http"
 )
 
 type Cairo struct {
@@ -29,18 +30,21 @@ type Cairo struct {
 	network       utils.Network
 }
 
-func NewCairo(cfg *config.Config) *Cairo {
+func NewCairo(cfg *config.Config) (*Cairo, error) {
 	state, err := NewCairoState(cfg)
 	if err != nil {
 		logrus.Fatal("init cairoState for Cairo failed: ", err)
+		return nil, err
 	}
 	cairoVM, err := newVM(cfg)
 	if err != nil {
 		logrus.Fatal("init cairoVM failed: ", err)
+		return nil, err
 	}
 	sequencerAddr, err := new(felt.Felt).SetString(cfg.SequencerAddr)
 	if err != nil {
 		logrus.Fatal("load sequencer address failed: ", err)
+		return nil, err
 	}
 
 	cairo := &Cairo{
@@ -61,7 +65,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 		cairo.GetBlockWithTxs, cairo.GetBlockWithTxHashes,
 	)
 
-	return cairo
+	return cairo, nil
 }
 
 func newVM(cfg *config.Config) (vm.VM, error) {

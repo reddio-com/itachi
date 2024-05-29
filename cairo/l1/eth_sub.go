@@ -3,16 +3,17 @@ package l1
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/rpc"
 	"itachi/cairo/l1/contract"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type EthSubscriber struct {
@@ -30,7 +31,10 @@ func NewEthSubscriber(ethClientAddress string, coreContractAddress common.Addres
 	if err != nil {
 		return nil, err
 	}
-	ethClient := ethclient.NewClient(client)
+	ethClient, err := ethclient.Dial(ethClientAddress)
+	if err != nil {
+		return nil, err
+	}
 	filterer, err := contract.NewStarknetFilterer(coreContractAddress, ethClient)
 	if err != nil {
 		return nil, err

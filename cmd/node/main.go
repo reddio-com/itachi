@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/yu-org/yu/apps/poa"
-	"github.com/yu-org/yu/core/startup"
 	"itachi/cairo/config"
 	"itachi/cmd/node/app"
+
+	"github.com/yu-org/yu/apps/poa"
+	"github.com/yu-org/yu/core/startup"
 )
 
 func main() {
