@@ -1,7 +1,7 @@
 package evm
 
 import (
-	"github.com/yu-org/yu/common/yerror"
+	// "github.com/yu-org/yu/common/yerror"
 	"itachi/evm/config"
 	"math"
 	"math/big"
@@ -192,15 +192,15 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
 	// init ethState
-	block, err := s.GetCurrentBlock()
-	if err != nil {
-		if err == yerror.ErrBlockNotFound {
-			block = genesisBlock.Compact()
-		} else {
-			logrus.Fatal("GetCurrentBlock failed: ", err)
-		}
-	}
-	ethState, err := NewEthState(cfg, common.Hash(block.StateRoot))
+	// block, err := s.GetCurrentBlock()
+	// if err != nil {
+	// 	if err == yerror.ErrBlockNotFound {
+	// 		block = genesisBlock.Compact()
+	// 	} else {
+	// 		logrus.Fatal("GetCurrentBlock failed: ", err)
+	// 	}
+	// }
+	ethState, err := NewEthState(cfg, common.Hash{})
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
