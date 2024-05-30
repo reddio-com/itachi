@@ -1,7 +1,8 @@
 package evm
 
 import (
-	"github.com/BurntSushi/toml"
+	// "github.com/yu-org/yu/common/yerror"
+
 	"itachi/evm/config"
 	"math"
 	"math/big"
@@ -85,7 +86,8 @@ type GethConfig struct {
 }
 
 // sets defaults on the config
-func (s *Solidity) setDefaults(cfg *GethConfig) {
+func SetDefaultGethConfig() *GethConfig {
+	cfg := defaultGethConfig()
 	if cfg.ChainConfig == nil {
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:             big.NewInt(1),
@@ -131,8 +133,31 @@ func (s *Solidity) setDefaults(cfg *GethConfig) {
 	if cfg.BlobBaseFee == nil {
 		cfg.BlobBaseFee = big.NewInt(params.BlobTxMinBlobGasprice)
 	}
-	if cfg.State == nil && s.ethState != nil {
-		cfg.State = s.ethState.StateDB
+
+	return cfg
+}
+
+func defaultGethConfig() *GethConfig {
+	return &GethConfig{
+		ChainConfig: params.MainnetChainConfig,
+		Difficulty:  big.NewInt(1),
+		Origin:      common.HexToAddress("0x0"),
+		Coinbase:    common.HexToAddress("0x0"),
+		BlockNumber: big.NewInt(0),
+		Time:        0,
+		GasLimit:    8000000,
+		GasPrice:    big.NewInt(1),
+		Value:       big.NewInt(0),
+		Debug:       false,
+		EVMConfig:   vm.Config{},
+		BaseFee:     big.NewInt(1000000000), // 1 gwei
+		BlobBaseFee: big.NewInt(0),
+		BlobHashes:  []common.Hash{},
+		BlobFeeCap:  big.NewInt(0),
+		Random:      &common.Hash{},
+
+		State:     nil,
+		GetHashFn: nil,
 	}
 }
 
@@ -162,31 +187,26 @@ func setDefaultEthStateConfig() *config.Config {
 	}
 }
 
-func LoadEvmConfig(fpath string) *GethConfig {
-	cfg := new(GethConfig)
-	_, err := toml.DecodeFile(fpath, cfg)
-	if err != nil {
-		logrus.Fatalf("load config file failed: %v", err)
-	}
-	return cfg
-}
-
 func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	cfg := s.stateConfig
 	genesis := DefaultGoerliGenesisBlock()
 
-	logrus.Println("Genesis GethConfig: ", genesis.Config)
+	logrus.Printf("Genesis GethConfig: %+v", genesis.Config)
 	logrus.Println("Genesis Timestamp: ", genesis.Timestamp)
-	logrus.Println("Genesis ExtraData: ", genesis.ExtraData)
+	logrus.Printf("Genesis ExtraData: %x", genesis.ExtraData)
 	logrus.Println("Genesis GasLimit: ", genesis.GasLimit)
 	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
 	// init ethState
-	block, err := s.GetCurrentBlock()
-	if err != nil {
-		logrus.Fatal("GetCurrentBlock failed: ", err)
-	}
-	ethState, err := NewEthState(cfg, common.Hash(block.StateRoot))
+	// block, err := s.GetCurrentBlock()
+	// if err != nil {
+	// 	if err == yerror.ErrBlockNotFound {
+	// 		block = genesisBlock.Compact()
+	// 	} else {
+	// 		logrus.Fatal("GetCurrentBlock failed: ", err)
+	// 	}
+	// }
+	ethState, err := NewEthState(cfg, common.Hash{})
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
@@ -220,9 +240,6 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 		// 	solidity.SimulateTransactions,
 		// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
 	)
-
-	solidity.setDefaults(gethConfig)
-
 	return solidity
 }
 
@@ -242,7 +259,6 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	input := txReq.Input
 
 	cfg := s.cfg
-	s.setDefaults(cfg)
 
 	var (
 		address = common.BytesToAddress([]byte("contract"))
@@ -284,7 +300,6 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	}
 
 	cfg := s.cfg
-	s.setDefaults(cfg)
 	address := callReq.Address
 	input := callReq.Input
 
@@ -330,7 +345,6 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	}
 
 	cfg := s.cfg
-	s.setDefaults(cfg)
 
 	input := txCreate.Input
 
