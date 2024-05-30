@@ -3,6 +3,7 @@ package evm
 import (
 	// "github.com/yu-org/yu/common/yerror"
 
+	"github.com/BurntSushi/toml"
 	"itachi/evm/config"
 	"math"
 	"math/big"
@@ -134,6 +135,15 @@ func SetDefaultGethConfig() *GethConfig {
 		cfg.BlobBaseFee = big.NewInt(params.BlobTxMinBlobGasprice)
 	}
 
+	return cfg
+}
+
+func LoadEvmConfig(fpath string) *GethConfig {
+	cfg := defaultGethConfig()
+	_, err := toml.DecodeFile(fpath, cfg)
+	if err != nil {
+		logrus.Fatalf("load config file failed: %v", err)
+	}
 	return cfg
 }
 
