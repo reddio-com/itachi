@@ -9,13 +9,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/state/snapshot"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
+	// "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
+	"github.com/sirupsen/logrus"
 	"itachi/evm/config"
 	"path/filepath"
 )
@@ -84,7 +85,7 @@ func NewEthState(cfg *config.Config, currentStateRoot common.Hash) (*EthState, e
 }
 
 func (s *EthState) GenesisCommit() (common.Hash, error) {
-	return s.Commit(0, types.EmptyRootHash)
+	return s.Commit(0)
 }
 
 //func (s *EthState) NewStateDB(parentStateRoot common.Hash) error {
@@ -99,7 +100,7 @@ func (s *EthState) GenesisCommit() (common.Hash, error) {
 //	return err
 //}
 
-func (s *EthState) Commit(blockNum uint64, currentStateRoot common.Hash) (common.Hash, error) {
+func (s *EthState) Commit(blockNum uint64) (common.Hash, error) {
 	s.StateDB.StopPrefetcher()
 	stateRoot, err := s.StateDB.Commit(blockNum, true)
 	if err != nil {
@@ -111,7 +112,8 @@ func (s *EthState) Commit(blockNum uint64, currentStateRoot common.Hash) (common
 	}
 
 	// new stateDB for the next block
-	err = s.newStateForNextBlock(currentStateRoot)
+	err = s.newStateForNextBlock(stateRoot)
+	logrus.Printf("EthState Commit Successful")
 	return stateRoot, err
 }
 
