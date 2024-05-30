@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"github.com/BurntSushi/toml"
 	"itachi/evm/config"
 	"math"
 	"math/big"
@@ -77,6 +78,10 @@ type GethConfig struct {
 
 	State     *state.StateDB
 	GetHashFn func(n uint64) common.Hash
+
+	EnableEthRPC bool   `toml:"enable_eth_rpc"`
+	EthHost      string `toml:"eth_host"`
+	EthPort      string `toml:"eth_port"`
 }
 
 // sets defaults on the config
@@ -126,7 +131,7 @@ func (s *Solidity) setDefaults(cfg *GethConfig) {
 	if cfg.BlobBaseFee == nil {
 		cfg.BlobBaseFee = big.NewInt(params.BlobTxMinBlobGasprice)
 	}
-	if cfg.State == nil {
+	if cfg.State == nil && s.ethState != nil {
 		cfg.State = s.ethState.StateDB
 	}
 }
@@ -155,6 +160,15 @@ func setDefaultEthStateConfig() *config.Config {
 		Cache:                   512,                 // Default cache size
 		Handles:                 64,                  // Default number of handles
 	}
+}
+
+func LoadEvmConfig(fpath string) *GethConfig {
+	cfg := new(GethConfig)
+	_, err := toml.DecodeFile(fpath, cfg)
+	if err != nil {
+		logrus.Fatalf("load config file failed: %v", err)
+	}
+	return cfg
 }
 
 func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
@@ -206,6 +220,8 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 		// 	solidity.SimulateTransactions,
 		// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
 	)
+
+	solidity.setDefaults(gethConfig)
 
 	return solidity
 }
