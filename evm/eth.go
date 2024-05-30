@@ -185,9 +185,9 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	cfg := s.stateConfig
 	genesis := DefaultGoerliGenesisBlock()
 
-	logrus.Println("Genesis GethConfig: ", genesis.Config)
+	logrus.Printf("Genesis GethConfig: %+v", genesis.Config)
 	logrus.Println("Genesis Timestamp: ", genesis.Timestamp)
-	logrus.Println("Genesis ExtraData: ", genesis.ExtraData)
+	logrus.Printf("Genesis ExtraData: %x", genesis.ExtraData)
 	logrus.Println("Genesis GasLimit: ", genesis.GasLimit)
 	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
