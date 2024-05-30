@@ -17,22 +17,24 @@ import (
 const CairoTripod = "cairo"
 
 type L1 struct {
-	itachi *kernel.Kernel
-	ethL1  *EthSubscriber
+	itachi      *kernel.Kernel
+	ethL1       *EthSubscriber
+	starknetrpc *starknetrpc.StarknetRPC
 }
 
-func NewL1(itachi *kernel.Kernel, cfg *config.Config) (*L1, error) {
+func NewL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC) (*L1, error) {
 	ethL1, err := NewEthSubscriber(cfg.EthClientAddress, common.HexToAddress(cfg.EthContractAddress))
 	if err != nil {
 		return nil, err
 	}
 	return &L1{
-		itachi: itachi,
-		ethL1:  ethL1,
+		itachi:      itachi,
+		ethL1:       ethL1,
+		starknetrpc: s,
 	}, nil
 }
 
-func (l *L1) Run(ctx context.Context, s *starknetrpc.StarknetRPC) {
+func (l *L1) Run(ctx context.Context) {
 	msgChan := make(chan *contract.StarknetLogMessageToL2)
 	l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
 
@@ -43,7 +45,7 @@ func (l *L1) Run(ctx context.Context, s *starknetrpc.StarknetRPC) {
 			case msg := <-msgChan:
 				l1Txn := parseEventToL1Txn(msg)
 				broadcastedTxn := convertL1TxnToBroadcastedTxn(l1Txn)
-				response, err := s.AddTransaction(*broadcastedTxn)
+				response, err := l.starknetrpc.AddTransaction(*broadcastedTxn)
 				if err != nil {
 					logrus.Errorf("Error adding transaction: %v", err)
 				} else {
