@@ -2,11 +2,12 @@ package l1
 
 import (
 	"context"
+	"fmt"
 	"itachi/cairo/config"
 	"itachi/cairo/l1/contract"
 	"itachi/cairo/starknetrpc"
+	"math/big"
 
-	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/ethereum/go-ethereum/common"
@@ -43,10 +44,13 @@ func (l *L1) Run(ctx context.Context) {
 		for {
 			select {
 			case msg := <-msgChan:
-				l1Txn := parseEventToL1Txn(msg)
-				broadcastedTxn := convertL1TxnToBroadcastedTxn(l1Txn)
-				response, err := l.starknetrpc.AddTransaction(*broadcastedTxn)
+				broadcastedTxn, err := convertL1TxnToBroadcastedTxn(msg)
 				if err != nil {
+					logrus.Errorf("Error converting L1 txn to broadcasted txn: %v", err)
+					continue
+				}
+				response, jsonRpcErr := l.starknetrpc.AddTransaction(*broadcastedTxn)
+				if jsonRpcErr != nil {
 					logrus.Errorf("Error adding transaction: %v", err)
 				} else {
 					logrus.Infof("Transaction added: %v", response)
@@ -56,33 +60,30 @@ func (l *L1) Run(ctx context.Context) {
 			}
 		}
 	}()
-
 }
 
-func parseEventToL1Txn(event *contract.StarknetLogMessageToL2) *core.L1HandlerTransaction {
+func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.BroadcastedTransaction, error) {
 	callData := make([]*felt.Felt, 0)
 	callData = append(callData, new(felt.Felt).SetBigInt(event.FromAddress.Big()))
 	for _, payload := range event.Payload {
 		data := new(felt.Felt).SetBigInt(payload)
 		callData = append(callData, data)
 	}
-	return &core.L1HandlerTransaction{
-		ContractAddress:    new(felt.Felt).SetBigInt(event.ToAddress),
-		EntryPointSelector: new(felt.Felt).SetBigInt(event.Selector),
-		Nonce:              new(felt.Felt).SetBigInt(event.Nonce),
-		CallData:           callData,
-		Version:            new(core.TransactionVersion),
-	}
-}
 
-func convertL1TxnToBroadcastedTxn(l1Txn *core.L1HandlerTransaction) *rpc.BroadcastedTransaction {
+	maxU128 := new(big.Int).SetUint64(1<<64 - 1)
+
+	// Check if fee exceeds u128 max value
+	if event.Fee.Cmp(maxU128) > 0 {
+		return nil, fmt.Errorf("fee exceeds u128 max value")
+	}
+
 	return &rpc.BroadcastedTransaction{
 		Transaction: rpc.Transaction{
 			Type:            rpc.TxnL1Handler,
-			ContractAddress: l1Txn.ContractAddress,
-			Nonce:           l1Txn.Nonce,
-			CallData:        &l1Txn.CallData,
+			ContractAddress: new(felt.Felt).SetBigInt(event.ToAddress),
+			Nonce:           new(felt.Felt).SetBigInt(event.Nonce),
+			CallData:        &callData,
 		},
-		PaidFeeOnL1: nil,
-	}
+		PaidFeeOnL1: new(felt.Felt).SetBigInt(event.Fee),
+	}, nil
 }
