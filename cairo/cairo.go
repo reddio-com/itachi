@@ -30,7 +30,7 @@ type Cairo struct {
 	network       utils.Network
 }
 
-func NewCairo(cfg *config.Config) (*Cairo, error) {
+func NewCairo(cfg *config.Config) *Cairo {
 	state, err := NewCairoState(cfg)
 	if err != nil {
 		logrus.Fatal("init cairoState for Cairo failed: ", err)
@@ -62,7 +62,7 @@ func NewCairo(cfg *config.Config) (*Cairo, error) {
 		cairo.GetBlockWithTxs, cairo.GetBlockWithTxHashes,
 	)
 
-	return cairo, nil
+	return cairo
 }
 
 func newVM(cfg *config.Config) (vm.VM, error) {

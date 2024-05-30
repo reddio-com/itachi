@@ -38,10 +38,7 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) (*kernel.Kernel, 
 
 func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config) (*kernel.Kernel, error) {
 	poaTri := poa.NewPoa(poaCfg)
-	cairoTri, err := cairo.NewCairo(crCfg)
-	if err != nil {
-		return nil, err
-	}
+	cairoTri := cairo.NewCairo(crCfg)
 	chain := startup.InitDefaultKernel(
 		poaTri, cairoTri,
 	)
