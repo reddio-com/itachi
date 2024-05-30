@@ -9,6 +9,7 @@ import (
 	"itachi/cairo/config"
 	"itachi/cairo/starknetrpc"
 	"itachi/evm"
+	"itachi/evm/ethrpc"
 	"itachi/utils"
 )
 
@@ -17,6 +18,7 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config, evmCfg *evm.GethC
 
 	chain := InitItachi(poaCfg, crCfg, evmCfg)
 	starknetrpc.StartUpStarknetRPC(chain, crCfg)
+	ethrpc.StartupEthRPC(chain, evmCfg)
 	utils.StartUpPprof(crCfg)
 	chain.Startup()
 }
