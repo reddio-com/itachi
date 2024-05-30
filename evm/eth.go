@@ -375,7 +375,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 
 func (s *Solidity) Commit(block *yu_types.Block) {
 	blockNumber := uint64(block.Height)
-	stateRoot, err := s.ethState.Commit(blockNumber, common.Hash(block.StateRoot))
+	stateRoot, err := s.ethState.Commit(blockNumber)
 	if err != nil {
 		logrus.Errorf("Solidity commit failed on Block(%d), error: %v", blockNumber, err)
 	}
