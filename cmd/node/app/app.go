@@ -28,7 +28,10 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) (*kernel.Kernel, 
 	if err != nil {
 		panic(err)
 	}
-	l1Client.Run(context.Background())
+	err = l1Client.Run(context.Background())
+	if err != nil {
+		return nil, err
+	}
 
 	utils.StartUpPprof(crCfg)
 	chain.Startup()

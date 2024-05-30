@@ -7,6 +7,7 @@ import (
 	"itachi/cairo/l1/contract"
 	"itachi/cairo/starknetrpc"
 	"math/big"
+	"time"
 
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
@@ -15,12 +16,10 @@ import (
 	"github.com/yu-org/yu/core/kernel"
 )
 
-const CairoTripod = "cairo"
-
 type L1 struct {
 	itachi      *kernel.Kernel
 	ethL1       *EthSubscriber
-	starknetrpc *starknetrpc.StarknetRPC
+	starknetRPC *starknetrpc.StarknetRPC
 }
 
 func NewL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC) (*L1, error) {
@@ -31,13 +30,16 @@ func NewL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC
 	return &L1{
 		itachi:      itachi,
 		ethL1:       ethL1,
-		starknetrpc: s,
+		starknetRPC: s,
 	}, nil
 }
 
-func (l *L1) Run(ctx context.Context) {
+func (l *L1) Run(ctx context.Context) error {
 	msgChan := make(chan *contract.StarknetLogMessageToL2)
-	l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
+	sub, err := l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
+	if err != nil {
+		return err
+	}
 
 	// Listen for msgChan
 	go func() {
@@ -49,17 +51,22 @@ func (l *L1) Run(ctx context.Context) {
 					logrus.Errorf("Error converting L1 txn to broadcasted txn: %v", err)
 					continue
 				}
-				response, jsonRpcErr := l.starknetrpc.AddTransaction(*broadcastedTxn)
+				response, jsonRpcErr := l.starknetRPC.AddTransaction(*broadcastedTxn)
 				if jsonRpcErr != nil {
 					logrus.Errorf("Error adding transaction: %v", err)
 				} else {
-					logrus.Infof("Transaction added: %v", response)
+					logrus.Infof("L1 Transaction added: %v", response)
 				}
+			case subErr := <-sub.Err():
+				time.Sleep(2 * time.Second)
+				logrus.Errorf("L1 update subscription failed: %v, Resubscribing...", subErr)
 			case <-ctx.Done():
+				sub.Unsubscribe()
 				return
 			}
 		}
 	}()
+	return nil
 }
 
 func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.BroadcastedTransaction, error) {
