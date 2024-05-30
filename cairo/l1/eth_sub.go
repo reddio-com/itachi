@@ -31,10 +31,7 @@ func NewEthSubscriber(ethClientAddress string, coreContractAddress common.Addres
 	if err != nil {
 		return nil, err
 	}
-	ethClient, err := ethclient.Dial(ethClientAddress)
-	if err != nil {
-		return nil, err
-	}
+	ethClient := ethclient.NewClient(client)
 	filterer, err := contract.NewStarknetFilterer(coreContractAddress, ethClient)
 	if err != nil {
 		return nil, err
