@@ -5,12 +5,12 @@ import (
 	"itachi/cairo/config"
 	"itachi/cairo/l1/contract"
 	"itachi/cairo/starknetrpc"
-	"log"
 
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/kernel"
 )
 
@@ -45,9 +45,9 @@ func (l *L1) Run(ctx context.Context, s *starknetrpc.StarknetRPC) {
 				broadcastedTxn := convertL1TxnToBroadcastedTxn(l1Txn)
 				response, err := s.AddTransaction(*broadcastedTxn)
 				if err != nil {
-					log.Printf("Error adding transaction: %v", err)
+					logrus.Errorf("Error adding transaction: %v", err)
 				} else {
-					log.Printf("Transaction added: %v", response)
+					logrus.Infof("Transaction added: %v", response)
 				}
 			case <-ctx.Done():
 				return
@@ -81,6 +81,6 @@ func convertL1TxnToBroadcastedTxn(l1Txn *core.L1HandlerTransaction) *rpc.Broadca
 			Nonce:           l1Txn.Nonce,
 			CallData:        &l1Txn.CallData,
 		},
-		PaidFeeOnL1: nil, // Set this to the appropriate value if available
+		PaidFeeOnL1: nil,
 	}
 }

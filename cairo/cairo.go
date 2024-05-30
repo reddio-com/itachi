@@ -34,17 +34,14 @@ func NewCairo(cfg *config.Config) (*Cairo, error) {
 	state, err := NewCairoState(cfg)
 	if err != nil {
 		logrus.Fatal("init cairoState for Cairo failed: ", err)
-		return nil, err
 	}
 	cairoVM, err := newVM(cfg)
 	if err != nil {
 		logrus.Fatal("init cairoVM failed: ", err)
-		return nil, err
 	}
 	sequencerAddr, err := new(felt.Felt).SetString(cfg.SequencerAddr)
 	if err != nil {
 		logrus.Fatal("load sequencer address failed: ", err)
-		return nil, err
 	}
 
 	cairo := &Cairo{

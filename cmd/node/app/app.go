@@ -24,11 +24,11 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) (*kernel.Kernel, 
 	rpcSrv := starknetrpc.StartUpStarknetRPC(chain, crCfg)
 
 	// Subscribe to L1
-	L1, err := l1.NewL1(chain, crCfg)
+	l1Client, err := l1.NewL1(chain, crCfg)
 	if err != nil {
 		panic(err)
 	}
-	L1.Run(context.Background(), rpcSrv)
+	l1Client.Run(context.Background(), rpcSrv)
 
 	utils.StartUpPprof(crCfg)
 	chain.Startup()
