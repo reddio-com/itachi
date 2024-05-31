@@ -8,23 +8,25 @@ import (
 	"itachi/cairo"
 	"itachi/cairo/config"
 	"itachi/cairo/starknetrpc"
+	"itachi/evm"
 	"itachi/utils"
 )
 
-func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) {
+func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config, evmCfg *evm.GethConfig) {
 	figure.NewColorFigure("Itachi", "big", "green", false).Print()
 
-	chain := InitItachi(poaCfg, crCfg)
+	chain := InitItachi(poaCfg, crCfg, evmCfg)
 	starknetrpc.StartUpStarknetRPC(chain, crCfg)
 	utils.StartUpPprof(crCfg)
 	chain.Startup()
 }
 
-func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config) *kernel.Kernel {
+func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config, evmCfg *evm.GethConfig) *kernel.Kernel {
 	poaTri := poa.NewPoa(poaCfg)
 	cairoTri := cairo.NewCairo(crCfg)
+	solidityTri := evm.NewSolidity(evmCfg)
 	chain := startup.InitDefaultKernel(
-		poaTri, cairoTri,
+		poaTri, cairoTri, solidityTri,
 	)
 	return chain
 }
