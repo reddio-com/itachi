@@ -3,17 +3,15 @@ package l1
 import (
 	"context"
 	"fmt"
-	"itachi/cairo/config"
-	"itachi/cairo/l1/contract"
-	"itachi/cairo/starknetrpc"
-	"math/big"
-	"time"
-
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/kernel"
+	"itachi/cairo/config"
+	"itachi/cairo/l1/contract"
+	"itachi/cairo/starknetrpc"
+	"math/big"
 )
 
 type L1 struct {
@@ -60,7 +58,6 @@ func (l *L1) Run(ctx context.Context) error {
 			case subErr := <-sub.Err():
 				logrus.Errorf("L1 update subscription failed: %v, Resubscribing...", subErr)
 				sub.Unsubscribe()
-				time.Sleep(3 * time.Second)
 
 				sub, err = l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
 				if err != nil {
