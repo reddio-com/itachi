@@ -2,6 +2,9 @@ package cairo
 
 import (
 	"encoding/hex"
+	"itachi/cairo/config"
+	"net/http"
+
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -16,8 +19,6 @@ import (
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
-	"itachi/cairo/config"
-	"net/http"
 )
 
 type Cairo struct {
