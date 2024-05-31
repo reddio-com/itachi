@@ -58,8 +58,14 @@ func (l *L1) Run(ctx context.Context) error {
 					logrus.Infof("L1 Transaction added: %v", response)
 				}
 			case subErr := <-sub.Err():
-				time.Sleep(2 * time.Second)
 				logrus.Errorf("L1 update subscription failed: %v, Resubscribing...", subErr)
+				sub.Unsubscribe()
+				time.Sleep(3 * time.Second)
+
+				sub, err = l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
+				if err != nil {
+					logrus.Errorf("Resubscribe failed: %v", err)
+				}
 			case <-ctx.Done():
 				sub.Unsubscribe()
 				return
