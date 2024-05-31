@@ -45,6 +45,7 @@ type Config struct {
 	StarknetPort      string `toml:"starknet_port"`
 
 	// L1 configs
+	EnableL1           bool   `toml:"enable_l1"`
 	EthClientAddress   string `toml:"eth_client_address"`
 	EthContractAddress string `toml:"eth_contract_address"`
 

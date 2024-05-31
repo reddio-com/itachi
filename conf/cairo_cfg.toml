@@ -11,6 +11,8 @@ max_vm_queue = 1000000
 log_level = 1
 colour = true
 
+# ETH L1
+enable_l1 = false
 eth_client_address = "https://sepolia.infura.io/v3/"
 
 sequencer_addr = "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b"

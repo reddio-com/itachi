@@ -32,6 +32,19 @@ func NewL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC
 	}, nil
 }
 
+func StartupL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC) {
+	if cfg.EnableL1 {
+		l1, err := NewL1(itachi, cfg, s)
+		if err != nil {
+			logrus.Fatal("init L1 client failed: ", err)
+		}
+		err = l1.Run(context.Background())
+		if err != nil {
+			logrus.Fatal("l1 client run failed: ", err)
+		}
+	}
+}
+
 func (l *L1) Run(ctx context.Context) error {
 	msgChan := make(chan *contract.StarknetLogMessageToL2)
 	sub, err := l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)

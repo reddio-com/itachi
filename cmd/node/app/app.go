@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"itachi/cairo"
 	"itachi/cairo/config"
 	"itachi/cairo/l1"
@@ -14,36 +13,27 @@ import (
 	"github.com/yu-org/yu/core/startup"
 )
 
-func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) (*kernel.Kernel, error) {
+func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) {
 	figure.NewColorFigure("Itachi", "big", "green", false).Print()
 
-	chain, err := InitItachi(poaCfg, crCfg)
-	if err != nil {
-		return nil, err
-	}
+	chain := InitItachi(poaCfg, crCfg)
+
+	// Starknet RPC server
 	rpcSrv := starknetrpc.StartUpStarknetRPC(chain, crCfg)
 
 	// Subscribe to L1
-	l1Client, err := l1.NewL1(chain, crCfg, rpcSrv)
-	if err != nil {
-		panic(err)
-	}
-	err = l1Client.Run(context.Background())
-	if err != nil {
-		return nil, err
-	}
+	l1.StartupL1(chain, crCfg, rpcSrv)
 
 	utils.StartUpPprof(crCfg)
 	chain.Startup()
 
-	return chain, nil
 }
 
-func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config) (*kernel.Kernel, error) {
+func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config) *kernel.Kernel {
 	poaTri := poa.NewPoa(poaCfg)
 	cairoTri := cairo.NewCairo(crCfg)
 	chain := startup.InitDefaultKernel(
 		poaTri, cairoTri,
 	)
-	return chain, nil
+	return chain
 }
