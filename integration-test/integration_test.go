@@ -3,6 +3,13 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
+	"itachi/cairo"
+	"itachi/cairo/config"
+	"itachi/cmd/node/app"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
@@ -13,12 +20,6 @@ import (
 	"github.com/yu-org/yu/core/kernel"
 	"github.com/yu-org/yu/core/startup"
 	"github.com/yu-org/yu/example/client/callchain"
-	"itachi/cairo"
-	"itachi/cairo/config"
-	"itachi/cmd/node/app"
-	"sync"
-	"testing"
-	"time"
 )
 
 var chain *kernel.Kernel
@@ -28,7 +29,7 @@ func init() {
 	poaCfg := poa.DefaultCfg(0)
 	crCfg := config.DefaultCfg()
 
-	chain = app.InitItachi(poaCfg, crCfg)
+	chain, _ = app.InitItachi(poaCfg, crCfg)
 }
 
 func TestIntegration(t *testing.T) {
