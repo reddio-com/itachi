@@ -39,9 +39,15 @@ type Config struct {
 	GenesisContracts map[string]string `toml:"genesis_contracts"`
 	GenesisStorages  []*GenesisStorage `toml:"genesis_storages"`
 
+	// RPC configs
 	EnableStarknetRPC bool   `toml:"enable_starknet_rpc"`
 	StarknetHost      string `toml:"starknet_host"`
 	StarknetPort      string `toml:"starknet_port"`
+
+	// L1 configs
+	EnableL1           bool   `toml:"enable_l1"`
+	EthClientAddress   string `toml:"eth_client_address"`
+	EthContractAddress string `toml:"eth_contract_address"`
 
 	EnablePprof bool   `toml:"enable_pprof"`
 	PprofAddr   string `toml:"pprof_addr"`

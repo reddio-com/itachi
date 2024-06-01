@@ -3,12 +3,13 @@ package starknetrpc
 import (
 	"context"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"itachi/cairo/config"
 	"net"
 	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/NethermindEth/juno/jsonrpc"
 	"github.com/NethermindEth/juno/utils"
@@ -92,7 +93,7 @@ func (s *StarknetRPC) Serve(ctx context.Context) error {
 	}
 }
 
-func StartUpStarknetRPC(chain *kernel.Kernel, cfg *config.Config) {
+func StartUpStarknetRPC(chain *kernel.Kernel, cfg *config.Config) *StarknetRPC {
 	if cfg.EnableStarknetRPC {
 		rpcSrv, err := NewStarknetRPC(chain, cfg)
 		if err != nil {
@@ -106,7 +107,9 @@ func StartUpStarknetRPC(chain *kernel.Kernel, cfg *config.Config) {
 				logrus.Errorf("starknetRPC serves failed, %v", err)
 			}
 		}()
+		return rpcSrv
 	}
+	return nil
 }
 
 func exactPathServer(path string, handler http.Handler) http.HandlerFunc {
