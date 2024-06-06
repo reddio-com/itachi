@@ -103,7 +103,6 @@ func (s *EthRPC) Call(ctx context.Context, callParams map[string]interface{}, bl
 		msg.BlockNumber = nil
 	}
 
-	log.Printf("CallContract Args: %+v", msg)
 	byt, _ := json.Marshal(callParams)
 	callRequest := evm.CallRequest{
 		Address: *msg.To,
@@ -111,6 +110,7 @@ func (s *EthRPC) Call(ctx context.Context, callParams map[string]interface{}, bl
 	}
 
 	requestByt, _ := json.Marshal(callRequest)
+	log.Printf("CallContract Args: %+v", string(requestByt))
 	rdCall := new(yucommon.RdCall)
 	rdCall.TripodName = SolidityTripod
 	rdCall.FuncName = "Call"
@@ -140,18 +140,33 @@ func (s *EthRPC) SendRawTransaction(ctx context.Context, signedTx string) (*comm
 	}
 
 	log.Printf("SendRawTransaction Tx: %+v, Sender: %+v", tx, sender)
+	txJson, err := json.Marshal(tx)
+	if tx.To() == nil || *tx.To() == (common.Address{}) {
+		signedWrCall := &yucore.SignedWrCall{
+			Call: &yucommon.WrCall{
+				TripodName: SolidityTripod,
+				FuncName:   "CreateContract",
+				Params:     string(txJson),
+			},
+		}
 
-	signedWrCall := &yucore.SignedWrCall{
-		Call: &yucommon.WrCall{
-			TripodName: SolidityTripod,
-			FuncName:   "ExecuteTxn",
-			Params:     signedTx,
-		},
-	}
+		err = s.chain.HandleTxn(signedWrCall)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		signedWrCall := &yucore.SignedWrCall{
+			Call: &yucommon.WrCall{
+				TripodName: SolidityTripod,
+				FuncName:   "ExecuteTxn",
+				Params:     string(txJson),
+			},
+		}
 
-	err = s.chain.HandleTxn(signedWrCall)
-	if err != nil {
-		return nil, err
+		err = s.chain.HandleTxn(signedWrCall)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, nil
