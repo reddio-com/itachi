@@ -139,7 +139,7 @@ func SetDefaultGethConfig() *GethConfig {
 }
 
 func LoadEvmConfig(fpath string) *GethConfig {
-	cfg := defaultGethConfig()
+	cfg := SetDefaultGethConfig()
 	_, err := toml.DecodeFile(fpath, cfg)
 	if err != nil {
 		logrus.Fatalf("load config file failed: %v", err)
