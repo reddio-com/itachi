@@ -8,6 +8,7 @@ import (
 type CallRequest struct {
 	Input   []byte         `json:"input"`
 	Address common.Address `json:"address"`
+	Origin  common.Address `json:"origin"`
 }
 
 type CallResponse struct {
@@ -17,17 +18,12 @@ type CallResponse struct {
 }
 
 type TxRequest struct {
-	Input []byte `json:"input"`
-	Code  []byte `json:"code"`
+	Input  []byte         `json:"input"`
+	Code   []byte         `json:"code"`
+	Origin common.Address `json:"origin"`
 }
 
 type CreateRequest struct {
-	Input []byte `json:"input"`
+	Input  []byte         `json:"input"`
+	Origin common.Address `json:"origin"`
 }
-
-// type CreateResponse struct {
-// 	Ret          []byte         `json:"ret"`
-// 	ContractAddr common.Address `json:"contractAddr"`
-// 	LeftOverGas  uint64         `json:"leftOverGas"`
-// 	Err          error          `json:"err"`
-// }
