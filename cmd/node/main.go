@@ -1,11 +1,13 @@
 package main
 
 import (
-	"github.com/yu-org/yu/apps/poa"
-	"github.com/yu-org/yu/core/startup"
 	"itachi/cairo/config"
 	"itachi/cmd/node/app"
 	"itachi/evm"
+	"itachi/evm"
+
+	"github.com/yu-org/yu/apps/poa"
+	"github.com/yu-org/yu/core/startup"
 )
 
 func main() {
@@ -13,5 +15,6 @@ func main() {
 	poaCfg := poa.DefaultCfg(0)
 	cairoCfg := config.LoadCairoCfg("./conf/cairo_cfg.toml")
 	gethCfg := evm.LoadEvmConfig("./conf/evm_cfg.toml")
+
 	app.StartUpChain(poaCfg, cairoCfg, gethCfg)
 }

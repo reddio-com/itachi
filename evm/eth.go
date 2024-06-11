@@ -250,6 +250,7 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 		// 	solidity.SimulateTransactions,
 		// 	solidity.GetBlockWithTxs, solidity.GetBlockWithTxHashes,
 	)
+
 	return solidity
 }
 
