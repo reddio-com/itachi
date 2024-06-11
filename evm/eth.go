@@ -267,13 +267,14 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 
 	code := txReq.Code
 	input := txReq.Input
+	origin := txReq.Origin
 
 	cfg := s.cfg
 
 	var (
 		address = common.BytesToAddress([]byte("contract"))
 		vmenv   = newEVM(cfg)
-		sender  = vm.AccountRef(cfg.Origin)
+		sender  = vm.AccountRef(origin)
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
@@ -287,7 +288,7 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code)
 	// Call the code with the given configuration.
-	ret, _, err := vmenv.Call(
+	ret, leftOverGas, err := vmenv.Call(
 		sender,
 		common.BytesToAddress([]byte("contract")),
 		input,
@@ -296,6 +297,7 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	)
 
 	println("Return ret value:", ret)
+	println("Return leftOverGas value:", leftOverGas)
 	return err
 }
 
@@ -312,10 +314,11 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	cfg := s.cfg
 	address := callReq.Address
 	input := callReq.Input
+	origin := callReq.Origin
 
 	var (
 		vmenv   = newEVM(cfg)
-		sender  = vm.AccountRef(cfg.Origin)
+		sender  = vm.AccountRef(origin)
 		statedb = cfg.State
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
@@ -325,7 +328,7 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
 	// - reset transient storage(eip 1153)
-	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+	statedb.Prepare(rules, origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 
 	// Call the code with the given configuration.
 	ret, leftOverGas, err := vmenv.Call(
@@ -357,13 +360,14 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	cfg := s.cfg
 
 	input := txCreate.Input
+	origin := txCreate.Origin
 
 	if cfg.State == nil {
 		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 	}
 	var (
 		vmenv  = newEVM(cfg)
-		sender = vm.AccountRef(cfg.Origin)
+		sender = vm.AccountRef(origin)
 		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
@@ -372,7 +376,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
 	// - reset transient storage(eip 1153)
-	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
+	cfg.State.Prepare(rules, origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
 	// Call the code with the given configuration.
 	code, address, leftOverGas, err := vmenv.Create(
 		sender,
@@ -393,6 +397,7 @@ func (s *Solidity) Commit(block *yu_types.Block) {
 	stateRoot, err := s.ethState.Commit(blockNumber)
 	if err != nil {
 		logrus.Errorf("Solidity commit failed on Block(%d), error: %v", blockNumber, err)
+		return
 	}
 	block.StateRoot = AdaptHash(stateRoot)
 }
