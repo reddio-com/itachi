@@ -13,7 +13,8 @@ func main() {
 	startup.InitDefaultKernelConfig()
 	poaCfg := poa.DefaultCfg(0)
 	cairoCfg := config.LoadCairoCfg("./conf/cairo_cfg.toml")
-	gethCfg := evm.LoadEvmConfig("./conf/evm_cfg.toml")
+	gethCfg := evm.SetDefaultGethConfig()
+	
 
 	app.StartUpChain(poaCfg, cairoCfg, gethCfg)
 }
