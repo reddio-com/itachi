@@ -4,7 +4,6 @@ import (
 	"itachi/cairo/config"
 	"itachi/cmd/node/app"
 	"itachi/evm"
-	"itachi/evm"
 
 	"github.com/yu-org/yu/apps/poa"
 	"github.com/yu-org/yu/core/startup"
