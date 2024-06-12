@@ -11,6 +11,7 @@ type CallRequest struct {
 	Address  common.Address `json:"address"`
 	Origin   common.Address `json:"origin"`
 	GasLimit uint64         `json:"gasLimit"`
+	GasPrice *big.Int       `json:"gasPrice"`
 	Value    *big.Int       `json:"value"`
 }
 
@@ -25,6 +26,7 @@ type TxRequest struct {
 	Code     []byte         `json:"code"`
 	Origin   common.Address `json:"origin"`
 	GasLimit uint64         `json:"gasLimit"`
+	GasPrice *big.Int       `json:"gasPrice"`
 	Value    *big.Int       `json:"value"`
 }
 
@@ -32,5 +34,6 @@ type CreateRequest struct {
 	Input    []byte         `json:"input"`
 	Origin   common.Address `json:"origin"`
 	GasLimit uint64         `json:"gasLimit"`
+	GasPrice *big.Int       `json:"gasPrice"`
 	Value    *big.Int       `json:"value"`
 }

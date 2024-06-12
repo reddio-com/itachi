@@ -254,9 +254,15 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	input := txReq.Input
 	origin := txReq.Origin
 	gasLimit := txReq.GasLimit
+	gasPrice := txReq.GasPrice
 	value := txReq.Value
 
 	cfg := s.cfg
+
+	cfg.Origin = origin
+	cfg.GasLimit = gasLimit
+	cfg.GasPrice = gasPrice
+	cfg.Value = value
 
 	var (
 		address = common.BytesToAddress([]byte("contract"))
@@ -303,7 +309,13 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	input := callReq.Input
 	origin := callReq.Origin
 	gasLimit := callReq.GasLimit
+	gasPrice := callReq.GasPrice
 	value := callReq.Value
+
+	cfg.Origin = origin
+	cfg.GasLimit = gasLimit
+	cfg.GasPrice = gasPrice
+	cfg.Value = value
 
 	var (
 		vmenv   = newEVM(cfg)
@@ -351,7 +363,13 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	input := txCreate.Input
 	origin := txCreate.Origin
 	gasLimit := txCreate.GasLimit
+	gasPrice := txCreate.GasPrice
 	value := txCreate.Value
+
+	cfg.Origin = origin
+	cfg.GasLimit = gasLimit
+	cfg.GasPrice = gasPrice
+	cfg.Value = value
 
 	if cfg.State == nil {
 		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
