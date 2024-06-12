@@ -253,6 +253,8 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	code := txReq.Code
 	input := txReq.Input
 	origin := txReq.Origin
+	gasLimit := txReq.GasLimit
+	value := txReq.Value
 
 	cfg := s.cfg
 
@@ -263,12 +265,12 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: value, Gas: gasLimit}), origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
 	// - reset transient storage(eip 1153)
-	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+	cfg.State.Prepare(rules, origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 	cfg.State.CreateAccount(address)
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code)
@@ -277,8 +279,8 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 		sender,
 		common.BytesToAddress([]byte("contract")),
 		input,
-		cfg.GasLimit,
-		uint256.MustFromBig(cfg.Value),
+		gasLimit,
+		uint256.MustFromBig(value),
 	)
 
 	println("Return ret value:", ret)
@@ -300,6 +302,8 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	address := callReq.Address
 	input := callReq.Input
 	origin := callReq.Origin
+	gasLimit := callReq.GasLimit
+	value := callReq.Value
 
 	var (
 		vmenv   = newEVM(cfg)
@@ -308,7 +312,7 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: value, Gas: gasLimit}), origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -320,8 +324,8 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 		sender,
 		address,
 		input,
-		cfg.GasLimit,
-		uint256.MustFromBig(cfg.Value),
+		gasLimit,
+		uint256.MustFromBig(value),
 	)
 	println("Return ret value:", ret)
 	println("Return leftOverGas value:", leftOverGas)
@@ -346,6 +350,8 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 
 	input := txCreate.Input
 	origin := txCreate.Origin
+	gasLimit := txCreate.GasLimit
+	value := txCreate.Value
 
 	if cfg.State == nil {
 		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
@@ -356,7 +362,7 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: value, Gas: gasLimit}), origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -366,8 +372,8 @@ func (s *Solidity) Create(ctx *context.WriteContext) error {
 	code, address, leftOverGas, err := vmenv.Create(
 		sender,
 		input,
-		cfg.GasLimit,
-		uint256.MustFromBig(cfg.Value),
+		gasLimit,
+		uint256.MustFromBig(value),
 	)
 
 	println("Return code value:", code)
