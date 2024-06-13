@@ -17,7 +17,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -241,7 +240,7 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 		// network:       utils.Network(cfg.Network),
 	}
 
-	solidity.SetWritings(solidity.ExecuteTxn, solidity.Create)
+	solidity.SetWritings(solidity.ExecuteTxn)
 	solidity.SetReadings(
 		solidity.Call,
 		// solidity.GetClass, solidity.GetClassAt,
@@ -266,7 +265,8 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 		return err
 	}
 
-	input := txReq.Input
+	zeroAddress := common.Address{}
+
 	origin := txReq.Origin
 	gasLimit := txReq.GasLimit
 	gasPrice := txReq.GasPrice
@@ -279,33 +279,15 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	cfg.GasPrice = gasPrice
 	cfg.Value = value
 
-	var (
-		address = common.BytesToAddress([]byte("contract"))
-		vmenv   = newEVM(cfg)
-		sender  = vm.AccountRef(origin)
-		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
-	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: value, Gas: gasLimit}), origin)
-	}
-	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-berlin)
-	// - reset transient storage(eip 1153)
-	cfg.State.Prepare(rules, origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
-	// Increment the nonce for the next transaction
-	cfg.State.SetNonce(origin, cfg.State.GetNonce(sender.Address())+1)
-	// Call the code with the given configuration.
-	ret, leftOverGas, err := vmenv.Call(
-		sender,
-		common.BytesToAddress([]byte("contract")),
-		input,
-		gasLimit,
-		uint256.MustFromBig(value),
-	)
+	vmenv := newEVM(cfg)
+	sender := vm.AccountRef(txReq.Origin)
+	rules := cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 
-	println("Return ret value:", ret)
-	println("Return leftOverGas value:", leftOverGas)
-	return err
+	if txReq.Address == zeroAddress {
+		return executeContractCreation(txReq, cfg, vmenv, sender, rules)
+	} else {
+		return executeContractCall(txReq, cfg, vmenv, sender, rules)
+	}
 }
 
 // Call executes the code given by the contract's address. It will return the
@@ -364,57 +346,6 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	ctx.JsonOk(&CallResponse{Ret: ret, LeftOverGas: leftOverGas})
 }
 
-// Create executes the code using the EVM create method
-func (s *Solidity) Create(ctx *context.WriteContext) error {
-	txCreate := new(CreateRequest)
-	err := ctx.BindJson(txCreate)
-	if err != nil {
-		return err
-	}
-
-	cfg := s.cfg
-
-	input := txCreate.Input
-	origin := txCreate.Origin
-	gasLimit := txCreate.GasLimit
-	gasPrice := txCreate.GasPrice
-	value := txCreate.Value
-
-	cfg.Origin = origin
-	cfg.GasLimit = gasLimit
-	cfg.GasPrice = gasPrice
-	cfg.Value = value
-
-	if cfg.State == nil {
-		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
-	}
-	var (
-		vmenv  = newEVM(cfg)
-		sender = vm.AccountRef(origin)
-		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
-	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: value, Gas: gasLimit}), origin)
-	}
-	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-berlin)
-	// - reset transient storage(eip 1153)
-	cfg.State.Prepare(rules, origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
-	// Call the code with the given configuration.
-	code, address, leftOverGas, err := vmenv.Create(
-		sender,
-		input,
-		gasLimit,
-		uint256.MustFromBig(value),
-	)
-
-	println("Return code value:", code)
-	println("Return address value:", address.Bytes())
-	println("Return leftOverGas value:", leftOverGas)
-
-	return err
-}
-
 func (s *Solidity) Commit(block *yu_types.Block) {
 	blockNumber := uint64(block.Height)
 	stateRoot, err := s.ethState.Commit(blockNumber)
@@ -429,4 +360,42 @@ func AdaptHash(ethHash common.Hash) yu_common.Hash {
 	var yuHash yu_common.Hash
 	copy(yuHash[:], ethHash[:])
 	return yuHash
+}
+
+func executeContractCreation(txReq *TxRequest, cfg *GethConfig, vmenv *vm.EVM, sender vm.AccountRef, rules params.Rules) error {
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: txReq.Input, Value: txReq.Value, Gas: txReq.GasLimit}), txReq.Origin)
+	}
+
+	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
+
+	code, address, leftOverGas, err := vmenv.Create(sender, txReq.Input, txReq.GasLimit, uint256.MustFromBig(txReq.Value))
+	if err != nil {
+		return err
+	}
+
+	println("Return code value:", code)
+	println("Return address value:", address.Bytes())
+	println("Return leftOverGas value:", leftOverGas)
+
+	return nil
+}
+
+func executeContractCall(txReq *TxRequest, cfg *GethConfig, vmenv *vm.EVM, sender vm.AccountRef, rules params.Rules) error {
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &txReq.Address, Data: txReq.Input, Value: txReq.Value, Gas: txReq.GasLimit}), txReq.Origin)
+	}
+
+	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, &txReq.Address, vm.ActivePrecompiles(rules), nil)
+	cfg.State.SetNonce(txReq.Origin, cfg.State.GetNonce(sender.Address())+1)
+
+	ret, leftOverGas, err := vmenv.Call(sender, txReq.Address, txReq.Input, txReq.GasLimit, uint256.MustFromBig(txReq.Value))
+	if err != nil {
+		return err
+	}
+
+	println("Return ret value:", ret)
+	println("Return leftOverGas value:", leftOverGas)
+
+	return nil
 }
