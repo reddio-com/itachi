@@ -66,18 +66,15 @@ func (e *EthAPIBackend) ExtRPCEnabled() bool {
 }
 
 func (e *EthAPIBackend) RPCGasCap() uint64 {
-	//TODO implement me
-	panic("implement me")
+	return 50000000
 }
 
 func (e *EthAPIBackend) RPCEVMTimeout() time.Duration {
-	//TODO implement me
-	panic("implement me")
+	return 5 * time.Second
 }
 
 func (e *EthAPIBackend) RPCTxFeeCap() float64 {
-	//TODO implement me
-	panic("implement me")
+	return 1
 }
 
 func (e *EthAPIBackend) UnprotectedAllowed() bool {
