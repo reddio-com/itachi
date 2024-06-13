@@ -187,8 +187,7 @@ func (e *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction)
 	}
 	// TODO: should judge if is CreateTxrequest
 	txReq := &evm.TxRequest{
-		Input: signedTx.Data(),
-		// Code:     signedTx.Data(),
+		Input:    signedTx.Data(),
 		Origin:   sender,
 		GasLimit: signedTx.Gas(),
 		GasPrice: signedTx.GasPrice(),

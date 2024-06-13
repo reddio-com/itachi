@@ -23,7 +23,6 @@ type CallResponse struct {
 
 type TxRequest struct {
 	Input    []byte         `json:"input"`
-	Code     []byte         `json:"code"`
 	Origin   common.Address `json:"origin"`
 	GasLimit uint64         `json:"gasLimit"`
 	GasPrice *big.Int       `json:"gasPrice"`

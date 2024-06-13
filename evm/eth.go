@@ -266,7 +266,6 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 		return err
 	}
 
-	code := txReq.Code
 	input := txReq.Input
 	origin := txReq.Origin
 	gasLimit := txReq.GasLimit
@@ -294,8 +293,6 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	// - reset transient storage(eip 1153)
 	cfg.State.Prepare(rules, origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 	cfg.State.CreateAccount(address)
-	// set the receiver's (the executing contract) code for execution.
-	cfg.State.SetCode(address, code)
 	// Call the code with the given configuration.
 	ret, leftOverGas, err := vmenv.Call(
 		sender,
