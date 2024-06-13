@@ -25,8 +25,9 @@ import (
 )
 
 type EthAPIBackend struct {
-	ethChainCfg *params.ChainConfig
-	chain       *kernel.Kernel
+	allowUnprotectedTxs bool
+	ethChainCfg         *params.ChainConfig
+	chain               *kernel.Kernel
 }
 
 func (e *EthAPIBackend) SyncProgress() ethereum.SyncProgress {
@@ -80,8 +81,7 @@ func (e *EthAPIBackend) RPCTxFeeCap() float64 {
 }
 
 func (e *EthAPIBackend) UnprotectedAllowed() bool {
-	//TODO implement me
-	panic("implement me")
+	return e.allowUnprotectedTxs
 }
 
 func (e *EthAPIBackend) SetHead(number uint64) {
@@ -248,8 +248,7 @@ func (e *EthAPIBackend) SubscribeNewTxsEvent(events chan<- core.NewTxsEvent) eve
 }
 
 func (e *EthAPIBackend) ChainConfig() *params.ChainConfig {
-	//TODO implement me
-	panic("implement me")
+	return e.ethChainCfg
 }
 
 func (e *EthAPIBackend) Engine() consensus.Engine {
