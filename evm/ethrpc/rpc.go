@@ -47,10 +47,17 @@ func NewEthRPC(chain *kernel.Kernel, cfg *evm.GethConfig) (*EthRPC, error) {
 		rpcServer: rpc.NewServer(),
 	}
 	logrus.Debug("Start EthRpc at ", net.JoinHostPort(cfg.EthHost, cfg.EthPort))
-
-	err := s.rpcServer.RegisterName("eth", s)
-	if err != nil {
-		return nil, err
+	backend := &EthAPIBackend{
+		allowUnprotectedTxs: true,
+		chain:               chain,
+		ethChainCfg:         cfg.ChainConfig,
+	}
+	apis := GetAPIs(backend)
+	for _, api := range apis {
+		err := s.rpcServer.RegisterName(api.Namespace, api.Service)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	mux := http.NewServeMux()

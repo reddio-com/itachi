@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	yucommon "github.com/yu-org/yu/common"
 	yucore "github.com/yu-org/yu/core"
 	"itachi/evm"
@@ -179,14 +178,14 @@ func (s *EthRPC) ParseRawTransactionParam(rawParam string) (tx *types.Transactio
 		return
 	}
 
-	tx = new(types.Transaction)
-	if err = rlp.DecodeBytes(rawTxBytes, tx); err != nil {
+	tx = &types.Transaction{}
+	if err = tx.UnmarshalBinary(rawTxBytes); err != nil {
 		log.Print("failed to decode origin tx: ", err)
 		return
 	}
 
 	chainID := s.cfg.ChainConfig.ChainID
-	signer := types.NewEIP155Signer(chainID)
+	signer := types.LatestSignerForChainID(chainID)
 	sender, err = types.Sender(signer, tx)
 	if err != nil {
 		return

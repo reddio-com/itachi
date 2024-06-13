@@ -3,6 +3,7 @@ package ethrpc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -57,7 +58,8 @@ func (e *EthAPIBackend) ChainDb() ethdb.Database {
 
 func (e *EthAPIBackend) AccountManager() *accounts.Manager {
 	//TODO implement me
-	panic("implement me")
+	return nil
+	//panic("implement me")
 }
 
 func (e *EthAPIBackend) ExtRPCEnabled() bool {
@@ -172,6 +174,7 @@ func (e *EthAPIBackend) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) e
 }
 
 func (e *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
+	fmt.Printf("SendTx, tx=%+v\n", signedTx)
 	block, err := e.chain.Chain.GetEndBlock()
 	if err != nil {
 		return err
