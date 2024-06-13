@@ -292,6 +292,8 @@ func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	// - prepare accessList(post-berlin)
 	// - reset transient storage(eip 1153)
 	cfg.State.Prepare(rules, origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+	// Increment the nonce for the next transaction
+	cfg.State.SetNonce(origin, cfg.State.GetNonce(sender.Address())+1)
 	// Call the code with the given configuration.
 	ret, leftOverGas, err := vmenv.Call(
 		sender,
