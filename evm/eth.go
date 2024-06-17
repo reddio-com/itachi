@@ -220,6 +220,8 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
 	s.ethState = ethState
+	s.cfg.State = ethState.stateDB
+	
 	logrus.Println("Genesis NewEthState cfg.DbPath: ", ethState.cfg.DbPath)
 	logrus.Println("Genesis NewEthState ethState.cfg.NameSpace: ", ethState.cfg.NameSpace)
 	logrus.Println("Genesis NewEthState ethState.StateDB.SnapshotCommits: ", ethState.stateDB)
@@ -330,7 +332,7 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 		statedb = s.ethState
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
-	
+
 	vmenv.StateDB = s.ethState.stateDB
 
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
