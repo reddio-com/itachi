@@ -222,7 +222,7 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	s.ethState = ethState
 	logrus.Println("Genesis NewEthState cfg.DbPath: ", ethState.cfg.DbPath)
 	logrus.Println("Genesis NewEthState ethState.cfg.NameSpace: ", ethState.cfg.NameSpace)
-	logrus.Println("Genesis NewEthState ethState.StateDB.SnapshotCommits: ", ethState.StateDB.SnapshotCommits)
+	logrus.Println("Genesis NewEthState ethState.StateDB.SnapshotCommits: ", ethState.stateDB)
 	logrus.Println("Genesis NewEthState ethState.stateCache: ", ethState.stateCache)
 	logrus.Println("Genesis NewEthState ethState.trieDB: ", ethState.trieDB)
 
