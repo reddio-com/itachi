@@ -189,3 +189,9 @@ func (s *EthState) SetNonce(addr common.Address, nonce uint64) {
 	s.stateDB.StopPrefetcher()
 	s.stateDB.SetNonce(addr, nonce)
 }
+
+func (s *EthState) GetNonce(addr common.Address) uint64 {
+	s.stateDB.StopPrefetcher()
+	uint64 := s.stateDB.GetNonce(addr)
+	return uint64
+}

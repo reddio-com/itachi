@@ -394,7 +394,7 @@ func executeContractCall(txReq *TxRequest, ethState *EthState, cfg *GethConfig, 
 	}
 
 	ethState.Prepare(rules, cfg.Origin, cfg.Coinbase, &txReq.Address, vm.ActivePrecompiles(rules), nil)
-	ethState.SetNonce(txReq.Origin, cfg.State.GetNonce(sender.Address())+1)
+	ethState.SetNonce(txReq.Origin, ethState.GetNonce(sender.Address())+1)
 
 	ret, leftOverGas, err := vmenv.Call(sender, txReq.Address, txReq.Input, txReq.GasLimit, uint256.MustFromBig(txReq.Value))
 	if err != nil {
