@@ -9,10 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/state/snapshot"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	// "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
@@ -175,4 +176,14 @@ func snapsConfig(cfg *config.Config) snapshot.Config {
 		NoBuild:    cfg.NoBuild,
 		AsyncBuild: !cfg.SnapshotWait,
 	}
+}
+
+func (s *EthState) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
+	s.StateDB.StopPrefetcher()
+	s.StateDB.Prepare(rules, sender, coinbase, dst, precompiles, list)
+}
+
+func (s *EthState) SetNonce(addr common.Address, nonce uint64) {
+	s.StateDB.StopPrefetcher()
+	s.StateDB.SetNonce(addr, nonce)
 }
