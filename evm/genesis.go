@@ -631,5 +631,9 @@ func decodePrealloc(data string) types.GenesisAlloc {
 		}
 		ga[common.BigToAddress(account.Addr)] = acc
 	}
+
+	for addr, account := range ga {
+		fmt.Printf("Genesis Address: %s, Balance: %s\n", addr.Hex(), account.Balance.String())
+	}
 	return ga
 }
