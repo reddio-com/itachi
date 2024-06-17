@@ -3,7 +3,6 @@ package ethrpc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/sirupsen/logrus"
 	yucommon "github.com/yu-org/yu/common"
 	yucore "github.com/yu-org/yu/core"
 	"github.com/yu-org/yu/core/kernel"
@@ -174,26 +174,21 @@ func (e *EthAPIBackend) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) e
 }
 
 func (e *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
-	fmt.Printf("SendTx, tx=%+v\n", signedTx)
-	block, err := e.chain.Chain.GetEndBlock()
-	if err != nil {
-		return err
-	}
-	signer := types.MakeSigner(e.ethChainCfg, new(big.Int).SetUint64(uint64(block.Height)), block.Timestamp)
-
+	signer := types.NewEIP155Signer(e.ethChainCfg.ChainID)
 	sender, err := types.Sender(signer, signedTx)
 	if err != nil {
 		return err
 	}
-	// TODO: should judge if is CreateTxrequest
 	txReq := &evm.TxRequest{
 		Input:    signedTx.Data(),
 		Origin:   sender,
+		Address:  *signedTx.To(),
 		GasLimit: signedTx.Gas(),
 		GasPrice: signedTx.GasPrice(),
 		Value:    signedTx.Value(),
 	}
 	byt, err := json.Marshal(txReq)
+	logrus.Printf("SendTx, Request=%+v\n", string(byt))
 	if err != nil {
 		return err
 	}

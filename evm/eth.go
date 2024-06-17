@@ -261,6 +261,7 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
+	logrus.Printf("ExecuteTxn: %+v\n", txReq)
 	if err != nil {
 		return err
 	}
