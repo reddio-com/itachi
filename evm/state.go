@@ -27,6 +27,7 @@ type EthState struct {
 	stateDB    *state.StateDB
 	stateCache state.Database
 	trieDB     *triedb.Database
+	ethDB      ethdb.Database
 	snaps      *snapshot.Tree
 	logger     *tracing.Hooks
 }
@@ -80,6 +81,7 @@ func NewEthState(cfg *config.Config, currentStateRoot common.Hash) (*EthState, e
 		stateDB:    stateDB,
 		stateCache: stateCache,
 		trieDB:     trieDB,
+		ethDB:      db,
 		snaps:      snaps,
 		logger:     vmConfig.Tracer,
 	}
