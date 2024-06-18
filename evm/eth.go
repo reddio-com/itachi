@@ -206,22 +206,21 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	logrus.Println("Genesis GasLimit: ", genesis.GasLimit)
 	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
-	// init ethState
-	// block, err := s.GetCurrentBlock()
-	// if err != nil {
-	// 	if err == yerror.ErrBlockNotFound {
-	// 		block = genesisBlock.Compact()
-	// 	} else {
-	// 		logrus.Fatal("GetCurrentBlock failed: ", err)
-	// 	}
-	// }
 	ethState, err := NewEthState(cfg, common.Hash{})
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
 	s.ethState = ethState
 	s.cfg.State = ethState.stateDB
-	
+
+	chainConfig, _, err := SetupGenesisBlock(ethState.ethDB, ethState.trieDB, genesis)
+	if err != nil {
+		logrus.Fatal("SetupGenesisBlock failed: ", err)
+	}
+
+	// s.cfg.ChainConfig = chainConfig
+
+	logrus.Println("Genesis SetupGenesisBlock chainConfig: ", chainConfig)
 	logrus.Println("Genesis NewEthState cfg.DbPath: ", ethState.cfg.DbPath)
 	logrus.Println("Genesis NewEthState ethState.cfg.NameSpace: ", ethState.cfg.NameSpace)
 	logrus.Println("Genesis NewEthState ethState.StateDB.SnapshotCommits: ", ethState.stateDB)
