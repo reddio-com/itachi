@@ -186,7 +186,7 @@ func setDefaultEthStateConfig() *config.Config {
 		NoPruning:               false,
 		NoPrefetch:              false,
 		StateHistory:            0,                   // By default, there is no state history
-		StateScheme:             "full",              // Default state scheme
+		StateScheme:             "hash",              // Default state scheme
 		DbPath:                  "verse_db",          // Default database path
 		DbType:                  "pebble",            // Default database type
 		NameSpace:               "eth/db/chaindata/", // Default namespace
