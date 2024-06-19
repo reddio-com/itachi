@@ -15,5 +15,7 @@ func main() {
 	cairoCfg := config.LoadCairoCfg("./conf/cairo_cfg.toml")
 	gethCfg := evm.LoadEvmConfig("./conf/evm_cfg.toml")
 
+	// go TestSendTransaction(gethCfg, true)
+
 	app.StartUpChain(poaCfg, cairoCfg, gethCfg)
 }

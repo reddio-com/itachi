@@ -40,12 +40,12 @@ func testEthCall(exit bool) {
 	}
 }
 
-func testSendTransaction(gethCfg *evm.GethConfig, exit bool) {
+func TestSendTransaction(gethCfg *evm.GethConfig, exit bool) {
 	// A random private key. address = 0x7Bd36074b61Cfe75a53e1B9DF7678C96E6463b02
 	privateKeyStr := "32e3b56c9f2763d2332e6e4188e4755815ac96441e899de121969845e343c2ff"
 	nonce := uint64(0)
-	to := common.HexToAddress("0x7Bd36074b61Cfe75a53e1B9DF7678C96E6463b02")
-	amount := big.NewInt(10000000000000000)
+	to := common.HexToAddress("0x2Efe24c33f049Ffec693ec1D809A45Fff14e9527")
+	amount := big.NewInt(1)
 	gasLimit := uint64(21000)
 	gasPrice := big.NewInt(3000000000000)
 	data := []byte{}
