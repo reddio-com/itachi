@@ -213,7 +213,7 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	s.ethState = ethState
 	s.cfg.State = ethState.stateDB
 
-	chainConfig, _, err := SetupGenesisBlock(ethState.ethDB, ethState.trieDB, genesis)
+	chainConfig, _, err := SetupGenesisBlock(ethState, genesis)
 	if err != nil {
 		logrus.Fatal("SetupGenesisBlock failed: ", err)
 	}
@@ -350,8 +350,8 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 		gasLimit,
 		uint256.MustFromBig(value),
 	)
-	println("Return ret value:", ret)
-	println("Return leftOverGas value:", leftOverGas)
+	println("Call Return ret value:", ret)
+	println("Call Return leftOverGas value:", leftOverGas)
 
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, &CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
@@ -404,10 +404,14 @@ func executeContractCall(txReq *TxRequest, ethState *EthState, cfg *GethConfig, 
 	ethState.Prepare(rules, cfg.Origin, cfg.Coinbase, &txReq.Address, vm.ActivePrecompiles(rules), nil)
 	ethState.SetNonce(txReq.Origin, ethState.GetNonce(sender.Address())+1)
 
+	logrus.Printf("before transfer: account %s balance %d \n", sender.Address(), ethState.stateDB.GetBalance(sender.Address()))
+
 	ret, leftOverGas, err := vmenv.Call(sender, txReq.Address, txReq.Input, txReq.GasLimit, uint256.MustFromBig(txReq.Value))
 	if err != nil {
 		return err
 	}
+
+	logrus.Printf("after  transfer: account %s balance %d \n", sender.Address(), ethState.stateDB.GetBalance(sender.Address()))
 
 	println("Return ret value:", ret)
 	println("Return leftOverGas value:", leftOverGas)

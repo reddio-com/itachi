@@ -148,11 +148,11 @@ func hashAlloc(ga *types.GenesisAlloc, isVerkle bool) (common.Hash, error) {
 // flushAlloc is very similar with hash, but the main difference is all the generated
 // states will be persisted into the given database. Also, the genesis state
 // specification will be flushed as well.
-func flushAlloc(ga *types.GenesisAlloc, db ethdb.Database, triedb *triedb.Database, blockhash common.Hash) error {
-	statedb, err := state.New(types.EmptyRootHash, state.NewDatabaseWithNodeDB(db, triedb), nil)
-	if err != nil {
-		return err
-	}
+func flushAlloc(statedb *state.StateDB, ga *types.GenesisAlloc, db ethdb.Database, triedb *triedb.Database, blockhash common.Hash) error {
+	//statedb, err := state.New(types.EmptyRootHash, state.NewDatabaseWithNodeDB(db, triedb), nil)
+	//if err != nil {
+	//	return err
+	//}
 	for addr, account := range *ga {
 		if account.Balance != nil {
 			// This is not actually logged via tracer because OnGenesisBlock
@@ -165,16 +165,16 @@ func flushAlloc(ga *types.GenesisAlloc, db ethdb.Database, triedb *triedb.Databa
 			statedb.SetState(addr, key, value)
 		}
 	}
-	root, err := statedb.Commit(0, false)
-	if err != nil {
-		return err
-	}
-	// Commit newly generated states into disk if it's not empty.
-	if root != types.EmptyRootHash {
-		if err := triedb.Commit(root, true); err != nil {
-			return err
-		}
-	}
+	//root, err := statedb.Commit(0, false)
+	//if err != nil {
+	//	return err
+	//}
+	//// Commit newly generated states into disk if it's not empty.
+	//if root != types.EmptyRootHash {
+	//	if err := triedb.Commit(root, true); err != nil {
+	//		return err
+	//	}
+	//}
 	// Marshal the genesis state specification and persist.
 	blob, err := json.Marshal(ga)
 	if err != nil {
@@ -261,11 +261,11 @@ type ChainOverrides struct {
 // error is a *params.ConfigCompatError and the new, unwritten config is returned.
 //
 // The returned chain configuration is never nil.
-func SetupGenesisBlock(db ethdb.Database, triedb *triedb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
-	return SetupGenesisBlockWithOverride(db, triedb, genesis, nil)
+func SetupGenesisBlock(ethState *EthState, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
+	return SetupGenesisBlockWithOverride(ethState, genesis, nil)
 }
 
-func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, genesis *Genesis, overrides *ChainOverrides) (*params.ChainConfig, common.Hash, error) {
+func SetupGenesisBlockWithOverride(ethState *EthState, genesis *Genesis, overrides *ChainOverrides) (*params.ChainConfig, common.Hash, error) {
 	if genesis != nil && genesis.Config == nil {
 		return params.AllEthashProtocolChanges, common.Hash{}, errGenesisNoConfig
 	}
@@ -280,7 +280,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 		}
 	}
 	// Just commit the new block if there is no stored genesis block.
-	stored := rawdb.ReadCanonicalHash(db, 0)
+	stored := rawdb.ReadCanonicalHash(ethState.ethDB, 0)
 	if (stored == common.Hash{}) {
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
@@ -290,7 +290,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 		}
 
 		applyOverrides(genesis.Config)
-		block, err := genesis.Commit(db, triedb)
+		block, err := genesis.Commit(ethState)
 		if err != nil {
 			return genesis.Config, common.Hash{}, err
 		}
@@ -300,8 +300,8 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	// state database is not initialized yet. It can happen that the node
 	// is initialized with an external ancient store. Commit genesis state
 	// in this case.
-	header := rawdb.ReadHeader(db, stored, 0)
-	if header.Root != types.EmptyRootHash && !triedb.Initialized(header.Root) {
+	header := rawdb.ReadHeader(ethState.ethDB, stored, 0)
+	if header.Root != types.EmptyRootHash && !ethState.trieDB.Initialized(header.Root) {
 		if genesis == nil {
 			genesis = DefaultGenesisBlock()
 		}
@@ -311,7 +311,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 		if hash != stored {
 			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
 		}
-		block, err := genesis.Commit(db, triedb)
+		block, err := genesis.Commit(ethState)
 		if err != nil {
 			return genesis.Config, hash, err
 		}
@@ -331,10 +331,10 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	if err := newcfg.CheckConfigForkOrder(); err != nil {
 		return newcfg, common.Hash{}, err
 	}
-	storedcfg := rawdb.ReadChainConfig(db, stored)
+	storedcfg := rawdb.ReadChainConfig(ethState.ethDB, stored)
 	if storedcfg == nil {
 		log.Warn("Found genesis block without chain config")
-		rawdb.WriteChainConfig(db, stored, newcfg)
+		rawdb.WriteChainConfig(ethState.ethDB, stored, newcfg)
 		return newcfg, stored, nil
 	}
 	storedData, _ := json.Marshal(storedcfg)
@@ -349,7 +349,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	}
 	// Check config compatibility and write the config. Compatibility errors
 	// are returned to the caller unless we're already at block zero.
-	head := rawdb.ReadHeadHeader(db)
+	head := rawdb.ReadHeadHeader(ethState.ethDB)
 	if head == nil {
 		return newcfg, stored, errors.New("missing head header")
 	}
@@ -359,7 +359,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	}
 	// Don't overwrite if the old is identical to the new
 	if newData, _ := json.Marshal(newcfg); !bytes.Equal(storedData, newData) {
-		rawdb.WriteChainConfig(db, stored, newcfg)
+		rawdb.WriteChainConfig(ethState.ethDB, stored, newcfg)
 	}
 	return newcfg, stored, nil
 }
@@ -481,7 +481,7 @@ func (g *Genesis) ToBlock() *types.Block {
 
 // Commit writes the block and state of a genesis specification to the database.
 // The block is committed as the canonical head block.
-func (g *Genesis) Commit(db ethdb.Database, triedb *triedb.Database) (*types.Block, error) {
+func (g *Genesis) Commit(ethState *EthState /*db ethdb.Database, triedb *triedb.Database*/) (*types.Block, error) {
 	block := g.ToBlock()
 	if block.Number().Sign() != 0 {
 		return nil, errors.New("can't commit genesis block with number > 0")
@@ -499,24 +499,24 @@ func (g *Genesis) Commit(db ethdb.Database, triedb *triedb.Database) (*types.Blo
 	// All the checks has passed, flushAlloc the states derived from the genesis
 	// specification as well as the specification itself into the provided
 	// database.
-	if err := flushAlloc(&g.Alloc, db, triedb, block.Hash()); err != nil {
+	if err := flushAlloc(ethState.stateDB, &g.Alloc, ethState.ethDB, ethState.trieDB, block.Hash()); err != nil {
 		return nil, err
 	}
-	rawdb.WriteTd(db, block.Hash(), block.NumberU64(), block.Difficulty())
-	rawdb.WriteBlock(db, block)
-	rawdb.WriteReceipts(db, block.Hash(), block.NumberU64(), nil)
-	rawdb.WriteCanonicalHash(db, block.Hash(), block.NumberU64())
-	rawdb.WriteHeadBlockHash(db, block.Hash())
-	rawdb.WriteHeadFastBlockHash(db, block.Hash())
-	rawdb.WriteHeadHeaderHash(db, block.Hash())
-	rawdb.WriteChainConfig(db, block.Hash(), config)
+	rawdb.WriteTd(ethState.ethDB, block.Hash(), block.NumberU64(), block.Difficulty())
+	rawdb.WriteBlock(ethState.ethDB, block)
+	rawdb.WriteReceipts(ethState.ethDB, block.Hash(), block.NumberU64(), nil)
+	rawdb.WriteCanonicalHash(ethState.ethDB, block.Hash(), block.NumberU64())
+	rawdb.WriteHeadBlockHash(ethState.ethDB, block.Hash())
+	rawdb.WriteHeadFastBlockHash(ethState.ethDB, block.Hash())
+	rawdb.WriteHeadHeaderHash(ethState.ethDB, block.Hash())
+	rawdb.WriteChainConfig(ethState.ethDB, block.Hash(), config)
 	return block, nil
 }
 
 // MustCommit writes the genesis block and state to db, panicking on error.
 // The block is committed as the canonical head block.
-func (g *Genesis) MustCommit(db ethdb.Database, triedb *triedb.Database) *types.Block {
-	block, err := g.Commit(db, triedb)
+func (g *Genesis) MustCommit(ethState *EthState) *types.Block {
+	block, err := g.Commit(ethState)
 	if err != nil {
 		panic(err)
 	}
@@ -634,7 +634,7 @@ func decodePrealloc(data string) types.GenesisAlloc {
 	}
 
 	p = append(p, devAccount)
-	
+
 	ga := make(types.GenesisAlloc, len(p))
 	for _, account := range p {
 		acc := types.Account{Balance: account.Balance}
