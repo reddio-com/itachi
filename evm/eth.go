@@ -391,7 +391,7 @@ func executeContractCreation(txReq *TxRequest, ethState *EthState, cfg *GethConf
 	}
 
 	println("Return code value:", code)
-	println("Return address value:", address.Bytes())
+	println("Return address value:", address.Hex())
 	println("Return leftOverGas value:", leftOverGas)
 
 	return nil
