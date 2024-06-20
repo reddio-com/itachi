@@ -88,6 +88,7 @@ type GethConfig struct {
 // sets defaults on the config
 func SetDefaultGethConfig() *GethConfig {
 	cfg := defaultGethConfig()
+	cfg.ChainConfig.ChainID = big.NewInt(1)
 	if cfg.ChainConfig == nil {
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:             big.NewInt(1),
@@ -148,7 +149,7 @@ func LoadEvmConfig(fpath string) *GethConfig {
 
 func defaultGethConfig() *GethConfig {
 	return &GethConfig{
-		ChainConfig: params.MainnetChainConfig,
+		ChainConfig: params.SepoliaChainConfig,
 		Difficulty:  big.NewInt(1),
 		Origin:      common.HexToAddress("0x0"),
 		Coinbase:    common.HexToAddress("0x0"),
