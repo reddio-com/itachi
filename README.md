@@ -10,21 +10,21 @@ Significantly, Verse bridges the gap between EVM and CarioVM via our unique para
 
 Verse is set to transition from a single sequencer to a shared validation model with Itachi, marking a significant step toward scalability and decentralization.
 
-**Verse Modules**
+## Verse Modules
 
-**On-chain VRF (Verifiable Random Function):**
+*On-chain VRF (Verifiable Random Function):*
 
 Verse provides a necessary source of randomness for games via on-chain VRF, ensuring the fairness and unpredictability of game outcomes. This is particularly important for games that require fair random results, such as online card games and gambling applications. The on-chain VRF secures the generation of random numbers in a cryptographically safe manner, preventing any possibility of manipulation.
 
-**zk Game General Circuits:**
+*Zk Game General Circuits:*
 
 Utilizing Zero-Knowledge Proof (ZKP) technology, the Verse platform can verify the correctness of game states and player actions without revealing any player information. This not only enhances the security of the games but also protects the privacy of the players.
 
-**ZK Governance**
+*ZK Governance*
 
 Zero Knowledge Governance (ZK Governance) offers a comprehensive solution to these challenges by balancing the need for transparency in governance with the privacy of individual voters.
 
-**Anti-Mev**
+*Anti-Mev*
 
 FOCG will encounter very serious MEV attack issues. Bots can fully monitor opponents' actions and respond accordingly, gaining a first-mover advantage by manipulating gas fees.
 
