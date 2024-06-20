@@ -182,10 +182,12 @@ func (e *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction)
 	txReq := &evm.TxRequest{
 		Input:    signedTx.Data(),
 		Origin:   sender,
-		Address:  *signedTx.To(),
 		GasLimit: signedTx.Gas(),
 		GasPrice: signedTx.GasPrice(),
 		Value:    signedTx.Value(),
+	}
+	if signedTx.To() != nil {
+		txReq.Address = *signedTx.To()
 	}
 	byt, err := json.Marshal(txReq)
 	logrus.Printf("SendTx, Request=%+v\n", string(byt))
