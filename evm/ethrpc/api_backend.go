@@ -109,8 +109,25 @@ func (e *EthAPIBackend) CurrentHeader() *types.Header {
 }
 
 func (e *EthAPIBackend) CurrentBlock() *types.Header {
-	//TODO implement me
-	panic("implement me")
+	yuBlock, err := e.chain.Chain.GetEndBlock()
+	if err != nil {
+		logrus.Error("EthAPIBackend.CurrentBlock() failed: ", err)
+		return new(types.Header)
+	}
+	return &types.Header{
+		ParentHash:  common.Hash(yuBlock.PrevHash),
+		Coinbase:    common.Address{},
+		Root:        common.Hash(yuBlock.StateRoot),
+		TxHash:      common.Hash(yuBlock.TxnRoot),
+		ReceiptHash: common.Hash(yuBlock.ReceiptRoot),
+		Number:      new(big.Int).SetUint64(uint64(yuBlock.Height)),
+		GasLimit:    yuBlock.LeiLimit,
+		GasUsed:     yuBlock.LeiUsed,
+		Time:        yuBlock.Timestamp,
+		Extra:       yuBlock.Extra,
+		Nonce:       types.BlockNonce{},
+		BaseFee:     nil,
+	}
 }
 
 func (e *EthAPIBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Block, error) {
