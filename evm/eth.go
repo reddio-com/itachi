@@ -149,7 +149,7 @@ func LoadEvmConfig(fpath string) *GethConfig {
 
 func defaultGethConfig() *GethConfig {
 	return &GethConfig{
-		ChainConfig: params.SepoliaChainConfig,
+		ChainConfig: params.GoerliChainConfig,
 		Difficulty:  big.NewInt(1),
 		Origin:      common.HexToAddress("0x0"),
 		Coinbase:    common.HexToAddress("0x0"),
