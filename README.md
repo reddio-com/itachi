@@ -1,6 +1,6 @@
 ## Verse Chain
 
-Verse is Starknet's first gaming-specific layer 3 network to address the existing gaps in blockchain gaming. Verse enhances compatibility between CairoVM and EVM, and supports a permissionless economic trust layer, enabling better interoperability and asset management across chains.
+Verse builds a modular infrastructure and economic layer for on-chain games with CairoVM and EVM compatibility.
 
 ## Verse Chain Technical Brief
 
