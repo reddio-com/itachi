@@ -2,6 +2,9 @@ package cairo
 
 import (
 	"errors"
+	"net/http"
+	"slices"
+
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/encoder"
@@ -12,8 +15,6 @@ import (
 	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/types"
-	"net/http"
-	"slices"
 )
 
 type BlockID struct {
@@ -114,14 +115,14 @@ func (c *Cairo) GetBlockWithTxHashes(ctx *context.ReadContext) {
 	var br BlockWithTxHashesRequest
 	err := ctx.BindJson(&br)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &BlockWithTxHashesResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
 
 	var compactBlock *types.CompactBlock
 	compactBlock, err = c.getYuBlock(br.BlockID)
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &BlockWithTxHashesResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 
@@ -215,6 +216,40 @@ func (c *Cairo) adaptStarkBlockHeader(yuBlock *types.CompactBlock) rpc.BlockHead
 		SequencerAddress: c.sequencerAddr,
 		// TODO：L1GasPrice, StarknetVersion
 	}
+}
+
+type BlockNumberResponse struct {
+	BlockNumber uint64         `json:"block_number"`
+	Err         *jsonrpc.Error `json:"err"`
+}
+
+func (c *Cairo) GetBlockNumber(ctx *context.ReadContext) {
+	var err error
+	var compactBlock *types.CompactBlock
+	compactBlock, err = c.Chain.LastFinalized()
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockNumberResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	ctx.JsonOk(&BlockNumberResponse{BlockNumber: uint64(compactBlock.Height)})
+}
+
+type BlockHashAndNumberResponse struct {
+	BlockHashAndNumber *rpc.BlockHashAndNumber `json:"block_hash_and_number"`
+	Err                *jsonrpc.Error          `json:"err"`
+}
+
+func (c *Cairo) GetBlockHashAndNumber(ctx *context.ReadContext) {
+	var err error
+	var compactBlock *types.CompactBlock
+	compactBlock, err = c.Chain.LastFinalized()
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockNumberResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	feltHash := new(felt.Felt).SetBytes(compactBlock.Hash.Bytes())
+	blockHashAndNumber := &rpc.BlockHashAndNumber{Hash: feltHash, Number: uint64(compactBlock.Height)}
+	ctx.JsonOk(&BlockHashAndNumberResponse{BlockHashAndNumber: blockHashAndNumber})
 }
 
 type TransactionStatusRequest struct {

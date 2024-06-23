@@ -29,7 +29,7 @@ func init() {
 	poaCfg := poa.DefaultCfg(0)
 	crCfg := config.DefaultCfg()
 
-	chain, _ = app.InitItachi(poaCfg, crCfg)
+	chain = app.InitItachi(poaCfg, crCfg)
 }
 
 func TestIntegration(t *testing.T) {

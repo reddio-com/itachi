@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"itachi/cairo"
+
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -14,12 +17,18 @@ import (
 	"github.com/yu-org/yu/common"
 	yucore "github.com/yu-org/yu/core"
 	yucontext "github.com/yu-org/yu/core/context"
-	"itachi/cairo"
 )
 
+// //////////////////////////////////////
+// //		Chain Handlers		////////
+// //////////////////////////////////////
 func (s *StarknetRPC) GetChainID() (*felt.Felt, *jsonrpc.Error) {
 	return s.network.ChainID(), nil
 }
+
+////////////////////////////////////////
+////		Block Handlers		////////
+////////////////////////////////////////
 
 func (s *StarknetRPC) GetBlockWithTxHashes(id rpc.BlockID) (*rpc.BlockWithTxHashes, *jsonrpc.Error) {
 	req := &cairo.BlockWithTxHashesRequest{BlockID: cairo.NewFromJunoBlockID(id)}
@@ -39,6 +48,31 @@ func (s *StarknetRPC) GetBlockWithTxs(id rpc.BlockID) (*rpc.BlockWithTxs, *jsonr
 	}
 	res := resp.DataInterface.(*cairo.BlockWithTxsResponse)
 	return res.BlockWithTxs, res.Err
+}
+
+// BlockHashAndNumber returns the block number of the latest Finalized block.
+func (s *StarknetRPC) GetBlockNumber() (uint64, *jsonrpc.Error) {
+	fmt.Println("GetBlockNumber")
+	req := ""
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockNumber")
+	if jsonErr != nil {
+		return 0, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockNumberResponse)
+
+	return res.BlockNumber, nil
+}
+
+// BlockHashAndNumber returns the block number and hash of the latest Finalized block.
+func (s *StarknetRPC) GetBlockHashAndNumber() (*rpc.BlockHashAndNumber, *jsonrpc.Error) {
+	fmt.Println("GetBlockNumber")
+	req := ""
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockHashAndNumber")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockHashAndNumberResponse)
+	return res.BlockHashAndNumber, nil
 }
 
 func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxResponse, *jsonrpc.Error) {
@@ -113,6 +147,7 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 func (s *StarknetRPC) EstimateFee(broadcastedTxns []rpc.BroadcastedTransaction,
 	simulationFlags []rpc.SimulationFlag, id rpc.BlockID,
 ) ([]rpc.FeeEstimate, *jsonrpc.Error) {
+	fmt.Println("EstimateFee")
 	result, err := s.simulateTransactions(id, broadcastedTxns, append(simulationFlags, rpc.SkipFeeChargeFlag), false, true)
 	if err != nil {
 		return nil, err
@@ -268,12 +303,14 @@ func (s *StarknetRPC) GetClassHashAt(id rpc.BlockID, address felt.Felt) (*felt.F
 	return cr.ClassHash, cr.Err
 }
 
-func (s *StarknetRPC) SpecVersion() (string, *jsonrpc.Error) {
+func (s *StarknetRPC) SpecVersionV0_7() (string, *jsonrpc.Error) {
+	return "0.7.0", nil
+}
+func (s *StarknetRPC) SpecVersionV0_6() (string, *jsonrpc.Error) {
 	return "0.6.0", nil
 }
-
-func (s *StarknetRPC) LegacySpecVersion() (string, *jsonrpc.Error) {
-	return "0.5.1", nil
+func (s *StarknetRPC) SpecVersionV0_5() (string, *jsonrpc.Error) {
+	return "0.5.0", nil
 }
 
 func (s *StarknetRPC) adaptChainRead(req any, funcName string) (*yucontext.ResponseData, *jsonrpc.Error) {

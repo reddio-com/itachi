@@ -84,6 +84,6 @@ func DefaultCfg() *Config {
 		SkipChargeFee:     true,
 		SkipValidate:      true,
 		ErrOnRevert:       true,
-		EnableStarknetRPC: false,
+		EnableStarknetRPC: true,
 	}
 }

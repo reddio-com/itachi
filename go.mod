@@ -11,10 +11,12 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/jinzhu/copier v0.3.5
+	github.com/joho/godotenv v1.4.0
 	github.com/rs/cors v1.10.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/sourcegraph/conc v0.2.0
 	github.com/stretchr/testify v1.8.4
+	github.com/test-go/testify v1.1.4
 	github.com/yu-org/yu v0.0.0-20240508071445-65e90bf5b444
 )
 
@@ -178,7 +180,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
 	github.com/tendermint/tendermint v0.34.24 // indirect
-	github.com/test-go/testify v1.1.4 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
