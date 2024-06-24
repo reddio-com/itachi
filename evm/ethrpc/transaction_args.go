@@ -81,23 +81,28 @@ func (args *TransactionArgs) data() []byte {
 
 // setDefaults fills in default values for unspecified tx fields.
 func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend, skipGasEstimation bool) error {
-	if err := args.setBlobTxSidecar(ctx); err != nil {
-		return err
-	}
-	if err := args.setFeeDefaults(ctx, b); err != nil {
-		return err
-	}
+	// TODO: should return err after implement EthAPIBackend.CurrentHeader()
+	//if err := args.setBlobTxSidecar(ctx); err != nil {
+	//	return err
+	//}
+
+	// TODO: should return err after implement EthAPIBackend.SuggestGasTipCap()
+	//if err := args.setFeeDefaults(ctx, b); err != nil {
+	//	return err
+	//}
 
 	if args.Value == nil {
 		args.Value = new(hexutil.Big)
 	}
-	if args.Nonce == nil {
-		nonce, err := b.GetPoolNonce(ctx, args.from())
-		if err != nil {
-			return err
-		}
-		args.Nonce = (*hexutil.Uint64)(&nonce)
-	}
+
+	// TODO: should return err after implement EthAPIBackend.GetPoolNonce()
+	//if args.Nonce == nil {
+	//	nonce, err := b.GetPoolNonce(ctx, args.from())
+	//	if err != nil {
+	//		return err
+	//	}
+	//	args.Nonce = (*hexutil.Uint64)(&nonce)
+	//}
 	if args.Data != nil && args.Input != nil && !bytes.Equal(*args.Data, *args.Input) {
 		return errors.New(`both "data" and "input" are set and not equal. Please use "input" to pass transaction call data`)
 	}
