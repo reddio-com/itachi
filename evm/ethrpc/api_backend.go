@@ -217,7 +217,9 @@ func (e *EthAPIBackend) Call(ctx context.Context, args TransactionArgs, blockNrO
 	if err != nil {
 		return nil, err
 	}
-	return response.DataBytes, nil
+
+	resp := response.DataInterface.(*evm.CallResponse)
+	return resp.Ret, nil
 }
 
 func (e *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
