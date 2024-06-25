@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
@@ -188,6 +189,37 @@ func (e *EthAPIBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) e
 func (e *EthAPIBackend) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (e *EthAPIBackend) Call(ctx context.Context, args TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, overrides *StateOverride, blockOverrides *BlockOverrides) (hexutil.Bytes, error) {
+	err := args.setDefaults(ctx, e, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// byt, _ := json.Marshal(args)
+	callRequest := evm.CallRequest{
+		Origin:   *args.From,
+		Address:  *args.To,
+		Input:    *args.Data,
+		Value:    args.Value.ToInt(),
+		GasLimit: uint64(*args.Gas),
+		GasPrice: args.GasPrice.ToInt(),
+	}
+
+	requestByt, _ := json.Marshal(callRequest)
+	rdCall := new(yucommon.RdCall)
+	rdCall.TripodName = SolidityTripod
+	rdCall.FuncName = "Call"
+	rdCall.Params = string(requestByt)
+
+	response, err := e.chain.HandleRead(rdCall)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := response.DataInterface.(*evm.CallResponse)
+	return resp.Ret, nil
 }
 
 func (e *EthAPIBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
