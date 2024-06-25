@@ -197,11 +197,11 @@ func (e *EthAPIBackend) Call(ctx context.Context, args TransactionArgs, blockNrO
 		return nil, err
 	}
 
-	byt, _ := json.Marshal(args)
+	// byt, _ := json.Marshal(args)
 	callRequest := evm.CallRequest{
 		Origin:   *args.From,
 		Address:  *args.To,
-		Input:    byt,
+		Input:    *args.Data,
 		Value:    args.Value.ToInt(),
 		GasLimit: uint64(*args.Gas),
 		GasPrice: args.GasPrice.ToInt(),
