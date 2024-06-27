@@ -9,10 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/state/snapshot"
 	"github.com/ethereum/go-ethereum/core/tracing"
-	// "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/ethereum/go-ethereum/triedb/pathdb"
@@ -23,9 +24,10 @@ import (
 
 type EthState struct {
 	cfg        *config.Config
-	StateDB    *state.StateDB
+	stateDB    *state.StateDB
 	stateCache state.Database
 	trieDB     *triedb.Database
+	ethDB      ethdb.Database
 	snaps      *snapshot.Tree
 	logger     *tracing.Hooks
 }
@@ -72,11 +74,14 @@ func NewEthState(cfg *config.Config, currentStateRoot common.Hash) (*EthState, e
 	if err != nil {
 		return nil, err
 	}
+	stateDB, _ := state.New(types.EmptyRootHash, state.NewDatabaseWithNodeDB(db, trieDB), snaps)
 
 	ethState := &EthState{
 		cfg:        cfg,
+		stateDB:    stateDB,
 		stateCache: stateCache,
 		trieDB:     trieDB,
+		ethDB:      db,
 		snaps:      snaps,
 		logger:     vmConfig.Tracer,
 	}
@@ -101,8 +106,8 @@ func (s *EthState) GenesisCommit() (common.Hash, error) {
 //}
 
 func (s *EthState) Commit(blockNum uint64) (common.Hash, error) {
-	s.StateDB.StopPrefetcher()
-	stateRoot, err := s.StateDB.Commit(blockNum, true)
+	s.stateDB.StopPrefetcher()
+	stateRoot, err := s.stateDB.Commit(blockNum, true)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -126,7 +131,7 @@ func (s *EthState) newStateForNextBlock(currentStateRoot common.Hash) error {
 	newsStateDB.SetLogger(s.logger)
 	// Enable prefetching to pull in trie node paths while processing transactions
 	newsStateDB.StartPrefetcher("chain")
-	s.StateDB = newsStateDB
+	s.stateDB = newsStateDB
 	return nil
 }
 
@@ -175,4 +180,20 @@ func snapsConfig(cfg *config.Config) snapshot.Config {
 		NoBuild:    cfg.NoBuild,
 		AsyncBuild: !cfg.SnapshotWait,
 	}
+}
+
+func (s *EthState) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
+	s.stateDB.StopPrefetcher()
+	s.stateDB.Prepare(rules, sender, coinbase, dst, precompiles, list)
+}
+
+func (s *EthState) SetNonce(addr common.Address, nonce uint64) {
+	s.stateDB.StopPrefetcher()
+	s.stateDB.SetNonce(addr, nonce)
+}
+
+func (s *EthState) GetNonce(addr common.Address) uint64 {
+	s.stateDB.StopPrefetcher()
+	uint64 := s.stateDB.GetNonce(addr)
+	return uint64
 }

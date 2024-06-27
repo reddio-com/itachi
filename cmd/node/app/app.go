@@ -5,13 +5,14 @@ import (
 	"itachi/cairo/config"
 	"itachi/cairo/l1"
 	"itachi/cairo/starknetrpc"
+	"itachi/evm"
+	"itachi/evm/ethrpc"
 	"itachi/utils"
 
 	"github.com/common-nighthawk/go-figure"
 	"github.com/yu-org/yu/apps/poa"
 	"github.com/yu-org/yu/core/kernel"
 	"github.com/yu-org/yu/core/startup"
-	"itachi/evm"
 )
 
 func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config, evmCfg *evm.GethConfig) {
@@ -22,6 +23,7 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config, evmCfg *evm.GethC
 	// Starknet RPC server
 	rpcSrv := starknetrpc.StartUpStarknetRPC(chain, crCfg)
 
+	ethrpc.StartupEthRPC(chain, evmCfg)
 	// Subscribe to L1
 	l1.StartupL1(chain, crCfg, rpcSrv)
 

@@ -2,6 +2,10 @@ package evm
 
 import (
 	// "github.com/yu-org/yu/common/yerror"
+
+	"encoding/hex"
+	"github.com/BurntSushi/toml"
+	"github.com/yu-org/yu/common/yerror"
 	"itachi/evm/config"
 	"math"
 	"math/big"
@@ -15,7 +19,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -78,11 +81,16 @@ type GethConfig struct {
 
 	State     *state.StateDB
 	GetHashFn func(n uint64) common.Hash
+
+	EnableEthRPC bool   `toml:"enable_eth_rpc"`
+	EthHost      string `toml:"eth_host"`
+	EthPort      string `toml:"eth_port"`
 }
 
 // sets defaults on the config
 func SetDefaultGethConfig() *GethConfig {
 	cfg := defaultGethConfig()
+	cfg.ChainConfig.ChainID = big.NewInt(1)
 	if cfg.ChainConfig == nil {
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:             big.NewInt(1),
@@ -128,12 +136,22 @@ func SetDefaultGethConfig() *GethConfig {
 	if cfg.BlobBaseFee == nil {
 		cfg.BlobBaseFee = big.NewInt(params.BlobTxMinBlobGasprice)
 	}
+
+	return cfg
+}
+
+func LoadEvmConfig(fpath string) *GethConfig {
+	cfg := SetDefaultGethConfig()
+	_, err := toml.DecodeFile(fpath, cfg)
+	if err != nil {
+		logrus.Fatalf("load config file failed: %v", err)
+	}
 	return cfg
 }
 
 func defaultGethConfig() *GethConfig {
 	return &GethConfig{
-		ChainConfig: params.MainnetChainConfig,
+		ChainConfig: params.GoerliChainConfig,
 		Difficulty:  big.NewInt(1),
 		Origin:      common.HexToAddress("0x0"),
 		Coinbase:    common.HexToAddress("0x0"),
@@ -171,7 +189,7 @@ func setDefaultEthStateConfig() *config.Config {
 		NoPruning:               false,
 		NoPrefetch:              false,
 		StateHistory:            0,                   // By default, there is no state history
-		StateScheme:             "full",              // Default state scheme
+		StateScheme:             "hash",              // Default state scheme
 		DbPath:                  "verse_db",          // Default database path
 		DbType:                  "pebble",            // Default database type
 		NameSpace:               "eth/db/chaindata/", // Default namespace
@@ -191,20 +209,35 @@ func (s *Solidity) InitChain(genesisBlock *yu_types.Block) {
 	logrus.Println("Genesis GasLimit: ", genesis.GasLimit)
 	logrus.Println("Genesis Difficulty: ", genesis.Difficulty.String())
 
-	// init ethState
-	// block, err := s.GetCurrentBlock()
-	// if err != nil {
-	// 	if err == yerror.ErrBlockNotFound {
-	// 		block = genesisBlock.Compact()
-	// 	} else {
-	// 		logrus.Fatal("GetCurrentBlock failed: ", err)
-	// 	}
-	// }
-	ethState, err := NewEthState(cfg, common.Hash{})
+	var lastStateRoot common.Hash
+	block, err := s.GetCurrentBlock()
+	if err != nil && err != yerror.ErrBlockNotFound {
+		logrus.Fatal("get current block failed: ", err)
+	}
+	if block != nil {
+		lastStateRoot = common.Hash(block.StateRoot)
+	}
+
+	ethState, err := NewEthState(cfg, lastStateRoot)
 	if err != nil {
 		logrus.Fatal("init NewEthState failed: ", err)
 	}
 	s.ethState = ethState
+	s.cfg.State = ethState.stateDB
+
+	chainConfig, _, err := SetupGenesisBlock(ethState, genesis)
+	if err != nil {
+		logrus.Fatal("SetupGenesisBlock failed: ", err)
+	}
+
+	// s.cfg.ChainConfig = chainConfig
+
+	logrus.Println("Genesis SetupGenesisBlock chainConfig: ", chainConfig)
+	logrus.Println("Genesis NewEthState cfg.DbPath: ", ethState.cfg.DbPath)
+	logrus.Println("Genesis NewEthState ethState.cfg.NameSpace: ", ethState.cfg.NameSpace)
+	logrus.Println("Genesis NewEthState ethState.StateDB.SnapshotCommits: ", ethState.stateDB)
+	logrus.Println("Genesis NewEthState ethState.stateCache: ", ethState.stateCache)
+	logrus.Println("Genesis NewEthState ethState.trieDB: ", ethState.trieDB)
 
 	// commit genesis state
 	genesisStateRoot, err := s.ethState.GenesisCommit()
@@ -225,7 +258,7 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 		// network:       utils.Network(cfg.Network),
 	}
 
-	solidity.SetWritings(solidity.ExecuteTxn, solidity.Create)
+	solidity.SetWritings(solidity.ExecuteTxn)
 	solidity.SetReadings(
 		solidity.Call,
 		// solidity.GetClass, solidity.GetClassAt,
@@ -246,42 +279,39 @@ func NewSolidity(gethConfig *GethConfig) *Solidity {
 func (s *Solidity) ExecuteTxn(ctx *context.WriteContext) error {
 	txReq := new(TxRequest)
 	err := ctx.BindJson(txReq)
+	logrus.Printf("ExecuteTxn: %+v\n", txReq)
 	if err != nil {
 		return err
 	}
 
-	code := txReq.Code
-	input := txReq.Input
+	zeroAddress := common.Address{}
+
+	origin := txReq.Origin
+	gasLimit := txReq.GasLimit
+	gasPrice := txReq.GasPrice
+	value := txReq.Value
 
 	cfg := s.cfg
+	ethstate := s.ethState
 
-	var (
-		address = common.BytesToAddress([]byte("contract"))
-		vmenv   = newEVM(cfg)
-		sender  = vm.AccountRef(cfg.Origin)
-		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
-	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	cfg.Origin = origin
+	cfg.GasLimit = gasLimit
+	cfg.GasPrice = gasPrice
+	cfg.Value = value
+
+	vmenv := newEVM(cfg)
+	vmenv.StateDB = s.ethState.stateDB
+
+	logrus.Println("ExecuteTxn vmenv: ", vmenv)
+
+	sender := vm.AccountRef(txReq.Origin)
+	rules := cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
+
+	if txReq.Address == zeroAddress {
+		return executeContractCreation(txReq, ethstate, cfg, vmenv, sender, rules)
+	} else {
+		return executeContractCall(txReq, ethstate, cfg, vmenv, sender, rules)
 	}
-	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-berlin)
-	// - reset transient storage(eip 1153)
-	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
-	cfg.State.CreateAccount(address)
-	// set the receiver's (the executing contract) code for execution.
-	cfg.State.SetCode(address, code)
-	// Call the code with the given configuration.
-	ret, _, err := vmenv.Call(
-		sender,
-		common.BytesToAddress([]byte("contract")),
-		input,
-		cfg.GasLimit,
-		uint256.MustFromBig(cfg.Value),
-	)
-
-	println("Return ret value:", ret)
-	return err
 }
 
 // Call executes the code given by the contract's address. It will return the
@@ -297,31 +327,52 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	cfg := s.cfg
 	address := callReq.Address
 	input := callReq.Input
+	origin := callReq.Origin
+	gasLimit := callReq.GasLimit
+	gasPrice := callReq.GasPrice
+	value := callReq.Value
+
+	cfg.Origin = origin
+	cfg.GasLimit = gasLimit
+	cfg.GasPrice = gasPrice
+	cfg.Value = value
 
 	var (
-		vmenv   = newEVM(cfg)
-		sender  = vm.AccountRef(cfg.Origin)
-		statedb = cfg.State
-		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
+		vmenv    = newEVM(cfg)
+		sender   = vm.AccountRef(origin)
+		ethState = s.ethState
+		rules    = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
+
+	vmenv.StateDB = s.ethState.stateDB
+
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: value, Gas: gasLimit}), origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
 	// - reset transient storage(eip 1153)
-	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+	ethState.Prepare(rules, origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
+
+	println("Call Request sender:", sender.Address().Hex())
+	println("Call Request address:", address.Hex())
+	println("Call Request input:", hex.EncodeToString(input))
+	println("Call Request gasLimit:", gasLimit)
+	println("Call Request value :", value.String())
 
 	// Call the code with the given configuration.
 	ret, leftOverGas, err := vmenv.Call(
 		sender,
 		address,
 		input,
-		cfg.GasLimit,
-		uint256.MustFromBig(cfg.Value),
+		gasLimit,
+		uint256.MustFromBig(value),
 	)
-	println("Return ret value:", ret)
-	println("Return leftOverGas value:", leftOverGas)
+	println("Call Return ret value:", ret)
+	println("Call Return ret value:", hex.EncodeToString(ret))
+	retBigInt := new(big.Int).SetBytes(ret)
+	println("Call Return ret value:", retBigInt.String())
+	println("Call Return leftOverGas value:", leftOverGas)
 
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, &CallResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
@@ -329,48 +380,6 @@ func (s *Solidity) Call(ctx *context.ReadContext) {
 	}
 
 	ctx.JsonOk(&CallResponse{Ret: ret, LeftOverGas: leftOverGas})
-}
-
-// Create executes the code using the EVM create method
-func (s *Solidity) Create(ctx *context.WriteContext) error {
-	txCreate := new(CreateRequest)
-	err := ctx.BindJson(txCreate)
-	if err != nil {
-		return err
-	}
-
-	cfg := s.cfg
-
-	input := txCreate.Input
-
-	if cfg.State == nil {
-		cfg.State, _ = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
-	}
-	var (
-		vmenv  = newEVM(cfg)
-		sender = vm.AccountRef(cfg.Origin)
-		rules  = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
-	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
-	}
-	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-berlin)
-	// - reset transient storage(eip 1153)
-	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
-	// Call the code with the given configuration.
-	code, address, leftOverGas, err := vmenv.Create(
-		sender,
-		input,
-		cfg.GasLimit,
-		uint256.MustFromBig(cfg.Value),
-	)
-
-	println("Return code value:", code)
-	println("Return address value:", address.Bytes())
-	println("Return leftOverGas value:", leftOverGas)
-
-	return err
 }
 
 func (s *Solidity) Commit(block *yu_types.Block) {
@@ -387,4 +396,48 @@ func AdaptHash(ethHash common.Hash) yu_common.Hash {
 	var yuHash yu_common.Hash
 	copy(yuHash[:], ethHash[:])
 	return yuHash
+}
+
+func executeContractCreation(txReq *TxRequest, ethState *EthState, cfg *GethConfig, vmenv *vm.EVM, sender vm.AccountRef, rules params.Rules) error {
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: txReq.Input, Value: txReq.Value, Gas: txReq.GasLimit}), txReq.Origin)
+	}
+
+	ethState.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
+
+	code, address, leftOverGas, err := vmenv.Create(sender, txReq.Input, txReq.GasLimit, uint256.MustFromBig(txReq.Value))
+	if err != nil {
+		return err
+	}
+
+	println("Return code value:", code)
+	println("Return code value:", hex.EncodeToString(code))
+	println("Return address value:", address.Hex())
+	println("Return leftOverGas value:", leftOverGas)
+	println("Contract deployment successful!")
+
+	return nil
+}
+
+func executeContractCall(txReq *TxRequest, ethState *EthState, cfg *GethConfig, vmenv *vm.EVM, sender vm.AccountRef, rules params.Rules) error {
+	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
+		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &txReq.Address, Data: txReq.Input, Value: txReq.Value, Gas: txReq.GasLimit}), txReq.Origin)
+	}
+
+	ethState.Prepare(rules, cfg.Origin, cfg.Coinbase, &txReq.Address, vm.ActivePrecompiles(rules), nil)
+	ethState.SetNonce(txReq.Origin, ethState.GetNonce(sender.Address())+1)
+
+	logrus.Printf("before transfer: account %s balance %d \n", sender.Address(), ethState.stateDB.GetBalance(sender.Address()))
+
+	ret, leftOverGas, err := vmenv.Call(sender, txReq.Address, txReq.Input, txReq.GasLimit, uint256.MustFromBig(txReq.Value))
+	if err != nil {
+		return err
+	}
+
+	logrus.Printf("after  transfer: account %s balance %d \n", sender.Address(), ethState.stateDB.GetBalance(sender.Address()))
+
+	println("Return ret value:", ret)
+	println("Return leftOverGas value:", leftOverGas)
+
+	return nil
 }
