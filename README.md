@@ -1,37 +1,116 @@
-## Verse Chain
+# itachi
+Welcome to **itachi**, the much easier and more flexible modular stack to build Layer 2 or Layer 3 chains using Cairo and the Starknet technology.
+It's open source for everyone to use.  
 
-Verse builds a modular infrastructure and economic layer for on-chain games with CairoVM and EVM compatibility.
+Itachi is built on the [Yu](https://github.com/yu-org/yu) framework which not only makes it modular but also gives developers
+a simpler and more user-friendly development experience, just as simple as developing a web backend.   
 
-## Verse Chain Technical Brief
+It is specifically easy and helpful if you want to quickly own more of the stack and get more control over your chain.
 
-Verse leverages the **Itachi** infrastructure to introduce a specialized **Fractal Scaling Solution** for gaming applications.
+## Overall Structure
+![image](docs/images/itachi_arch.png)  
 
-Through smart contracts and chain-native modules, we enable developers to efficiently utilize functions and tools such as onchain VRF, AA wallets, and zk game general circuit. We also incorporate a few innovative EIPs such as EIP-5564 and EIP-6538 at the chain level, optimizing transaction efficiency and security, to empower game developers with more tool-kits and to enhance user experience.
+## Cairo Compatible
+- cairo-vm: 0.8.3
+- cairo-lang: 2.4.0
 
-Significantly, Verse bridges the gap between EVM and CarioVM via our unique parallel-chains structure, by creating chain-native common modules and making both EVM and CarioVM settle in the StarkNet, achieving higher compatibility across different virtual machines.
+## Build & Run
+### Prerequisites
+- rustc 1.74.0 (79e9716c9 2023-11-13)  
+- go 1.21
 
-Verse is set to transition from a single sequencer to a shared validation model with Itachi, marking a significant step toward scalability and decentralization.
+### Docker Pull & Run
+```shell
+docker pull ghcr.io/reddio-com/itachi:latest
+docker-compose up
+```
 
-![image](docs/images/versechain_arch.jpg)  
+### Source code Build & Run
+```shell
+git submodule init
+git submodule update --recursive --checkout
+make build
 
-## Verse Modules
+./itachi
+```   
+You can see the running results on your terminal.
+![image](docs/images/itachi_running.jpg)
 
-Verse will provide games with contract-based and native blockchain components, significantly reducing development costs. With the introduction of native blockchain modules, games will easily have access to features such as random number generation and anti-MEV capabilities, which are difficult to implement on other blockchains.
+### Reset Chain
+Reset Chain will clean all the stored history data locally. 
+```shell
+make reset
+```  
+## Test
+### [Starknet.py](https://github.com/software-mansion/starknet.py)
+You can use more complete python tests with `starknet.py`: https://github.com/reddio-com/itachi-testing
 
-**On-chain VRF (Verifiable Random Function):**
+## 🌐 Connect to Test Endpoint
+https://itachi-dev.reddio.com/
 
-Verse provides a necessary source of randomness for games via on-chain VRF, ensuring the fairness and unpredictability of game outcomes. This is particularly important for games that require fair random results, such as online card games and gambling applications. The on-chain VRF secures the generation of random numbers in a cryptographically safe manner, preventing any possibility of manipulation.
+## Configs  
+### Chain Configs
+The default config file of Itachi chain is `conf/cairo_cfg.toml`
+### Genesis Configs
+The genesis configs of Itachi chain is same as Madara. You can learn more details by [docs](docs/genesis.md)
 
-**zk Game General Circuits:**
 
-Utilizing Zero-Knowledge Proof (ZKP) technology, the Verse platform can verify the correctness of game states and player actions without revealing any player information. This not only enhances the security of the games but also protects the privacy of the players.
+## Starknet RPC
+### 0.5.1  
+- [x] addDeclareTransaction
+- [x] addDeployAccountTransaction
+- [x] addInvokeTransaction
+- [x] call
+- [x] estimateFee
+- [x] getTransactionReceipt
+- [x] getTransactionByHash
+- [x] getNonce
+- [x] getTransactionStatus
+- [x] getClass
+- [x] getClassAt
+- [x] getClassHashAt
+- [ ] blockHashAndNumber  
+- [ ] getBlockWithTxHashes
+- [ ] getBlockWithTxs  
+- [x] chainId
+- [ ] syncing
+- [ ] getTransactionByBlockIdAndIndex
+- [ ] getBlockTransactionCount
+- [ ] estimateMessageFee
+- [ ] blockNumber
+- [x] specVersion
+- [ ] traceTransaction
+- [x] simulateTransactions
+- [ ] traceBlockTransactions
+- [x] getStorageAt
+- [ ] getStateUpdate  
 
-**ZK Governance:**
 
-Zero Knowledge Governance (ZK Governance) offers a comprehensive solution to these challenges by balancing the need for transparency in governance with the privacy of individual voters.
-
-**Anti-Mev:**
-
-FOCG will encounter very serious MEV attack issues. Bots can fully monitor opponents' actions and respond accordingly, gaining a first-mover advantage by manipulating gas fees.
-
-We will address game-related MEV attacks using VerseChain's native modules.
+### 0.6.0   
+- [x] addDeclareTransaction
+- [x] addDeployAccountTransaction
+- [x] addInvokeTransaction
+- [x] call
+- [x] estimateFee
+- [x] getTransactionReceipt
+- [x] getTransactionByHash
+- [x] getNonce
+- [x] getTransactionStatus
+- [x] getClass
+- [x] getClassAt
+- [x] getClassHashAt
+- [ ] blockHashAndNumber
+- [x] getBlockWithTxHashes  
+- [x] getBlockWithTxs
+- [x] chainId
+- [ ] syncing
+- [ ] getTransactionByBlockIdAndIndex
+- [ ] getBlockTransactionCount
+- [ ] estimateMessageFee
+- [ ] blockNumber
+- [x] specVersion
+- [ ] traceTransaction
+- [x] simulateTransactions
+- [ ] traceBlockTransactions
+- [x] getStorageAt
+- [ ] getStateUpdate
