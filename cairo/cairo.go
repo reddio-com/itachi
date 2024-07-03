@@ -2,9 +2,7 @@ package cairo
 
 import (
 	"encoding/hex"
-	"itachi/cairo/config"
-	"net/http"
-
+	"fmt"
 	junostate "github.com/NethermindEth/juno/blockchain"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -15,10 +13,19 @@ import (
 	"github.com/NethermindEth/juno/utils"
 	"github.com/NethermindEth/juno/vm"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
 	"github.com/yu-org/yu/core/types"
+	. "github.com/yu-org/yu/core/types"
+	"github.com/yu-org/yu/utils/log"
+	"itachi/cairo/config"
+	"itachi/cairo/l1"
+	"itachi/cairo/l1/contract"
+	snos_ouput "itachi/cairo/snos-ouput"
+	"math/big"
+	"net/http"
 )
 
 type Cairo struct {
@@ -28,6 +35,130 @@ type Cairo struct {
 	cfg           *config.Config
 	sequencerAddr *felt.Felt
 	network       utils.Network
+}
+
+func (c *Cairo) StartBlock(block *Block) {
+
+	logrus.Infof("Cairo TriPod StartBlock for height (%d)! ", block.Height)
+
+}
+
+func (c *Cairo) EndBlock(block *Block) {
+
+	logrus.Infof("Cairo TriPod EndBlock for height (%d)! ", block.Height)
+
+}
+
+func (c *Cairo) FinalizeBlock(block *Block) {
+	logrus.Infof("Cairo TriPod finalize block for height (%d)! ", block.Height)
+
+	// for PrevStateRoot, get last finalized block
+	compactBlock, err := c.Chain.LastFinalized()
+	if err != nil {
+		logrus.Fatal("get compactBlock for finalize block failed: ", err)
+	}
+
+	var starkReceipt *rpc.TransactionReceipt
+	txns := block.Txns.ToArray()
+	messagesToL1 := make([]*rpc.MsgToL1, 0)
+	messagesToL2 := make([]*rpc.MsgFromL1, 0)
+	for t := 0; t < len(txns); t++ {
+		txn := txns[t]
+		receipt, _ := c.TxDB.GetReceipt(txn.TxnHash)
+		receiptExtraByt := receipt.Extra
+		err := encoder.Unmarshal(receiptExtraByt, &starkReceipt)
+		if err != nil {
+			// handle error
+			logrus.Fatal("unmarshal starkReceipt failed: ", err)
+		} else {
+			messagesToL1 = append(messagesToL1, starkReceipt.MessagesSent...)
+		}
+	}
+
+	num := uint64(block.Height)
+	// init StarknetOsOutput by block
+	snOsOutput := &snos_ouput.StarknetOsOutput{
+		PrevStateRoot: new(felt.Felt).SetBytes(compactBlock.StateRoot.Bytes()),
+		NewStateRoot:  new(felt.Felt).SetBytes(block.StateRoot.Bytes()),
+		BlockNumber:   new(felt.Felt).SetUint64(num),
+		BlockHash:     new(felt.Felt).SetBytes(block.Hash.Bytes()),
+		ConfigHash:    new(felt.Felt).SetUint64(0),
+		KzgDA:         new(felt.Felt).SetUint64(0),
+		MessagesToL1:  messagesToL1,
+		MessagesToL2:  messagesToL2,
+	}
+	// cairoState.UpdateStarknetOsOutput(snOsOutput)
+	logrus.Infof("snOsOutput: %+v", snOsOutput)
+
+	// send snOsOutput to L1 chain
+	c.ethCallUpdateState(c.cairoState, snOsOutput)
+
+	log.DoubleLineConsole.Info(fmt.Sprintf("Cairo Tripod finalize block, height=%d, hash=%s", block.Height, block.Hash.String()))
+
+}
+
+func (c *Cairo) ethCallUpdateState(cairoState *CairoState, snOsOutput *snos_ouput.StarknetOsOutput) {
+
+	ethClient, err := l1.NewEthClient(c.cfg.EthClientAddress)
+	if err != nil {
+		logrus.Errorf("init ethClient failed: %s", err)
+	}
+
+	starknetCore, err := contract.NewStarknetCore(common.HexToAddress(c.cfg.EthContractAddress), ethClient)
+	if err != nil {
+		return
+	}
+
+	// encode snOsOutput to []*big.Int
+	programOutput, err := snOsOutput.EncodeTo()
+	if err != nil {
+		logrus.Errorf("encode snOsOutput failed: %s", err)
+		return
+	}
+
+	// compute onchainDataHash and onchainDataSize
+	onchainDataHash, onchainDataSize, err := calculateOnchainData(programOutput)
+	if err != nil {
+		logrus.Errorf("calculate onchain data failed: %s", err)
+		return
+	}
+
+	chainID := big.NewInt(c.cfg.ChainID)
+	privateKeyHex := c.cfg.EthPrivateKey
+	address := c.cfg.EthClientAddress
+	gasLimit := c.cfg.GasLimit
+	auth, err := l1.CreateAuth(ethClient, privateKeyHex, address, gasLimit, chainID)
+	if err != nil {
+		logrus.Errorf("create auth failed: %s", err)
+		return
+	}
+
+	// call updateState
+	tx, err := starknetCore.UpdateState(auth, programOutput, onchainDataHash, onchainDataSize)
+	if err != nil {
+		logrus.Errorf("call updateState failed: %s", err)
+		return
+	}
+
+	// retrieve transaction hash and print.
+	logrus.Infof("update state, tx size: %d bytes", tx.Size())
+	txHash := tx.Hash()
+	logrus.Infof("update state, tx hash: %s", txHash.Hex())
+
+}
+
+func calculateOnchainData(programOutput []*big.Int) (*big.Int, *big.Int, error) {
+	var data []byte
+	for _, output := range programOutput {
+		data = append(data, output.Bytes()...)
+	}
+	onchainDataHash := crypto.Keccak256Hash(data)
+	onchainDataHashBig := new(big.Int).SetBytes(onchainDataHash.Bytes())
+
+	// compute onchainDataSize
+	onchainDataSize := new(big.Int).SetInt64(int64(len(programOutput)))
+
+	return onchainDataHashBig, onchainDataSize, nil
 }
 
 func NewCairo(cfg *config.Config) *Cairo {
