@@ -3,7 +3,7 @@ package snos_ouput
 import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/juno/rpc"
+	"itachi/cairo/adapters"
 	"math/big"
 )
 
@@ -23,8 +23,8 @@ type StarknetOsOutput struct {
 	// KZG_DA
 	KzgDA *felt.Felt `json:"kzgDA"`
 
-	MessagesToL1 []*rpc.MsgToL1   `json:"messages_to_l1"`
-	MessagesToL2 []*rpc.MsgFromL1 `json:"messages_to_l2"`
+	MessagesToL1 []*adapters.MessageL2ToL1 `json:"messages_to_l1"`
+	MessagesToL2 []*adapters.MessageL1ToL2 `json:"messages_to_l2"`
 }
 
 type SnosCodec interface {
