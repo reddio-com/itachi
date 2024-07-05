@@ -20,6 +20,7 @@ import (
 	"github.com/yu-org/yu/core/types"
 	. "github.com/yu-org/yu/core/types"
 	"github.com/yu-org/yu/utils/log"
+	"itachi/cairo/adapters"
 	"itachi/cairo/config"
 	"itachi/cairo/l1"
 	"itachi/cairo/l1/contract"
@@ -61,7 +62,6 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 	var starkReceipt *rpc.TransactionReceipt
 	txns := block.Txns.ToArray()
 	messagesToL1 := make([]*rpc.MsgToL1, 0)
-	messagesToL2 := make([]*rpc.MsgFromL1, 0)
 	for t := 0; t < len(txns); t++ {
 		txn := txns[t]
 		receipt, _ := c.TxDB.GetReceipt(txn.TxnHash)
@@ -74,6 +74,18 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 			messagesToL1 = append(messagesToL1, starkReceipt.MessagesSent...)
 		}
 	}
+	// Adapt
+	messageL2ToL1 := make([]*adapters.MessageL2ToL1, len(messagesToL1))
+	for idx, msg := range messagesToL1 {
+		messageL2ToL1[idx] = &adapters.MessageL2ToL1{
+			From:    msg.From,
+			To:      msg.To,
+			Payload: msg.Payload,
+		}
+	}
+
+	// todo 	messagesToL2 := make([]*rpc.MsgFromL1, 0)
+	messagesToL2 := make([]*adapters.MessageL1ToL2, 0)
 
 	num := uint64(block.Height)
 	// init StarknetOsOutput by block
@@ -84,7 +96,7 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 		BlockHash:     new(felt.Felt).SetBytes(block.Hash.Bytes()),
 		ConfigHash:    new(felt.Felt).SetUint64(0),
 		KzgDA:         new(felt.Felt).SetUint64(0),
-		MessagesToL1:  messagesToL1,
+		MessagesToL1:  messageL2ToL1,
 		MessagesToL2:  messagesToL2,
 	}
 	// cairoState.UpdateStarknetOsOutput(snOsOutput)
