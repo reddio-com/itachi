@@ -22,8 +22,8 @@ import (
 	"github.com/yu-org/yu/utils/log"
 	"itachi/cairo/adapters"
 	"itachi/cairo/config"
-	"itachi/cairo/l1"
 	"itachi/cairo/l1/contract"
+
 	snos_ouput "itachi/cairo/snos-ouput"
 	"math/big"
 	"net/http"
@@ -111,7 +111,7 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 
 func (c *Cairo) ethCallUpdateState(cairoState *CairoState, snOsOutput *snos_ouput.StarknetOsOutput) {
 
-	ethClient, err := l1.NewEthClient(c.cfg.EthClientAddress)
+	ethClient, err := NewEthClient(c.cfg.EthClientAddress)
 	if err != nil {
 		logrus.Errorf("init ethClient failed: %s", err)
 	}
@@ -139,7 +139,7 @@ func (c *Cairo) ethCallUpdateState(cairoState *CairoState, snOsOutput *snos_oupu
 	privateKeyHex := c.cfg.EthPrivateKey
 	address := c.cfg.EthClientAddress
 	gasLimit := c.cfg.GasLimit
-	auth, err := l1.CreateAuth(ethClient, privateKeyHex, address, gasLimit, chainID)
+	auth, err := CreateAuth(ethClient, privateKeyHex, address, gasLimit, chainID)
 	if err != nil {
 		logrus.Errorf("create auth failed: %s", err)
 		return
