@@ -3,16 +3,16 @@ package l1
 import (
 	"context"
 	"fmt"
-	"itachi/cairo/config"
-	"itachi/cairo/l1/contract"
-	"itachi/cairo/starknetrpc"
-	"math/big"
-
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/kernel"
+	"itachi/cairo/config"
+	"itachi/cairo/l1/contract"
+	"itachi/cairo/starknetrpc"
+	"math/big"
+	"os"
 )
 
 type L1 struct {
@@ -37,6 +37,7 @@ func StartupL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.Starkne
 	if cfg.EnableL1 {
 		l1, err := NewL1(itachi, cfg, s)
 		if err != nil {
+
 			logrus.Fatal("init L1 client failed: ", err)
 		}
 		err = l1.Run(context.Background())
@@ -107,7 +108,6 @@ func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.
 			ContractAddress: new(felt.Felt).SetBigInt(event.ToAddress),
 			Nonce:           new(felt.Felt).SetBigInt(event.Nonce),
 			CallData:        &callData,
-			Version:         new(felt.Felt).SetUint64(0),
 		},
 		PaidFeeOnL1: new(felt.Felt).SetBigInt(event.Fee),
 	}, nil

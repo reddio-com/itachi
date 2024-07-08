@@ -51,10 +51,13 @@ type Config struct {
 	EthContractAddress string `toml:"eth_contract_address"`
 
 	// L2 eth client configs
-	EnableL2      bool   `toml:"enable_l2"`
-	ChainID       int64  `toml:"chain_id"`
-	GasLimit      uint64 `toml:"gas_limit"`
-	EthPrivateKey string `toml:"eth_private_key"`
+	EnableL2UpdateState    bool   `toml:"enable_l2_update_state"`
+	EthRpcUrl              string `toml:"eth_rpc_url"`
+	ChainID                int64  `toml:"chain_id"`
+	GasLimit               uint64 `toml:"gas_limit"`
+	EthCoreContractAddress string `toml:"eth_core_contract_address"`
+	EthWalletAddress       string `toml:"eth_wallet_address"`
+	EthPrivateKey          string `toml:"eth_private_key"`
 
 	EnablePprof bool   `toml:"enable_pprof"`
 	PprofAddr   string `toml:"pprof_addr"`
