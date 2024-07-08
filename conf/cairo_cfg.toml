@@ -21,10 +21,13 @@ skip_validate = false
 err_on_revert = true
 
 #  L2 eth client configs
-enable_l2  = false
+enable_l2_update_state  = true
+eth_rpc_url = "https://sepolia.infura.io/v3/xxx"
 chain_id = 11155111
 gas_limit = 300000
-eth_private_key = ""
+eth_wallet_address = "xxx"
+eth_private_key = "xxx"
+eth_core_contract_address = "xxx"
 
 # starknet RPC
 enable_starknet_rpc = true

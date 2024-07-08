@@ -7,31 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
-	"itachi/cairo/config"
-	"itachi/cairo/l1/contract"
 	"math/big"
-	"time"
 )
-
-type MyEthClient struct {
-	cfg       *config.Config
-	ethClient *ethclient.Client
-	client    *rpc.Client
-	filterer  *contract.StarknetCoreFilterer
-}
-
-func NewEthClient(ethClientAddress string) (*ethclient.Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-	// TODO replace with our own client once we have one.
-	// Geth pulls in a lot of dependencies that we don't use.
-	client, err := rpc.DialContext(ctx, ethClientAddress)
-	if err != nil {
-		return nil, err
-	}
-	return ethclient.NewClient(client), nil
-}
 
 func CreateAuth(client *ethclient.Client, privateKeyHex string, address string, gasLimit uint64, chainID *big.Int) (*bind.TransactOpts, error) {
 	// Get nonce

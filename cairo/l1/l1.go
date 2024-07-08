@@ -12,6 +12,7 @@ import (
 	"itachi/cairo/l1/contract"
 	"itachi/cairo/starknetrpc"
 	"math/big"
+	"os"
 )
 
 type L1 struct {
@@ -33,9 +34,11 @@ func NewL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC
 }
 
 func StartupL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.StarknetRPC) {
+	logrus.SetOutput(os.Stdout)
 	if cfg.EnableL1 {
 		l1, err := NewL1(itachi, cfg, s)
 		if err != nil {
+
 			logrus.Fatal("init L1 client failed: ", err)
 		}
 		err = l1.Run(context.Background())

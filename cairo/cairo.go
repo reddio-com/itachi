@@ -14,6 +14,7 @@ import (
 	"github.com/NethermindEth/juno/vm"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/tripod"
@@ -23,10 +24,10 @@ import (
 	"itachi/cairo/adapters"
 	"itachi/cairo/config"
 	"itachi/cairo/l1/contract"
-
 	snos_ouput "itachi/cairo/snos-ouput"
 	"math/big"
 	"net/http"
+	"os"
 )
 
 type Cairo struct {
@@ -38,20 +39,13 @@ type Cairo struct {
 	network       utils.Network
 }
 
-func (c *Cairo) StartBlock(block *Block) {
-
-	logrus.Infof("Cairo TriPod StartBlock for height (%d)! ", block.Height)
-
-}
-
-func (c *Cairo) EndBlock(block *Block) {
-
-	logrus.Infof("Cairo TriPod EndBlock for height (%d)! ", block.Height)
-
-}
-
 func (c *Cairo) FinalizeBlock(block *Block) {
-	logrus.Infof("Cairo TriPod finalize block for height (%d)! ", block.Height)
+	logrus.SetOutput(os.Stdout)
+
+	if !c.cfg.EnableL2UpdateState {
+
+		return
+	}
 
 	// for PrevStateRoot, get last finalized block
 	compactBlock, err := c.Chain.LastFinalized()
@@ -86,6 +80,10 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 
 	// todo 	messagesToL2 := make([]*rpc.MsgFromL1, 0)
 	messagesToL2 := make([]*adapters.MessageL1ToL2, 0)
+	//for t := 0; t < len(txns); t++ {
+	//	txn := txns[t]
+	//
+	//}
 
 	num := uint64(block.Height)
 	// init StarknetOsOutput by block
@@ -100,10 +98,13 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 		MessagesToL2:  messagesToL2,
 	}
 	// cairoState.UpdateStarknetOsOutput(snOsOutput)
-	logrus.Infof("snOsOutput: %+v", snOsOutput)
+	fmt.Printf("snOsOutput:\n%+v\n", snOsOutput)
 
-	// send snOsOutput to L1 chain
-	c.ethCallUpdateState(c.cairoState, snOsOutput)
+	// 新旧状态根对比
+	if snOsOutput.PrevStateRoot.String() != snOsOutput.NewStateRoot.String() {
+		// send snOsOutput to L1 chain
+		c.ethCallUpdateState(c.cairoState, snOsOutput)
+	}
 
 	log.DoubleLineConsole.Info(fmt.Sprintf("Cairo Tripod finalize block, height=%d, hash=%s", block.Height, block.Hash.String()))
 
@@ -111,51 +112,52 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 
 func (c *Cairo) ethCallUpdateState(cairoState *CairoState, snOsOutput *snos_ouput.StarknetOsOutput) {
 
-	ethClient, err := NewEthClient(c.cfg.EthClientAddress)
+	client, err := ethclient.Dial(c.cfg.EthRpcUrl)
 	if err != nil {
-		logrus.Errorf("init ethClient failed: %s", err)
+		fmt.Println("init client failed: ", err)
 	}
 
-	starknetCore, err := contract.NewStarknetCore(common.HexToAddress(c.cfg.EthContractAddress), ethClient)
+	starknetCore, err := contract.NewStarknetCore(common.HexToAddress(c.cfg.EthCoreContractAddress), client)
 	if err != nil {
+		fmt.Println("init starknetCore failed: ", err)
 		return
 	}
 
 	// encode snOsOutput to []*big.Int
 	programOutput, err := snOsOutput.EncodeTo()
 	if err != nil {
-		logrus.Errorf("encode snOsOutput failed: %s", err)
+		fmt.Println("encode snOsOutput failed: ", err)
 		return
 	}
 
 	// compute onchainDataHash and onchainDataSize
 	onchainDataHash, onchainDataSize, err := calculateOnchainData(programOutput)
 	if err != nil {
-		logrus.Errorf("calculate onchain data failed: %s", err)
+		fmt.Println("calculate onchain data failed: ", err)
 		return
 	}
 
 	chainID := big.NewInt(c.cfg.ChainID)
 	privateKeyHex := c.cfg.EthPrivateKey
-	address := c.cfg.EthClientAddress
+	address := c.cfg.EthWalletAddress
 	gasLimit := c.cfg.GasLimit
-	auth, err := CreateAuth(ethClient, privateKeyHex, address, gasLimit, chainID)
+	auth, err := CreateAuth(client, privateKeyHex, address, gasLimit, chainID)
 	if err != nil {
-		logrus.Errorf("create auth failed: %s", err)
+		fmt.Println("create auth failed: ", err)
 		return
 	}
 
 	// call updateState
 	tx, err := starknetCore.UpdateState(auth, programOutput, onchainDataHash, onchainDataSize)
 	if err != nil {
-		logrus.Errorf("call updateState failed: %s", err)
+		fmt.Println("call updateState failed: %s", err)
 		return
 	}
 
 	// retrieve transaction hash and print.
-	logrus.Infof("update state, tx size: %d bytes", tx.Size())
 	txHash := tx.Hash()
-	logrus.Infof("update state, tx hash: %s", txHash.Hex())
+	log.DoubleLineConsole.Info("update state, tx hash: %s", txHash.Hex())
+	fmt.Println("https://sepolia.etherscan.io/tx/" + tx.Hash().Hex())
 
 }
 
