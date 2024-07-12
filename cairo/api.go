@@ -63,6 +63,85 @@ func (c *Cairo) GetTransaction(ctx *context.ReadContext) {
 	ctx.JsonOk(&TransactionResponse{Tx: &txReq.Tx.Transaction})
 }
 
+type TraceBlockTransactionsRequest struct {
+	BlockID BlockID `json:"block_id"`
+}
+
+type TraceBlockTransactionsResponse struct {
+	Trace *[]vm.TransactionTrace `json:"trace_root,omitempty"`
+	Err   *jsonrpc.Error         `json:"err"`
+}
+
+func (c *Cairo) TraceBlockTransactions(ctx *context.ReadContext) {
+	var rq TraceBlockTransactionsRequest
+	var traces *[]vm.TransactionTrace
+	err := ctx.BindJson(&rq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &TraceBlockTransactionsResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+	compactBlock, err := c.getYuBlock(rq.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	Hashs := compactBlock.TxnsHashes
+	for _, hash := range Hashs {
+		var trace vm.TransactionTrace
+		feltHash := new(felt.Felt).SetBytes(hash.Bytes())
+		c.getTraceByHash(*feltHash, &trace)
+		*traces = append(*traces, trace)
+	}
+	ctx.JsonOk(&TraceBlockTransactionsResponse{Trace: traces})
+}
+
+type TraceTransactionsRequest struct {
+	Hash felt.Felt `json:"hash"`
+}
+
+type TraceTransactionsResponse struct {
+	Trace *vm.TransactionTrace `json:"receipt"`
+	Err   *jsonrpc.Error       `json:"err"`
+}
+
+func (c *Cairo) TraceTransactions(ctx *context.ReadContext) {
+	var rq TraceTransactionsRequest
+	err := ctx.BindJson(&rq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &TraceTransactionsResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+	var trace vm.TransactionTrace
+	c.getTraceByHash(rq.Hash, &trace)
+
+	ctx.JsonOk(&TraceTransactionsResponse{Trace: &trace})
+}
+
+func (c *Cairo) getTraceByHash(hash felt.Felt, trace *vm.TransactionTrace) {
+	starkReceipt, err := c.getReceipt(hash)
+	if err != nil {
+		return
+	}
+
+	resources := starkReceipt.ExecutionResources
+	if resources == nil {
+		resources = &rpc.ExecutionResources{}
+	}
+
+	trace.ExecuteInvocation.FunctionInvocation.ExecutionResources = &vm.ExecutionResources{
+		Steps:        resources.Steps,
+		MemoryHoles:  resources.MemoryHoles,
+		Pedersen:     resources.Pedersen,
+		RangeCheck:   resources.RangeCheck,
+		Bitwise:      resources.Bitwise,
+		Ecdsa:        resources.Ecsda,
+		EcOp:         resources.EcOp,
+		Keccak:       resources.Keccak,
+		Poseidon:     resources.Poseidon,
+		SegmentArena: resources.SegmentArena,
+	}
+}
+
 type ReceiptRequest struct {
 	Hash felt.Felt `json:"hash"`
 }
@@ -250,6 +329,83 @@ func (c *Cairo) GetBlockHashAndNumber(ctx *context.ReadContext) {
 	feltHash := new(felt.Felt).SetBytes(compactBlock.Hash.Bytes())
 	blockHashAndNumber := &rpc.BlockHashAndNumber{Hash: feltHash, Number: uint64(compactBlock.Height)}
 	ctx.JsonOk(&BlockHashAndNumberResponse{BlockHashAndNumber: blockHashAndNumber})
+}
+
+type BlockTransactionCountRequest struct {
+	BlockID BlockID `json:"block_id"`
+}
+
+type BlockTransactionCountResponse struct {
+	TxsNumber uint64         `json:"TxsNumber"`
+	Err       *jsonrpc.Error `json:"err"`
+}
+
+func (c *Cairo) GetBlockTransactionCount(ctx *context.ReadContext) {
+	//get Block by blockID
+	var br BlockTransactionCountRequest
+	err := ctx.BindJson(&br)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &BlockTransactionCountResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+
+	var compactBlock *types.CompactBlock
+	compactBlock, err = c.getYuBlock(br.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockTransactionCountResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	//get the number of transactions in the block
+	var txnsNumber uint64 = uint64(len(compactBlock.TxnsHashes))
+	ctx.JsonOk(&BlockTransactionCountResponse{TxsNumber: txnsNumber})
+}
+
+type TransactionByBlockIDAndIndexRequest struct {
+	BlockID BlockID `json:"block_id"`
+	TxIndex int     `json:"index"`
+}
+
+type TransactionByBlockIDAndIndexResponse struct {
+	Tx  *rpc.Transaction `json:"tx"`
+	Err *jsonrpc.Error   `json:"err"`
+}
+
+func (c *Cairo) GetTransactionByBlockIDAndIndex(ctx *context.ReadContext) {
+	var tq TransactionByBlockIDAndIndexRequest
+	err := ctx.BindJson(&tq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &TransactionResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+	//check if the index is valid
+	if tq.TxIndex < 0 {
+		ctx.Json(http.StatusBadRequest, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, "index must be a non-negative integer")})
+		return
+	}
+	//check if the block is pending
+	compactBlock, err := c.getYuBlock(tq.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	if uint64(tq.TxIndex) >= uint64(len(compactBlock.TxnsHashes)) {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, "index out of range")})
+		return
+	}
+	//get the transaction by index
+	txHash := compactBlock.TxnsHashes[tq.TxIndex]
+	signedTx, err := c.TxDB.GetTxn(common.Hash(txHash.Bytes()))
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	txReq := new(TxRequest)
+	err = signedTx.BindJson(txReq)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	ctx.JsonOk(&TransactionByBlockIDAndIndexResponse{Tx: &txReq.Tx.Transaction})
 }
 
 type TransactionStatusRequest struct {

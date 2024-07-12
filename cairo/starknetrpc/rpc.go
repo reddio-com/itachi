@@ -129,11 +129,95 @@ func exactPathServer(path string, handler http.Handler) http.HandlerFunc {
 	}
 }
 
-func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) { //nolint: funlen
+func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 	return []jsonrpc.Method{
 		{
 			Name:    "starknet_chainId",
 			Handler: s.GetChainID,
+		},
+		{
+			Name:    "starknet_specVersion",
+			Handler: s.SpecVersionV0_7,
+		},
+		{
+			Name:    "starknet_getBlockWithTxHashes",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
+			Handler: s.GetBlockWithTxHashes,
+		},
+		{
+			Name:    "starknet_getBlockWithTxs",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
+			Handler: s.GetBlockWithTxs,
+		},
+		{
+			Name:    "starknet_addDeployAccountTransaction",
+			Params:  []jsonrpc.Parameter{{Name: "deploy_account_transaction"}},
+			Handler: s.AddTransaction,
+		},
+		{
+			Name:    "starknet_addDeclareTransaction",
+			Params:  []jsonrpc.Parameter{{Name: "declare_transaction"}},
+			Handler: s.AddTransaction,
+		},
+		{
+			Name:    "starknet_addInvokeTransaction",
+			Params:  []jsonrpc.Parameter{{Name: "invoke_transaction"}},
+			Handler: s.AddTransaction,
+		},
+		{
+			Name:    "starknet_call",
+			Params:  []jsonrpc.Parameter{{Name: "request"}, {Name: "block_id"}},
+			Handler: s.Call,
+		},
+		{
+			Name:    "starknet_simulateTransactions",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "transactions"}, {Name: "simulation_flags"}},
+			Handler: s.SimulateTransactions,
+		},
+		{
+			Name:    "starknet_estimateFee",
+			Params:  []jsonrpc.Parameter{{Name: "request"}, {Name: "simulation_flags"}, {Name: "block_id"}},
+			Handler: s.EstimateFee,
+		},
+		{
+			Name:    "starknet_getTransactionByHash",
+			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+			Handler: s.GetTransactionByHash,
+		},
+		{
+			Name:    "starknet_getTransactionStatus",
+			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+			Handler: s.GetTransactionStatus,
+		},
+		{
+			Name:    "starknet_getTransactionReceipt",
+			Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+			Handler: s.GetReceiptByHash,
+		},
+		{
+			Name:    "starknet_getNonce",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
+			Handler: s.GetNonce,
+		},
+		{
+			Name:    "starknet_getStorageAt",
+			Params:  []jsonrpc.Parameter{{Name: "contract_address"}, {Name: "key"}, {Name: "block_id"}},
+			Handler: s.GetStorage,
+		},
+		{
+			Name:    "starknet_getClass",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "class_hash"}},
+			Handler: s.GetClass,
+		},
+		{
+			Name:    "starknet_getClassAt",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
+			Handler: s.GetClassAt,
+		},
+		{
+			Name:    "starknet_getClassHashAt",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "contract_address"}},
+			Handler: s.GetClassHashAt,
 		},
 		{
 			Name:    "starknet_blockNumber",
@@ -144,20 +228,35 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) { //nolint: funlen
 			Handler: s.GetBlockHashAndNumber,
 		},
 		{
-			Name:    "starknet_getBlockWithTxHashes",
+			Name:    "starknet_getBlockTransactionCount",
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
-			Handler: s.GetBlockWithTxHashes,
+			Handler: s.GetBlockTransactionCount,
 		},
 		{
-			Name:    "starknet_getClass",
-			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "class_hash"}},
-			Handler: s.GetClass,
+			Name:    "starknet_getTransactionByBlockIdAndIndex",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "index"}},
+			Handler: s.GetTransactionByBlockIDAndIndex,
 		},
 		// {
-		// 	Name:    "starknet_getBlockTransactionCount",
-		// 	Params:  []jsonrpc.Parameter{{Name: "block_id"}},
-		// 	Handler: s.GetBlockTransactionCount,
+		// 	Name:    "starknet_traceTransaction",
+		// 	Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
+		// 	Handler: s.TraceTransaction,
 		// },
+		{
+			Name:    "starknet_traceBlockTransactions",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
+			Handler: s.TraceBlockTransactions,
+		},
+		// {
+		// 	Name:    "starknet_getStateUpdate",
+		// 	Params:  []jsonrpc.Parameter{{Name: "block_id"}},
+		// 	Handler: s.GetStateUpdate,
+		// },
+		{
+			Name:    "starknet_estimateMessageFee",
+			Params:  []jsonrpc.Parameter{{Name: "message"}, {Name: "block_id"}},
+			Handler: s.EstimateMessageFee,
+		},
 	}, "/v0_7"
 }
 

@@ -60,6 +60,8 @@ func NewCairo(cfg *config.Config) *Cairo {
 		cairo.GetTransaction, cairo.GetTransactionStatus, cairo.GetReceipt,
 		cairo.SimulateTransactions,
 		cairo.GetBlockWithTxs, cairo.GetBlockWithTxHashes,
+		cairo.GetBlockHashAndNumber, cairo.GetBlockNumber,
+		cairo.GetTransactionByBlockIDAndIndex, cairo.GetBlockTransactionCount,
 	)
 
 	return cairo

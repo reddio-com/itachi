@@ -139,7 +139,7 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] addDeclareTransaction
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
-- [ ] call
+- [x] call
 - [ ] estimateFee
 - [x] getTransactionReceipt
 - [x] getTransactionByHash
@@ -148,7 +148,7 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] getClass
 - [x] getClassAt
 - [x] getClassHashAt
-- [ ] blockHashAndNumber
+- [x] blockHashAndNumber
 - [x] getBlockWithTxHashes
 - [x] getBlockWithTxs
 - [x] chainId
