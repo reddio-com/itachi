@@ -58,6 +58,11 @@ make reset
 
 You can use more complete python tests with `starknet.py`: https://github.com/reddio-com/itachi-testing
 
+### [starknetGo](https://github.com/haisenCx/starknet.go/tree/itachi_test)
+
+You can use `starknetGo` for RPC unit testing. You can refer to the `itachi_test` branch in this fork used during RPC development：https://github.com/haisenCx/starknet.go/tree/itachi_test
+Files with the \_test suffix in path `starknet.go/rpc` are unit tests for RPC.
+
 ## 🌐 Connect to Test Endpoint
 
 https://itachi-dev.reddio.com/
@@ -140,7 +145,7 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] addDeployAccountTransaction
 - [x] addInvokeTransaction
 - [x] call
-- [ ] estimateFee
+- [x] estimateFee
 - [x] getTransactionReceipt
 - [x] getTransactionByHash
 - [x] getNonce
@@ -153,13 +158,13 @@ The genesis configs of Itachi chain is same as Madara. You can learn more detail
 - [x] getBlockWithTxs
 - [x] chainId
 - [ ] syncing
-- [ ] getTransactionByBlockIdAndIndex
-- [ ] getBlockTransactionCount
-- [ ] estimateMessageFee
+- [x] getTransactionByBlockIdAndIndex
+- [x] getBlockTransactionCount
+- [x] estimateMessageFee
 - [x] blockNumber
 - [x] specVersion
 - [ ] traceTransaction
 - [x] simulateTransactions
 - [ ] traceBlockTransactions
 - [x] getStorageAt
-- [ ] getStateUpdate
+- [x] getStateUpdate

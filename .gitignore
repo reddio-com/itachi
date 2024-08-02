@@ -1,6 +1,7 @@
 .idea
 **/**/yu
 **/**/cairo_db
+**/**/cairo_state_diff
 
 data
 itachi

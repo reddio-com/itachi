@@ -237,21 +237,22 @@ func (s *StarknetRPC) Methods() ([]jsonrpc.Method, string) {
 			Params:  []jsonrpc.Parameter{{Name: "block_id"}, {Name: "index"}},
 			Handler: s.GetTransactionByBlockIDAndIndex,
 		},
+		//TODO
 		// {
 		// 	Name:    "starknet_traceTransaction",
 		// 	Params:  []jsonrpc.Parameter{{Name: "transaction_hash"}},
 		// 	Handler: s.TraceTransaction,
 		// },
-		{
-			Name:    "starknet_traceBlockTransactions",
-			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
-			Handler: s.TraceBlockTransactions,
-		},
 		// {
-		// 	Name:    "starknet_getStateUpdate",
+		// 	Name:    "starknet_traceBlockTransactions",
 		// 	Params:  []jsonrpc.Parameter{{Name: "block_id"}},
-		// 	Handler: s.GetStateUpdate,
+		// 	Handler: s.TraceBlockTransactions,
 		// },
+		{
+			Name:    "starknet_getStateUpdate",
+			Params:  []jsonrpc.Parameter{{Name: "block_id"}},
+			Handler: s.GetStateUpdate,
+		},
 		{
 			Name:    "starknet_estimateMessageFee",
 			Params:  []jsonrpc.Parameter{{Name: "message"}, {Name: "block_id"}},

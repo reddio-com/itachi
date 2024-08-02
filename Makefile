@@ -8,6 +8,7 @@ build:
 
 reset:
 	@rm -r yu cairo_db
+	@rm -r yu cairo_state_diff
 
 clean:
 	rm -f $(PROJECT)

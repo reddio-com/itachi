@@ -13,7 +13,9 @@ colour = true
 
 # ETH L1
 enable_l1 = false
-eth_client_address = "https://sepolia.infura.io/v3/"
+# note: need websocket rpc to listen to the L1 event
+eth_client_address = "wss://sepolia.infura.io/ws/v3/xxx"
+eth_contract_address = "0x04CB058a9F397d255852a3Ed9A4C6096baedfF45"
 
 sequencer_addr = "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b"
 skip_charge_fee = true
@@ -24,6 +26,7 @@ err_on_revert = true
 enable_starknet_rpc = true
 starknet_host = "0.0.0.0"
 starknet_port = "9091"
+state_diff_db_path = "cairo_state_diff"
 
 # pprof
 enable_pprof = true
@@ -180,8 +183,3 @@ value = "0x3603a2692a2ae60abb343e832ee53b55d6b25f02a3ef1565ec691edc7a209b2"
 contract_address = "0x040e59c2c182a58fb0a74349bfa4769cbbcba32547591dd3fb1def8623997d02"
 key = "0x2bd557f4ba80dfabefabe45e9b2dd35db1b9a78e96c72bc2b69b655ce47a930"
 value = "0x1"
-
-
-
-
-

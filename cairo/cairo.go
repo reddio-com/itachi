@@ -2,6 +2,7 @@ package cairo
 
 import (
 	"encoding/hex"
+	"fmt"
 	"itachi/cairo/config"
 	"net/http"
 
@@ -43,7 +44,9 @@ func NewCairo(cfg *config.Config) *Cairo {
 	if err != nil {
 		logrus.Fatal("load sequencer address failed: ", err)
 	}
-
+	if err != nil {
+		logrus.Fatal("open StarkNet DB failed: ", err)
+	}
 	cairo := &Cairo{
 		Tripod:        tripod.NewTripod(),
 		cairoVM:       cairoVM,
@@ -62,6 +65,7 @@ func NewCairo(cfg *config.Config) *Cairo {
 		cairo.GetBlockWithTxs, cairo.GetBlockWithTxHashes,
 		cairo.GetBlockHashAndNumber, cairo.GetBlockNumber,
 		cairo.GetTransactionByBlockIDAndIndex, cairo.GetBlockTransactionCount,
+		cairo.GetStateUpdate,
 	)
 
 	return cairo
@@ -90,7 +94,7 @@ func (c *Cairo) InitChain(genesisBlock *types.Block) {
 	genesisBlock.StateRoot = stateRoot.Bytes()
 }
 
-func (c *Cairo) CheckTxn(txn *types.SignedTxn) error {
+func (c *Cairo) PreHandleTxn(txn *types.SignedTxn) error {
 	txReq := new(TxRequest)
 	err := txn.BindJson(txReq)
 	if err != nil {
@@ -164,12 +168,18 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 }
 
 func (c *Cairo) Commit(block *types.Block) {
+
 	blockNumber := uint64(block.Height)
-	stateRoot, err := c.cairoState.Commit(blockNumber)
+	// The processing of blockHash below is necessary to convert the Hash into a Felt-compatible uint256 type,
+	// using the official Starknet conversion method, ensuring that Felt and uint256 can be converted without loss.
+	// Without this processing, users would experience a loss of 4 bits of information when performing a uint252->256 bit conversion using starknet rpc.
+	block.Hash = new(felt.Felt).SetBytes(block.Hash.Bytes()).Bytes()
+	stateRoot, err := c.cairoState.Commit(block)
 	if err != nil {
 		logrus.Errorf("cairo commit failed on Block(%d), error: %v", blockNumber, err)
 	}
 	block.StateRoot = stateRoot.Bytes()
+
 }
 
 func (c *Cairo) Call(ctx *context.ReadContext) {
@@ -277,7 +287,7 @@ func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Tra
 		Amount: amount,
 		Unit:   feeUnit(tx),
 	}
-
+	fmt.Print("starkReceipt", starkReceipt)
 	switch v := tx.(type) {
 	case *core.DeployTransaction:
 		starkReceipt.ContractAddress = v.ContractAddress

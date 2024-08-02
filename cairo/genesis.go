@@ -3,11 +3,13 @@ package cairo
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/NethermindEth/juno/adapters/sn2core"
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/starknet"
-	"os"
+	"github.com/yu-org/yu/core/types"
 )
 
 func (c *Cairo) buildGenesis() (*felt.Felt, error) {
@@ -26,7 +28,13 @@ func (c *Cairo) buildGenesis() (*felt.Felt, error) {
 		return nil, err
 	}
 
-	return c.cairoState.Commit(0)
+	//genesisBlock
+	genesisBlock := &types.Block{
+		Header: &types.Header{
+			Height: 0,
+		},
+	}
+	return c.cairoState.Commit(genesisBlock)
 }
 
 func (c *Cairo) storeClasses() error {

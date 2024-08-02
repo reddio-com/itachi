@@ -2,13 +2,14 @@ package integration_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"itachi/cairo"
 	"itachi/cairo/config"
 	"itachi/cmd/node/app"
 	"sync"
 	"testing"
 	"time"
+
+	yucore "github.com/yu-org/yu/core"
 
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
@@ -25,11 +26,11 @@ import (
 var chain *kernel.Kernel
 
 func init() {
-	startup.InitDefaultKernelConfig()
+	yuCfg := startup.InitDefaultKernelConfig()
 	poaCfg := poa.DefaultCfg(0)
 	crCfg := config.DefaultCfg()
 
-	chain = app.InitItachi(poaCfg, crCfg)
+	chain = app.InitItachi(poaCfg, crCfg, yuCfg)
 }
 
 func TestIntegration(t *testing.T) {
@@ -76,11 +77,12 @@ func addTxToItachi(funcName string, tx *rpc.BroadcastedTransaction) error {
 	if err != nil {
 		return err
 	}
-	return callchain.CallChainByWriting(&common.WrCall{
-		TripodName: CairoTripod,
-		FuncName:   funcName,
-		Params:     string(byt),
-	})
+	return callchain.CallChainByWriting(&yucore.WritingPostBody{
+		Call: &common.WrCall{
+			TripodName: CairoTripod,
+			FuncName:   funcName,
+			Params:     string(byt),
+		}})
 }
 
 type CallReq struct {
@@ -108,7 +110,6 @@ func callItachi(funcName string, callReq *CallReq) ([]*felt.Felt, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("call Response error is ", callResp.Err)
 	return callResp.ReturnData, nil
 }
 
