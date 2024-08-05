@@ -54,7 +54,6 @@ jobs:
         with:
           repository: 'reddio-com/itachi-testing'
           submodules: 'recursive'
-          token: ${{ secrets.REDDIO_PAT }}
 
       - uses: actions/setup-python@v5
         name: Install Python 3.12
