@@ -48,7 +48,7 @@ func StartupL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.Starkne
 }
 
 func (l *L1) Run(ctx context.Context) error {
-	msgChan := make(chan *contract.StarknetLogMessageToL2)
+	msgChan := make(chan *contract.StarknetCoreLogMessageToL2)
 	sub, err := l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
 	if err != nil {
 		return err
@@ -59,6 +59,7 @@ func (l *L1) Run(ctx context.Context) error {
 		for {
 			select {
 			case msg := <-msgChan:
+				// todo fixme: convert L1 txn to broadcasted txn, add some other fields, version?
 				broadcastedTxn, err := convertL1TxnToBroadcastedTxn(msg)
 				if err != nil {
 					logrus.Errorf("Error converting L1 txn to broadcasted txn: %v", err)
@@ -87,7 +88,7 @@ func (l *L1) Run(ctx context.Context) error {
 	return nil
 }
 
-func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.BroadcastedTransaction, error) {
+func convertL1TxnToBroadcastedTxn(event *contract.StarknetCoreLogMessageToL2) (*rpc.BroadcastedTransaction, error) {
 	callData := make([]*felt.Felt, 0)
 	callData = append(callData, new(felt.Felt).SetBigInt(event.FromAddress.Big()))
 	for _, payload := range event.Payload {
