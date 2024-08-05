@@ -19,7 +19,7 @@ import (
 type EthSubscriber struct {
 	ethClient *ethclient.Client
 	client    *rpc.Client
-	filterer  *contract.StarknetFilterer
+	filterer  *contract.StarknetCoreFilterer
 }
 
 func NewEthSubscriber(ethClientAddress string, coreContractAddress common.Address) (*EthSubscriber, error) {
@@ -32,7 +32,7 @@ func NewEthSubscriber(ethClientAddress string, coreContractAddress common.Addres
 		return nil, err
 	}
 	ethClient := ethclient.NewClient(client)
-	filterer, err := contract.NewStarknetFilterer(coreContractAddress, ethClient)
+	filterer, err := contract.NewStarknetCoreFilterer(coreContractAddress, ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func NewEthSubscriber(ethClientAddress string, coreContractAddress common.Addres
 
 func (s *EthSubscriber) WatchLogMessageToL2(
 	ctx context.Context,
-	sink chan<- *contract.StarknetLogMessageToL2,
+	sink chan<- *contract.StarknetCoreLogMessageToL2,
 	fromAddress []common.Address,
 	toAddress []*big.Int,
 	selector []*big.Int,
