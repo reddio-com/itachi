@@ -1,9 +1,17 @@
 package starknetrpc
 
+/**
+* Chain Handlers
+* Block Handlers
+* Transaction Handlers
+* State Handlers
+ */
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"itachi/cairo"
+
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/jsonrpc"
@@ -14,14 +22,33 @@ import (
 	"github.com/yu-org/yu/common"
 	yucore "github.com/yu-org/yu/core"
 	yucontext "github.com/yu-org/yu/core/context"
-	"itachi/cairo"
 )
 
-func (s *StarknetRPC) GetChainID() (*felt.Felt, *jsonrpc.Error) {
-	return s.network.ChainID(), nil
+func (s *StarknetRPC) SpecVersionV0_7() (string, *jsonrpc.Error) {
+	return "0.7.0", nil
+}
+func (s *StarknetRPC) SpecVersionV0_6() (string, *jsonrpc.Error) {
+	return "0.6.0", nil
+}
+func (s *StarknetRPC) SpecVersionV0_5() (string, *jsonrpc.Error) {
+	return "0.5.0", nil
 }
 
-func (s *StarknetRPC) GetBlockWithTxHashes(id rpc.BlockID) (*rpc.BlockWithTxHashes, *jsonrpc.Error) {
+////////////////////////////////////////
+///		Chain Handlers			////////
+////////////////////////////////////////
+
+// GetNetwork returns the network of the chain.
+// FIXME: Implement full logic for GetChainID, including error handling and dynamic chain ID retrieval.
+func (s *StarknetRPC) GetChainID() (*felt.Felt, *jsonrpc.Error) {
+	return new(felt.Felt).SetBytes([]byte("SN_ITACHI")), nil
+}
+
+////////////////////////////////////////
+////		Block Handlers		////////
+////////////////////////////////////////
+
+func (s *StarknetRPC) GetBlockWithTxHashes(id rpc.BlockID) (*cairo.BlockWithTxHashes, *jsonrpc.Error) {
 	req := &cairo.BlockWithTxHashesRequest{BlockID: cairo.NewFromJunoBlockID(id)}
 	resp, jsonErr := s.adaptChainRead(req, "GetBlockWithTxHashes")
 	if jsonErr != nil {
@@ -31,7 +58,7 @@ func (s *StarknetRPC) GetBlockWithTxHashes(id rpc.BlockID) (*rpc.BlockWithTxHash
 	return res.BlockWithTxHashes, res.Err
 }
 
-func (s *StarknetRPC) GetBlockWithTxs(id rpc.BlockID) (*rpc.BlockWithTxs, *jsonrpc.Error) {
+func (s *StarknetRPC) GetBlockWithTxs(id rpc.BlockID) (*cairo.BlockWithTxs, *jsonrpc.Error) {
 	req := &cairo.BlockWithTxsRequest{BlockID: cairo.NewFromJunoBlockID(id)}
 	resp, jsonErr := s.adaptChainRead(req, "GetBlockWithTxs")
 	if jsonErr != nil {
@@ -41,6 +68,78 @@ func (s *StarknetRPC) GetBlockWithTxs(id rpc.BlockID) (*rpc.BlockWithTxs, *jsonr
 	return res.BlockWithTxs, res.Err
 }
 
+// BlockHashAndNumber returns the block number of the latest Finalized block.
+func (s *StarknetRPC) GetBlockNumber() (uint64, *jsonrpc.Error) {
+	req := ""
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockNumber")
+	if jsonErr != nil {
+		return 0, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockNumberResponse)
+
+	return res.BlockNumber, nil
+}
+
+// BlockHashAndNumber returns the block number and hash of the latest Finalized block.
+func (s *StarknetRPC) GetBlockHashAndNumber() (*rpc.BlockHashAndNumber, *jsonrpc.Error) {
+	req := ""
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockHashAndNumber")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockHashAndNumberResponse)
+	return res.BlockHashAndNumber, nil
+}
+
+// GetBlockTransactionCount returns the number of transactions in the block with the given ID.
+func (s *StarknetRPC) GetBlockTransactionCount(id rpc.BlockID) (uint64, *jsonrpc.Error) {
+	req := &cairo.BlockTransactionCountRequest{BlockID: cairo.NewFromJunoBlockID(id)}
+	resp, jsonErr := s.adaptChainRead(req, "GetBlockTransactionCount")
+	if jsonErr != nil {
+		return 0, jsonErr
+	}
+	res := resp.DataInterface.(*cairo.BlockTransactionCountResponse)
+	return res.TxsNumber, nil
+}
+
+////////////////////////////////////////
+////		Transaction Handlers	////
+////////////////////////////////////////
+
+func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *jsonrpc.Error) {
+	txReq := &cairo.TransactionRequest{Hash: hash}
+	resp, jsonErr := s.adaptChainRead(txReq, "GetTransaction")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	tr := resp.DataInterface.(*cairo.TransactionResponse)
+	return tr.Tx, tr.Err
+}
+
+func (s *StarknetRPC) GetTransactionStatus(ctx context.Context, hash felt.Felt) (*rpc.TransactionStatus, *jsonrpc.Error) {
+	tsReq := &cairo.TransactionStatusRequest{Hash: hash}
+	resp, jsonErr := s.adaptChainRead(tsReq, "GetTransactionStatus")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	tsr := resp.DataInterface.(*cairo.TransactionStatusResponse)
+	return tsr.Status, tsr.Err
+}
+
+// TransactionByBlockIDAndIndex returns the details of a transaction identified by the given
+// BlockID and index.
+//
+// It follows the specification defined here:
+// https://github.com/starkware-libs/starknet-specs/blob/master/api/starknet_api_openrpc.json#L184
+func (s *StarknetRPC) GetTransactionByBlockIDAndIndex(id rpc.BlockID, txIndex int) (*rpc.Transaction, *jsonrpc.Error) {
+	req := &cairo.TransactionByBlockIDAndIndexRequest{BlockID: cairo.NewFromJunoBlockID(id), TxIndex: txIndex}
+	resp, jsonErr := s.adaptChainRead(req, "GetTransactionByBlockIDAndIndex")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	tr := resp.DataInterface.(*cairo.TransactionByBlockIDAndIndexResponse)
+	return tr.Tx, tr.Err
+}
 func (s *StarknetRPC) AddTransaction(tx rpc.BroadcastedTransaction) (*rpc.AddTxResponse, *jsonrpc.Error) {
 	return s.addTransaction(tx, false)
 }
@@ -78,6 +177,7 @@ func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJ
 			Params:     string(byt),
 		},
 	}
+
 	err = s.chain.HandleTxn(signedWrCall)
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
@@ -87,7 +187,6 @@ func (s *StarknetRPC) addTransaction(tx rpc.BroadcastedTransaction, legacyTraceJ
 	if err != nil {
 		return nil, jsonrpc.Err(jsonrpc.InvalidRequest, err.Error())
 	}
-
 	return &rpc.AddTxResponse{
 		TransactionHash: bcTx.Hash(),
 		ContractAddress: txn.ContractAddress,
@@ -111,54 +210,84 @@ func (s *StarknetRPC) Call(call rpc.FunctionCall, id rpc.BlockID) ([]*felt.Felt,
 }
 
 func (s *StarknetRPC) EstimateFee(broadcastedTxns []rpc.BroadcastedTransaction,
-	simulationFlags []rpc.SimulationFlag, id rpc.BlockID,
-) ([]rpc.FeeEstimate, *jsonrpc.Error) {
-	result, err := s.simulateTransactions(id, broadcastedTxns, append(simulationFlags, rpc.SkipFeeChargeFlag), false, true)
+	simulationFlags []cairo.SimulationFlag, id rpc.BlockID,
+) ([]cairo.FeeEstimate, *jsonrpc.Error) {
+	result, err := s.simulateTransactions(id, broadcastedTxns, append(simulationFlags, cairo.SkipFeeChargeFlag), false, true)
 	if err != nil {
 		return nil, err
 	}
-	return utils.Map(result, func(tx rpc.SimulatedTransaction) rpc.FeeEstimate {
+
+	return utils.Map(result, func(tx cairo.SimulatedTransaction) cairo.FeeEstimate {
 		return tx.FeeEstimation
 	}), nil
 }
 
-func (s *StarknetRPC) LegacyEstimateFee(broadcastedTxns []rpc.BroadcastedTransaction, id rpc.BlockID) ([]rpc.FeeEstimate, *jsonrpc.Error) {
-	result, err := s.simulateTransactions(id, broadcastedTxns, []rpc.SimulationFlag{rpc.SkipFeeChargeFlag}, true, true)
+func (s *StarknetRPC) LegacyEstimateFee(broadcastedTxns []rpc.BroadcastedTransaction, id rpc.BlockID) ([]cairo.FeeEstimate, *jsonrpc.Error) {
+	result, err := s.simulateTransactions(id, broadcastedTxns, []cairo.SimulationFlag{cairo.SkipFeeChargeFlag}, true, true)
 	if err != nil && err.Code == rpc.ErrTransactionExecutionError.Code {
 		return nil, makeContractError(errors.New(err.Data.(rpc.TransactionExecutionErrorData).ExecutionError))
 	}
 
-	return utils.Map(result, func(tx rpc.SimulatedTransaction) rpc.FeeEstimate {
+	return utils.Map(result, func(tx cairo.SimulatedTransaction) cairo.FeeEstimate {
 		return tx.FeeEstimation
 	}), nil
 }
-
 func (s *StarknetRPC) SimulateTransactions(
 	id rpc.BlockID,
 	transactions []rpc.BroadcastedTransaction,
-	simulationFlags []rpc.SimulationFlag,
-) ([]rpc.SimulatedTransaction, *jsonrpc.Error) {
+	simulationFlags []cairo.SimulationFlag,
+) ([]cairo.SimulatedTransaction, *jsonrpc.Error) {
 	return s.simulateTransactions(id, transactions, simulationFlags, false, false)
 }
 
 func (s *StarknetRPC) LegacySimulateTransactions(
 	id rpc.BlockID,
 	transactions []rpc.BroadcastedTransaction,
-	simulationFlags []rpc.SimulationFlag,
-) ([]rpc.SimulatedTransaction, *jsonrpc.Error) {
+	simulationFlags []cairo.SimulationFlag,
+) ([]cairo.SimulatedTransaction, *jsonrpc.Error) {
 	simu, err := s.simulateTransactions(id, transactions, simulationFlags, true, true)
 	if err.Code == rpc.ErrTransactionExecutionError.Code {
 		return nil, makeContractError(errors.New(err.Data.(rpc.TransactionExecutionErrorData).ExecutionError))
 	}
 	return simu, err
 }
+func (s *StarknetRPC) EstimateMessageFee(msg rpc.MsgFromL1, id rpc.BlockID) (*cairo.FeeEstimate, *jsonrpc.Error) { //nolint:gocritic
+	calldata := make([]*felt.Felt, 0, len(msg.Payload)+1)
+	// The order of the calldata parameters matters. msg.From must be prepended.
+	calldata = append(calldata, new(felt.Felt).SetBytes(msg.From.Bytes()))
+	for payloadIdx := range msg.Payload {
+		calldata = append(calldata, &msg.Payload[payloadIdx])
+	}
+	tx := rpc.BroadcastedTransaction{
+		Transaction: rpc.Transaction{
+			Type:               rpc.TxnL1Handler,
+			ContractAddress:    &msg.To,
+			EntryPointSelector: &msg.Selector,
+			CallData:           &calldata,
+			Version:            &felt.Zero, // Needed for transaction hash calculation.
+			Nonce:              &felt.Zero, // Needed for transaction hash calculation.
+		},
+		// Needed to marshal to blockifier type.
+		// Must be greater than zero to successfully execute transaction.
+		PaidFeeOnL1: new(felt.Felt).SetUint64(1),
+	}
+	estimates, rpcErr := s.EstimateFee([]rpc.BroadcastedTransaction{tx}, nil, id)
+	if rpcErr != nil {
+		if rpcErr.Code == rpc.ErrTransactionExecutionError.Code {
+			data := rpcErr.Data.(rpc.TransactionExecutionErrorData)
+			return nil, makeContractError(errors.New(data.ExecutionError))
+		}
+		return nil, rpcErr
+	}
+	return &estimates[0], nil
+}
 
 func (s *StarknetRPC) simulateTransactions(
 	id rpc.BlockID,
 	transactions []rpc.BroadcastedTransaction,
-	simulationFlags []rpc.SimulationFlag,
+	simulationFlags []cairo.SimulationFlag,
 	legacyJson, errOnRevert bool,
-) ([]rpc.SimulatedTransaction, *jsonrpc.Error) {
+) ([]cairo.SimulatedTransaction, *jsonrpc.Error) {
 	simuReq := &cairo.SimulateRequest{
 		BlockID:         cairo.NewFromJunoBlockID(id),
 		Txs:             transactions,
@@ -172,26 +301,6 @@ func (s *StarknetRPC) simulateTransactions(
 	}
 	sr := resp.DataInterface.(*cairo.SimulateResponse)
 	return sr.Txs, sr.Err
-}
-
-func (s *StarknetRPC) GetTransactionByHash(hash felt.Felt) (*rpc.Transaction, *jsonrpc.Error) {
-	txReq := &cairo.TransactionRequest{Hash: hash}
-	resp, jsonErr := s.adaptChainRead(txReq, "GetTransaction")
-	if jsonErr != nil {
-		return nil, jsonErr
-	}
-	tr := resp.DataInterface.(*cairo.TransactionResponse)
-	return tr.Tx, tr.Err
-}
-
-func (s *StarknetRPC) GetTransactionStatus(ctx context.Context, hash felt.Felt) (*rpc.TransactionStatus, *jsonrpc.Error) {
-	tsReq := &cairo.TransactionStatusRequest{Hash: hash}
-	resp, jsonErr := s.adaptChainRead(tsReq, "GetTransactionStatus")
-	if jsonErr != nil {
-		return nil, jsonErr
-	}
-	tsr := resp.DataInterface.(*cairo.TransactionStatusResponse)
-	return tsr.Status, tsr.Err
 }
 
 func (s *StarknetRPC) GetReceiptByHash(hash felt.Felt) (*rpc.TransactionReceipt, *jsonrpc.Error) {
@@ -212,6 +321,26 @@ func (s *StarknetRPC) LegacyGetReceiptByHash(hash felt.Felt) (*rpc.TransactionRe
 	receipt.ActualFee.IsLegacy = true
 	receipt.ExecutionResources.IsLegacy = true
 	return receipt, nil
+}
+
+////////////////////////////////////////
+////		State Handlers		    ////
+////////////////////////////////////////
+
+// StateUpdate returns the state update identified by the given BlockID.
+//
+// It follows the specification defined here:
+// https://github.com/starkware-libs/starknet-specs/blob/master/api/starknet_api_openrpc.json#L77
+func (s *StarknetRPC) GetStateUpdate(id rpc.BlockID) (*cairo.StateUpdate, *jsonrpc.Error) {
+	req := &cairo.StateUpdateRequest{BlockID: cairo.NewFromJunoBlockID(id)}
+	resp, jsonErr := s.adaptChainRead(req, "GetStateUpdate")
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	sr := resp.DataInterface.(*cairo.StateUpdateResponse)
+
+	return sr.StateUpdate, sr.Err
+
 }
 
 func (s *StarknetRPC) GetNonce(id rpc.BlockID, address felt.Felt) (*felt.Felt, *jsonrpc.Error) {
@@ -237,6 +366,10 @@ func (s *StarknetRPC) GetStorage(address, key felt.Felt, id rpc.BlockID) (*felt.
 	sr := resp.DataInterface.(*cairo.StorageResponse)
 	return sr.Value, sr.Err
 }
+
+////////////////////////////////////////
+////		Contract Handlers		////
+////////////////////////////////////////
 
 func (s *StarknetRPC) GetClass(id rpc.BlockID, classHash felt.Felt) (*rpc.Class, *jsonrpc.Error) {
 	classReq := &cairo.ClassRequest{BlockID: cairo.NewFromJunoBlockID(id), ClassHash: &classHash}
@@ -266,14 +399,6 @@ func (s *StarknetRPC) GetClassHashAt(id rpc.BlockID, address felt.Felt) (*felt.F
 	}
 	cr := resp.DataInterface.(*cairo.ClassHashAtResponse)
 	return cr.ClassHash, cr.Err
-}
-
-func (s *StarknetRPC) SpecVersion() (string, *jsonrpc.Error) {
-	return "0.6.0", nil
-}
-
-func (s *StarknetRPC) LegacySpecVersion() (string, *jsonrpc.Error) {
-	return "0.5.1", nil
 }
 
 func (s *StarknetRPC) adaptChainRead(req any, funcName string) (*yucontext.ResponseData, *jsonrpc.Error) {

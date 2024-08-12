@@ -3,15 +3,16 @@ package l1
 import (
 	"context"
 	"fmt"
+	"itachi/cairo/config"
+	"itachi/cairo/l1/contract"
+	"itachi/cairo/starknetrpc"
+	"math/big"
+
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/kernel"
-	"itachi/cairo/config"
-	"itachi/cairo/l1/contract"
-	"itachi/cairo/starknetrpc"
-	"math/big"
 )
 
 type L1 struct {
@@ -106,6 +107,7 @@ func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.
 			ContractAddress: new(felt.Felt).SetBigInt(event.ToAddress),
 			Nonce:           new(felt.Felt).SetBigInt(event.Nonce),
 			CallData:        &callData,
+			Version:         new(felt.Felt).SetUint64(0),
 		},
 		PaidFeeOnL1: new(felt.Felt).SetBigInt(event.Fee),
 	}, nil

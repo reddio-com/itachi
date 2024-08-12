@@ -7,16 +7,18 @@ import (
 	"itachi/cairo/starknetrpc"
 	"itachi/utils"
 
+	yuconfig "github.com/yu-org/yu/config"
+
 	"github.com/common-nighthawk/go-figure"
 	"github.com/yu-org/yu/apps/poa"
 	"github.com/yu-org/yu/core/kernel"
 	"github.com/yu-org/yu/core/startup"
 )
 
-func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) {
+func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config, yuCfg *yuconfig.KernelConf) {
 	figure.NewColorFigure("Itachi", "big", "green", false).Print()
 
-	chain := InitItachi(poaCfg, crCfg)
+	chain := InitItachi(poaCfg, crCfg, yuCfg)
 
 	// Starknet RPC server
 	rpcSrv := starknetrpc.StartUpStarknetRPC(chain, crCfg)
@@ -29,11 +31,11 @@ func StartUpChain(poaCfg *poa.PoaConfig, crCfg *config.Config) {
 
 }
 
-func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config) *kernel.Kernel {
+func InitItachi(poaCfg *poa.PoaConfig, crCfg *config.Config, yuCfg *yuconfig.KernelConf) *kernel.Kernel {
 	poaTri := poa.NewPoa(poaCfg)
 	cairoTri := cairo.NewCairo(crCfg)
 	chain := startup.InitDefaultKernel(
-		poaTri, cairoTri,
+		yuCfg, poaTri, cairoTri,
 	)
 	return chain
 }

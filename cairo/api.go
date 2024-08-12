@@ -2,6 +2,10 @@ package cairo
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
+	"slices"
+
 	"github.com/NethermindEth/juno/core"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/encoder"
@@ -12,16 +16,7 @@ import (
 	"github.com/yu-org/yu/common"
 	"github.com/yu-org/yu/core/context"
 	"github.com/yu-org/yu/core/types"
-	"net/http"
-	"slices"
 )
-
-type BlockID struct {
-	Pending bool       `json:"pending"`
-	Latest  bool       `json:"latest"`
-	Hash    *felt.Felt `json:"hash"`
-	Number  uint64     `json:"number"`
-}
 
 func NewFromJunoBlockID(id rpc.BlockID) BlockID {
 	return BlockID{
@@ -106,34 +101,33 @@ type BlockWithTxHashesRequest struct {
 }
 
 type BlockWithTxHashesResponse struct {
-	BlockWithTxHashes *rpc.BlockWithTxHashes `json:"block_with_tx_hashes"`
-	Err               *jsonrpc.Error         `json:"err"`
+	BlockWithTxHashes *BlockWithTxHashes `json:"block_with_tx_hashes"`
+	Err               *jsonrpc.Error     `json:"err"`
 }
 
 func (c *Cairo) GetBlockWithTxHashes(ctx *context.ReadContext) {
 	var br BlockWithTxHashesRequest
 	err := ctx.BindJson(&br)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &BlockWithTxHashesResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
-
 	var compactBlock *types.CompactBlock
-	compactBlock, err = c.getYuBlock(br.BlockID)
+	compactBlock, err = c.getYuCompactBlock(br.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockWithTxHashesResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	status, err := c.blockStatus(br.BlockID)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
-	}
-
-	status := rpc.BlockAcceptedL2
-	if br.BlockID.Pending {
-		status = rpc.BlockPending
 	}
 	txHashes := make([]*felt.Felt, 0)
 	for _, txHash := range compactBlock.TxnsHashes {
 		txHashes = append(txHashes, new(felt.Felt).SetBytes(txHash.Bytes()))
 	}
-	ctx.JsonOk(&BlockWithTxHashesResponse{BlockWithTxHashes: &rpc.BlockWithTxHashes{
+	ctx.JsonOk(&BlockWithTxHashesResponse{BlockWithTxHashes: &BlockWithTxHashes{
 		Status:      status,
 		BlockHeader: c.adaptStarkBlockHeader(compactBlock),
 		TxnHashes:   txHashes,
@@ -145,8 +139,8 @@ type BlockWithTxsRequest struct {
 }
 
 type BlockWithTxsResponse struct {
-	BlockWithTxs *rpc.BlockWithTxs `json:"block_with_txs"`
-	Err          *jsonrpc.Error    `json:"err"`
+	BlockWithTxs *BlockWithTxs  `json:"block_with_txs"`
+	Err          *jsonrpc.Error `json:"err"`
 }
 
 func (c *Cairo) GetBlockWithTxs(ctx *context.ReadContext) {
@@ -156,36 +150,24 @@ func (c *Cairo) GetBlockWithTxs(ctx *context.ReadContext) {
 		ctx.Json(http.StatusBadRequest, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
-
 	var compactBlock *types.CompactBlock
-	compactBlock, err = c.getYuBlock(br.BlockID)
+	compactBlock, err = c.getYuCompactBlock(br.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	starkTxs, err := c.getTransactionsByCompactBlock(compactBlock)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	status, err := c.blockStatus(br.BlockID)
 	if err != nil {
 		ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 
-	starkTxs := make([]*rpc.Transaction, 0)
-	for _, txHash := range compactBlock.TxnsHashes {
-		var yuTxn *types.SignedTxn
-		yuTxn, err = c.TxDB.GetTxn(txHash)
-		if err != nil {
-			ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
-			return
-		}
-		txReq := new(TxRequest)
-		err = yuTxn.BindJson(txReq)
-		if err != nil {
-			ctx.Json(http.StatusInternalServerError, &BlockWithTxsResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
-			return
-		}
-		starkTxs = append(starkTxs, &txReq.Tx.Transaction)
-	}
-
-	status := rpc.BlockAcceptedL2
-	if br.BlockID.Pending {
-		status = rpc.BlockPending
-	}
-	blockWithTxs := &rpc.BlockWithTxs{
+	blockWithTxs := &BlockWithTxs{
 		Status:       status,
 		BlockHeader:  c.adaptStarkBlockHeader(compactBlock),
 		Transactions: starkTxs,
@@ -194,27 +176,207 @@ func (c *Cairo) GetBlockWithTxs(ctx *context.ReadContext) {
 	ctx.JsonOk(&BlockWithTxsResponse{BlockWithTxs: blockWithTxs})
 }
 
-func (c *Cairo) getYuBlock(id BlockID) (*types.CompactBlock, error) {
-	switch {
-	case id.Latest || id.Pending:
-		return c.Chain.GetEndBlock()
-	default:
-		return c.Chain.GetBlockByHeight(common.BlockNum(id.Number))
+func (c *Cairo) getTransactionsByCompactBlock(compactBlock *types.CompactBlock) ([]*rpc.Transaction, error) {
+	starkTxs := make([]*rpc.Transaction, 0)
+	for _, txHash := range compactBlock.TxnsHashes {
+		var yuTxn *types.SignedTxn
+		yuTxn, err := c.TxDB.GetTxn(txHash)
+		if err != nil {
+			return nil, err
+		}
+		txReq := new(TxRequest)
+		err = yuTxn.BindJson(txReq)
+		if err != nil {
+			return nil, err
+		}
+		starkCoreTx, _, _, err := c.adaptBroadcastedTransaction(txReq.Tx)
+		if err != nil {
+			return nil, err
+		}
+		starkTx := rpc.AdaptTransaction(starkCoreTx)
+		starkTxs = append(starkTxs, starkTx)
 	}
+	return starkTxs, nil
 }
 
-func (c *Cairo) adaptStarkBlockHeader(yuBlock *types.CompactBlock) rpc.BlockHeader {
-	num := uint64(yuBlock.Height)
-	return rpc.BlockHeader{
-		Hash:       new(felt.Felt).SetBytes(yuBlock.Hash.Bytes()),
+// FIXME: the following functions are not implemented yet
+func (c *Cairo) blockStatus(id BlockID) (BlockStatus, error) {
+	status := BlockAcceptedL2
+	if id.Pending {
+		status = BlockPending
+	}
+	return status, nil
+}
+
+//	func (c *Cairo) getYuBlock(id BlockID) (*types.Block, error) {
+//		switch {
+//		case id.Latest || id.Pending:
+//			return c.Chain.GetEndBlock()
+//		case id.Hash != nil:
+//			return c.Chain.GetBlock(id.Hash.Bytes())
+//		case id.Number != 0:
+//			return c.Chain.GetBlockByHeight(common.BlockNum(id.Number))
+//		default:
+//			return c.Chain.GetBlockByHeight(common.BlockNum(id.Number))
+//		}
+//	}
+func (c *Cairo) getYuCompactBlock(id BlockID) (*types.CompactBlock, error) {
+	switch {
+	case id.Latest || id.Pending:
+		return c.Chain.GetEndCompactBlock()
+	case id.Hash != nil:
+		return c.Chain.GetCompactBlock(id.Hash.Bytes())
+	case id.Number != 0:
+		return c.Chain.GetCompactBlockByHeight(common.BlockNum(id.Number))
+	default:
+		return c.Chain.GetCompactBlockByHeight(common.BlockNum(id.Number))
+	}
+}
+func (c *Cairo) adaptStarkBlockHeader(yuBlock *types.CompactBlock) BlockHeader {
+	var blockNumber *uint64
+	// if header.Hash == nil it's a pending block
+	if yuBlock.Header.Hash.Bytes() != nil {
+		height := uint64(yuBlock.Header.Height)
+		blockNumber = &height
+	}
+	sequencerAddress := c.sequencerAddr
+	if sequencerAddress == nil {
+		sequencerAddress = &felt.Zero
+	}
+
+	// FIXME: L1DAMode just for test, after the feeder function is implemented, it should be replaced
+	L1DAMode := Calldata
+	return BlockHeader{
+		Hash:       new(felt.Felt).SetBytes(yuBlock.Header.Hash.Bytes()),
 		ParentHash: new(felt.Felt).SetBytes(yuBlock.PrevHash.Bytes()),
-		Number:     &num,
+		Number:     blockNumber,
 		// FIXME
 		NewRoot:          new(felt.Felt).SetBytes(yuBlock.StateRoot.Bytes()),
 		Timestamp:        yuBlock.Timestamp,
-		SequencerAddress: c.sequencerAddr,
-		// TODO：L1GasPrice, StarknetVersion
+		SequencerAddress: sequencerAddress,
+		// FIXME: L1GasPrice, StarknetVersion，L1DataGasPrice，L1DAMode just for test, after the feeder function is implemented, it should be replaced
+		L1GasPrice: &ResourcePrice{
+			InFri: new(felt.Felt).SetUint64(52953095),
+			InWei: new(felt.Felt).SetUint64(52953096),
+		},
+		L1DataGasPrice: &ResourcePrice{
+			InFri: new(felt.Felt).SetUint64(52953097),
+			InWei: new(felt.Felt).SetUint64(52953098),
+		},
+		L1DAMode:        &L1DAMode,
+		StarknetVersion: "0.13.0",
 	}
+}
+
+type BlockNumberResponse struct {
+	BlockNumber uint64         `json:"block_number"`
+	Err         *jsonrpc.Error `json:"err"`
+}
+
+func (c *Cairo) GetBlockNumber(ctx *context.ReadContext) {
+	var err error
+	var compactBlock *types.CompactBlock
+	compactBlock, err = c.Chain.LastFinalizedCompact()
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockNumberResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	ctx.JsonOk(&BlockNumberResponse{BlockNumber: uint64(compactBlock.Height)})
+}
+
+type BlockHashAndNumberResponse struct {
+	BlockHashAndNumber *rpc.BlockHashAndNumber `json:"block_hash_and_number"`
+	Err                *jsonrpc.Error          `json:"err"`
+}
+
+func (c *Cairo) GetBlockHashAndNumber(ctx *context.ReadContext) {
+	var err error
+	var compactBlock *types.CompactBlock
+	compactBlock, err = c.Chain.LastFinalizedCompact()
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockNumberResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	feltHash := new(felt.Felt).SetBytes(compactBlock.Hash.Bytes())
+	blockHashAndNumber := &rpc.BlockHashAndNumber{Hash: feltHash, Number: uint64(compactBlock.Height)}
+	ctx.JsonOk(&BlockHashAndNumberResponse{BlockHashAndNumber: blockHashAndNumber})
+}
+
+type BlockTransactionCountRequest struct {
+	BlockID BlockID `json:"block_id"`
+}
+
+type BlockTransactionCountResponse struct {
+	TxsNumber uint64         `json:"TxsNumber"`
+	Err       *jsonrpc.Error `json:"err"`
+}
+
+func (c *Cairo) GetBlockTransactionCount(ctx *context.ReadContext) {
+	//get Block by blockID
+	var br BlockTransactionCountRequest
+	err := ctx.BindJson(&br)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &BlockTransactionCountResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+
+	var compactBlock *types.CompactBlock
+	compactBlock, err = c.getYuCompactBlock(br.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &BlockTransactionCountResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	//get the number of transactions in the block
+	var txnsNumber uint64 = uint64(len(compactBlock.TxnsHashes))
+	ctx.JsonOk(&BlockTransactionCountResponse{TxsNumber: txnsNumber})
+}
+
+type TransactionByBlockIDAndIndexRequest struct {
+	BlockID BlockID `json:"block_id"`
+	TxIndex int     `json:"index"`
+}
+
+type TransactionByBlockIDAndIndexResponse struct {
+	Tx  *rpc.Transaction `json:"tx"`
+	Err *jsonrpc.Error   `json:"err"`
+}
+
+func (c *Cairo) GetTransactionByBlockIDAndIndex(ctx *context.ReadContext) {
+	var tq TransactionByBlockIDAndIndexRequest
+	err := ctx.BindJson(&tq)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &TransactionResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+	//check if the index is valid
+	if tq.TxIndex < 0 {
+		ctx.Json(http.StatusBadRequest, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, "index must be a non-negative integer")})
+		return
+	}
+	//check if the block is pending
+	compactBlock, err := c.getYuCompactBlock(tq.BlockID)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	if uint64(tq.TxIndex) >= uint64(len(compactBlock.TxnsHashes)) {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, "index out of range")})
+		return
+	}
+	//get the transaction by index
+	txHash := compactBlock.TxnsHashes[tq.TxIndex]
+	signedTx, err := c.TxDB.GetTxn(common.Hash(txHash.Bytes()))
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	txReq := new(TxRequest)
+	err = signedTx.BindJson(txReq)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &TransactionByBlockIDAndIndexResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+	ctx.JsonOk(&TransactionByBlockIDAndIndexResponse{Tx: &txReq.Tx.Transaction})
 }
 
 type TransactionStatusRequest struct {
@@ -252,6 +414,88 @@ func (c *Cairo) GetTransactionStatus(ctx *context.ReadContext) {
 	}})
 }
 
+type StateUpdateRequest struct {
+	BlockID BlockID `json:"block_id"`
+}
+
+type StateUpdateResponse struct {
+	StateUpdate *StateUpdate   `json:"state_update"`
+	Err         *jsonrpc.Error `json:"err"`
+}
+
+func (c *Cairo) GetStateUpdate(ctx *context.ReadContext) {
+	var tr StateUpdateRequest
+	err := ctx.BindJson(&tr)
+	if err != nil {
+		ctx.Json(http.StatusBadRequest, &TransactionStatusResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		return
+	}
+	update, err := c.cairoState.GetStateUpdateByNumber(tr.BlockID.Number)
+	if err != nil {
+		ctx.Json(http.StatusInternalServerError, &StateUpdateResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		return
+	}
+
+	nonces := make([]Nonce, 0, len(update.StateDiff.Nonces))
+	for addr, nonce := range update.StateDiff.Nonces {
+		nonces = append(nonces, Nonce{ContractAddress: addr, Nonce: *nonce})
+	}
+
+	storageDiffs := make([]StorageDiff, 0, len(update.StateDiff.StorageDiffs))
+	for addr, diffs := range update.StateDiff.StorageDiffs {
+		entries := make([]Entry, 0, len(diffs))
+		for key, value := range diffs {
+			entries = append(entries, Entry{
+				Key:   key,
+				Value: *value,
+			})
+		}
+
+		storageDiffs = append(storageDiffs, StorageDiff{
+			Address:        addr,
+			StorageEntries: entries,
+		})
+	}
+
+	deployedContracts := make([]DeployedContract, 0, len(update.StateDiff.DeployedContracts))
+	for addr, classHash := range update.StateDiff.DeployedContracts {
+		deployedContracts = append(deployedContracts, DeployedContract{
+			Address:   addr,
+			ClassHash: *classHash,
+		})
+	}
+
+	declaredClasses := make([]DeclaredClass, 0, len(update.StateDiff.DeclaredV1Classes))
+	for classHash, compiledClassHash := range update.StateDiff.DeclaredV1Classes {
+		declaredClasses = append(declaredClasses, DeclaredClass{
+			ClassHash:         classHash,
+			CompiledClassHash: *compiledClassHash,
+		})
+	}
+
+	replacedClasses := make([]ReplacedClass, 0, len(update.StateDiff.ReplacedClasses))
+	for addr, classHash := range update.StateDiff.ReplacedClasses {
+		replacedClasses = append(replacedClasses, ReplacedClass{
+			ClassHash:       *classHash,
+			ContractAddress: addr,
+		})
+	}
+
+	ctx.JsonOk(&StateUpdateResponse{StateUpdate: &StateUpdate{
+		BlockHash: update.BlockHash,
+		OldRoot:   update.OldRoot,
+		NewRoot:   update.NewRoot,
+		StateDiff: &StateDiff{
+			DeprecatedDeclaredClasses: update.StateDiff.DeclaredV0Classes,
+			DeclaredClasses:           declaredClasses,
+			ReplacedClasses:           replacedClasses,
+			Nonces:                    nonces,
+			StorageDiffs:              storageDiffs,
+			DeployedContracts:         deployedContracts,
+		},
+	}})
+}
+
 type NonceRequest struct {
 	BlockID BlockID    `json:"block_id"`
 	Addr    *felt.Felt `json:"addr"`
@@ -274,6 +518,7 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 	switch {
 	case nq.BlockID.Latest || nq.BlockID.Pending:
 		nonce, err = c.cairoState.ContractNonce(nq.Addr)
+		fmt.Print("err: ", err)
 	default:
 		nonce, err = c.cairoState.ContractNonceAt(nq.Addr, nq.BlockID.Number)
 	}
@@ -281,6 +526,7 @@ func (c *Cairo) GetNonce(ctx *context.ReadContext) {
 		ctx.Json(http.StatusInternalServerError, &NonceResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
+
 	ctx.JsonOk(&NonceResponse{Nonce: nonce})
 }
 
@@ -420,14 +666,14 @@ func (c *Cairo) GetStorage(ctx *context.ReadContext) {
 type SimulateRequest struct {
 	BlockID         BlockID                      `json:"block_id"`
 	Txs             []rpc.BroadcastedTransaction `json:"txs"`
-	SimulationFlags []rpc.SimulationFlag         `json:"simulation_flags"`
+	SimulationFlags []SimulationFlag             `json:"simulation_flags"`
 	LegacyJson      bool                         `json:"legacy_json"`
 	ErrOnRevert     bool                         `json:"err_on_revert"`
 }
 
 type SimulateResponse struct {
-	Txs []rpc.SimulatedTransaction `json:"txs"`
-	Err *jsonrpc.Error             `json:"err"`
+	Txs []SimulatedTransaction `json:"txs"`
+	Err *jsonrpc.Error         `json:"err"`
 }
 
 func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
@@ -439,15 +685,15 @@ func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
 	var sq SimulateRequest
 	err := ctx.BindJson(&sq)
 	if err != nil {
-		ctx.Json(http.StatusBadRequest, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
+		ctx.Json(http.StatusBadRequest, &SimulateResponse{Err: jsonrpc.Err(jsonrpc.InvalidJSON, err.Error())})
 		return
 	}
-	skipFeeCharge := slices.Contains(sq.SimulationFlags, rpc.SkipFeeChargeFlag)
-	skipValidate := slices.Contains(sq.SimulationFlags, rpc.SkipValidateFlag)
+	skipFeeCharge := slices.Contains(sq.SimulationFlags, SkipFeeChargeFlag)
+	skipValidate := slices.Contains(sq.SimulationFlags, SkipValidateFlag)
 	// TODO: try get more BlockID
 	block, err := c.GetCurrentBlock()
 	if err != nil {
-		ctx.Json(http.StatusInternalServerError, &StorageResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
+		ctx.Json(http.StatusInternalServerError, &SimulateResponse{Err: jsonrpc.Err(jsonrpc.InternalError, err.Error())})
 		return
 	}
 
@@ -474,7 +720,6 @@ func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
 	if c.sequencerAddr == nil {
 		c.sequencerAddr = core.NetworkBlockHashMetaInfo(c.network).FallBackSequencerAddress
 	}
-
 	fees, traces, err := c.cairoVM.Execute(
 		txns, classes, uint64(block.Height),
 		block.Timestamp, c.sequencerAddr,
@@ -496,7 +741,7 @@ func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
 		return
 	}
 
-	var result []rpc.SimulatedTransaction
+	var result []SimulatedTransaction
 	for i, overallFee := range fees {
 		feeUnit := feeUnit(txns[i])
 
@@ -506,20 +751,23 @@ func (c *Cairo) SimulateTransactions(ctx *context.ReadContext) {
 			}
 		}
 
-		estimate := rpc.FeeEstimate{
-			GasConsumed: new(felt.Felt).Div(overallFee, gasPrice),
-			GasPrice:    gasPrice,
-			OverallFee:  overallFee,
+		estimate := FeeEstimate{
+			GasConsumed:     new(felt.Felt).Div(overallFee, gasPrice),
+			GasPrice:        gasPrice,
+			DataGasConsumed: &felt.Zero, //FixMe
+			DataGasPrice:    &felt.Zero, //FixMe
+			OverallFee:      overallFee,
 		}
 
 		if !sq.LegacyJson {
 			estimate.Unit = utils.Ptr(feeUnit)
 		}
-		result = append(result, rpc.SimulatedTransaction{
+		result = append(result, SimulatedTransaction{
 			TransactionTrace: &traces[i],
 			FeeEstimation:    estimate,
 		})
 	}
+
 	ctx.JsonOk(&SimulateResponse{Txs: result})
 }
 

@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	startup.InitDefaultKernelConfig()
+	yuCfg := startup.InitDefaultKernelConfig()
 	poaCfg := poa.DefaultCfg(0)
 	cairoCfg := config.LoadCairoCfg("./conf/cairo_cfg.toml")
 
-	app.StartUpChain(poaCfg, cairoCfg)
+	app.StartUpChain(poaCfg, cairoCfg, yuCfg)
 }

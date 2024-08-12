@@ -43,6 +43,7 @@ type Config struct {
 	EnableStarknetRPC bool   `toml:"enable_starknet_rpc"`
 	StarknetHost      string `toml:"starknet_host"`
 	StarknetPort      string `toml:"starknet_port"`
+	StateDiffDbPath   string `toml:"state_diff_db_path"`
 
 	// L1 configs
 	EnableL1           bool   `toml:"enable_l1"`
@@ -84,6 +85,6 @@ func DefaultCfg() *Config {
 		SkipChargeFee:     true,
 		SkipValidate:      true,
 		ErrOnRevert:       true,
-		EnableStarknetRPC: false,
+		EnableStarknetRPC: true,
 	}
 }
