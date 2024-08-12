@@ -2,7 +2,6 @@ package cairo
 
 import (
 	"encoding/hex"
-	"fmt"
 	"itachi/cairo/config"
 	"net/http"
 
@@ -153,7 +152,6 @@ func (c *Cairo) ExecuteTxn(ctx *context.WriteContext) error {
 		starkReceipt = makeStarkReceipt(traces[0], ctx.Block, tx, actualFees[0])
 	}
 	if err != nil {
-		// fmt.Printf("execute txn(%s) error: %v \n", tx.Hash(), err)
 		starkReceipt = makeErrStarkReceipt(ctx.Block, tx, err)
 	}
 
@@ -287,7 +285,6 @@ func makeStarkReceipt(trace vm.TransactionTrace, block *types.Block, tx core.Tra
 		Amount: amount,
 		Unit:   feeUnit(tx),
 	}
-	fmt.Print("starkReceipt", starkReceipt)
 	switch v := tx.(type) {
 	case *core.DeployTransaction:
 		starkReceipt.ContractAddress = v.ContractAddress
