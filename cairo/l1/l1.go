@@ -12,7 +12,6 @@ import (
 	"itachi/cairo/l1/contract"
 	"itachi/cairo/starknetrpc"
 	"math/big"
-	"os"
 )
 
 type L1 struct {
