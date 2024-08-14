@@ -3,16 +3,15 @@ package l1
 import (
 	"context"
 	"fmt"
-	"itachi/cairo/config"
-	"itachi/cairo/l1/contract"
-	"itachi/cairo/starknetrpc"
-	"math/big"
-
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/juno/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/yu-org/yu/core/kernel"
+	"itachi/cairo/config"
+	"itachi/cairo/l1/contract"
+	"itachi/cairo/starknetrpc"
+	"math/big"
 )
 
 type L1 struct {
@@ -37,6 +36,7 @@ func StartupL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.Starkne
 	if cfg.EnableL1 {
 		l1, err := NewL1(itachi, cfg, s)
 		if err != nil {
+
 			logrus.Fatal("init L1 client failed: ", err)
 		}
 		err = l1.Run(context.Background())
@@ -47,7 +47,7 @@ func StartupL1(itachi *kernel.Kernel, cfg *config.Config, s *starknetrpc.Starkne
 }
 
 func (l *L1) Run(ctx context.Context) error {
-	msgChan := make(chan *contract.StarknetLogMessageToL2)
+	msgChan := make(chan *contract.StarknetCoreLogMessageToL2)
 	sub, err := l.ethL1.WatchLogMessageToL2(ctx, msgChan, nil, nil, nil)
 	if err != nil {
 		return err
@@ -58,6 +58,7 @@ func (l *L1) Run(ctx context.Context) error {
 		for {
 			select {
 			case msg := <-msgChan:
+				// todo fixme: convert L1 txn to broadcasted txn, add some other fields, version?
 				broadcastedTxn, err := convertL1TxnToBroadcastedTxn(msg)
 				if err != nil {
 					logrus.Errorf("Error converting L1 txn to broadcasted txn: %v", err)
@@ -86,7 +87,7 @@ func (l *L1) Run(ctx context.Context) error {
 	return nil
 }
 
-func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.BroadcastedTransaction, error) {
+func convertL1TxnToBroadcastedTxn(event *contract.StarknetCoreLogMessageToL2) (*rpc.BroadcastedTransaction, error) {
 	callData := make([]*felt.Felt, 0)
 	callData = append(callData, new(felt.Felt).SetBigInt(event.FromAddress.Big()))
 	for _, payload := range event.Payload {
@@ -107,7 +108,6 @@ func convertL1TxnToBroadcastedTxn(event *contract.StarknetLogMessageToL2) (*rpc.
 			ContractAddress: new(felt.Felt).SetBigInt(event.ToAddress),
 			Nonce:           new(felt.Felt).SetBigInt(event.Nonce),
 			CallData:        &callData,
-			Version:         new(felt.Felt).SetUint64(0),
 		},
 		PaidFeeOnL1: new(felt.Felt).SetBigInt(event.Fee),
 	}, nil
