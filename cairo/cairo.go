@@ -100,7 +100,7 @@ func (c *Cairo) FinalizeBlock(block *Block) {
 	// cairoState.UpdateStarknetOsOutput(snOsOutput)
 	fmt.Printf("snOsOutput:\n%+v\n", snOsOutput)
 
-	// 新旧状态根对比
+	// compare new and old state-root
 	if snOsOutput.PrevStateRoot.String() != snOsOutput.NewStateRoot.String() {
 		// send snOsOutput to L1 chain
 		c.ethCallUpdateState(c.cairoState, snOsOutput)
