@@ -63,10 +63,6 @@ You can use more complete python tests with `starknet.py`: https://github.com/re
 You can use `starknetGo` for RPC unit testing. You can refer to the `itachi_test` branch in this fork used during RPC development：https://github.com/haisenCx/starknet.go/tree/itachi_test
 Files with the \_test suffix in path `starknet.go/rpc` are unit tests for RPC.
 
-## 🌐 Connect to Test Endpoint
-
-https://itachi-dev.reddio.com/
-
 ## Configs
 
 ### Chain Configs
