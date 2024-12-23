@@ -13,7 +13,7 @@ following:
   address for which storage is set and the
   [Starknet storage key](https://docs.starknet.io/documentation/architecture_and_concepts/Smart_Contracts/contract-storage/#storage_variables).
 
-The below defines all hardcoded values set in the geneses:
+The below defines all hardcoded values set in the genesis:
 
 ## Node genesis [link](https://github.com/keep-starknet-strange/madara/tree/main/configs/genesis-assets/genesis.json)
 
@@ -94,7 +94,7 @@ going through them.
 
 Finally, 0x1 is set as the contract owner of contract
 0x040e59c2c182a58fb0a74349bfa4769cbbcba32547591dd3fb1def8623997d02, which is
-deployed as a ERC721 contract (given the class hash of 0x80000).
+deployed as an ERC721 contract (given the class hash of 0x80000).
 
 <!-- markdownlint-disable MD013 -->
 
